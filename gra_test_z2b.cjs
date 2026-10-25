@@ -346,7 +346,7 @@ const CHROME = 'C:/Users/User/AppData/Local/ms-playwright/chromium-1134/chrome-w
     console.log('  info opisy trybów: ' + panel.cards.map(c => '"' + c.txt + '"').join(' | '));
     await p3.click('.tryb[data-tryb="3"]'); await p3.waitForTimeout(150);
     await e3(() => { const r = document.getElementById('ster-c'); r.value = '1.3'; r.dispatchEvent(new Event('input', { bubbles: true })); });
-    chk((await e3(() => __okruszek.tryb())) === 3 && (await e3(() => __okruszek.czulosc())) === 1.3 && JSON.stringify(JSON.parse(await LS())) === '{"m":3,"c":1.3}', 'wybór karty 3 i suwaka 1,3 zapisany: ' + (await LS()));
+    chk((await e3(() => __okruszek.tryb())) === 3 && (await e3(() => __okruszek.czulosc())) === 1.3 && JSON.stringify(JSON.parse(await LS())) === '{"v":1,"m":3,"c":1.3}', 'wybór karty 3 i suwaka 1,3 zapisany: ' + (await LS()));
     chk((await e3(() => document.getElementById('ster-cv').textContent)) === '1,3', 'wartość suwaka pokazana po polsku ("1,3")');
     await p3.keyboard.press('Escape'); await p3.waitForTimeout(400);
     s3 = await e3(() => __okruszek.stan()); await p3.waitForTimeout(500); const gtR = (await e3(() => __okruszek.stan())).graCzas;
@@ -354,11 +354,11 @@ const CHROME = 'C:/Users/User/AppData/Local/ms-playwright/chromium-1134/chrome-w
     await p3.reload(); await p3.waitForTimeout(700);
     chk((await e3(() => __okruszek.tryb())) === 3 && (await e3(() => __okruszek.czulosc())) === 1.3, 'po przeładowaniu strony tryb 3 i czułość 1,3 zapamiętane');
     await p3.goto(url + '&sterowanie=2'); await p3.waitForTimeout(600);
-    chk((await e3(() => __okruszek.tryb())) === 2 && (await e3(() => __okruszek.czulosc())) === 1.3 && (await LS()) === '{"m":3,"c":1.3}', '?sterowanie=2 nadpisuje zapisany tryb (czułość z zapisu zostaje, zapis nietknięty)');
+    chk((await e3(() => __okruszek.tryb())) === 2 && (await e3(() => __okruszek.czulosc())) === 1.3 && (await LS()) === '{"v":1,"m":3,"c":1.3}', '?sterowanie=2 nadpisuje zapisany tryb (czułość z zapisu zostaje, zapis nietknięty)');
     await p3.goto(url); await p3.waitForTimeout(600);
     chk((await e3(() => __okruszek.tryb())) === 3, 'bez parametru wraca zapisany tryb 3');
     await p3.keyboard.press('t'); await p3.waitForTimeout(150);
-    chk((await e3(() => __okruszek.tryb())) === 1 && (await LS()) === '{"m":1,"c":1.3}', 'klawisz T zapisuje nowy wybór: ' + (await LS()));
+    chk((await e3(() => __okruszek.tryb())) === 1 && (await LS()) === '{"v":1,"m":1,"c":1.3}', 'klawisz T zapisuje nowy wybór: ' + (await LS()));
     await p3.reload(); await p3.waitForTimeout(600);
     chk((await e3(() => __okruszek.tryb())) === 1, 'po przeładowaniu tryb 1 (z klawisza T)');
     /* karta w panelu przy otwartym panelu: T zmienia zaznaczenie */

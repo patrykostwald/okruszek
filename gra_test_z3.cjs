@@ -10,7 +10,7 @@
 const path = require('path');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
 const file = path.resolve(process.argv[2] || path.join(__dirname, 'index.html'));
-const url = 'file:///' + file.replace(/\\/g, '/') + '?test&seed=23';
+const url = 'file:///' + file.replace(/\\/g, '/') + '?test&seed=23&pasmo=1';   /* Z10: stary harmonogram Z3/Z3b w trybie zgodności */
 let fail = 0;
 const ok = (m) => console.log('  ok   ' + m);
 const bad = (m) => { fail++; console.log('  FAIL ' + m); };

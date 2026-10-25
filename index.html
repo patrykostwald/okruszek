@@ -58,7 +58,14 @@
   @media (hover:hover) { #ster .ok:hover { background:#ecf0f8; color:#0d1224; } }
   #ster .ok:active { background:#ecf0f8; color:#0d1224; }
   #ster .ok:focus-visible { outline:2px solid #ecf0f8; outline-offset:4px; }
+  /* Z10: wybór bramy startu pod "Jeszcze raz" (minimalnie; pełny ekran startu w Z12) */
+  #wynik .bramy { margin-top:18px; }
+  #wynik .bramy .et2 { font-size:12px; line-height:16px; height:16px; opacity:.7; }
+  #wynik .bramy .lst { display:flex; justify-content:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  #wynik .bramy .br { margin:0; min-width:44px; width:44px; height:44px; padding:0; font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; border-radius:20px 23px 21px 24px; border-width:1px; }
+  #wynik .bramy .br[aria-pressed="true"] { background:rgba(236,240,248,.18); border-width:1.5px; }
 </style>
+<script src="teksty.js"></script>
 </head>
 <body>
 <div id="scena">
@@ -71,6 +78,7 @@
 na chmurce.</p>
     <p class="rekord" id="w-rek"></p>
     <button id="jeszcze" type="button" tabindex="-1">Jeszcze raz</button>
+    <div class="bramy" id="w-bramy" style="display:none"><div class="et2">Skąd lecimy?</div><div class="lst" id="w-bramy-l"></div></div>
   </div>
 </div>
 <button id="sterb" type="button" aria-label="Sterowanie: zmień tryb i czułość skrętu"><span>sterowanie</span><b id="sterb-n">1</b></button>
@@ -127,6 +135,8 @@ na chmurce.</p>
    doba w tle (noc > świt > dzień > zachód, tempo zależy od prędkości), nowe przeszkadzajki (stado, wiatr, grad, burza, sznur latawca, mgła, sowa nocą).
    Architektura koloru: kolorowy sprite chmury (tint) jest OSOBNO od sprite'ów konturu (mono, ol) i nie musi pokrywać obrysu (miejsce na akwarelę w Z4).
    Z2b: trzy tryby sterowania (1 jeden kciuk, 2 dwa kciuki jak skrzydła, 3 drążek), wybór w grze (przycisk w rogu, klawisz T, ?sterowanie=n), czułość skrętu, zapis w localStorage.
+   Z10: Droga Słońca (krainy K1-K5 + Dalekie Niebo jako dane, bramy-kurtyny, start z bramy, wytrwałość, napięcie N(t), zapowiedź w sekundach i szkic,
+   klasy skutku S0-S3, prąd ratunkowy, cicha pomoc, ziarno dnia, zapis okruszek.zapis v1, tryb zgodności ?pasmo=1). Sekcja "Z10" niżej.
    Finalny ptaszek i akwarela to Z4; intro, pauza z historią, PWA to Z5; dźwięk to Z6. */
 (function () {
   'use strict';
@@ -461,6 +471,7 @@ na chmurce.</p>
     spawnN = { ptak: 0, deszcz: 0, jastrzab: 0, sowa: 0, stado: 0, wiatr: 0, grad: 0, burza: 0, latawiec: 0, mgla: 0 };
     endKind = '';
     flats.length = 0; for (k = 0; k < NFLAT; k++) flats.push(makeFlat(NEAR + (FAR - NEAR) * (k + 0.5) / NFLAT, 0));
+    drogaReset();   /* Z10 */
     elWynik.classList.remove('pokaz'); elWynik.setAttribute('aria-hidden', 'true'); elJeszcze.tabIndex = -1;
     if (document.activeElement === elJeszcze) elJeszcze.blur();
     last = performance.now();
@@ -530,7 +541,7 @@ na chmurce.</p>
     try { var o = JSON.parse(localStorage.getItem(LSKEY) || 'null'); if (o && o.m >= 1 && o.m <= 3) return { m: o.m | 0, c: o.c >= 0.5 && o.c <= 1.5 ? +o.c : 1 }; } catch (_) { }
     return null;
   }
-  function lsSave() { try { localStorage.setItem(LSKEY, JSON.stringify({ m: ctrlMode, c: sens })); } catch (_) { } }
+  function lsSave() { try { localStorage.setItem(LSKEY, JSON.stringify({ v: 1, m: ctrlMode, c: sens })); } catch (_) { } zapisz(); }
   function fmtC(c) { return c.toFixed(2).replace(/0$/, '').replace('.', ','); }
   function syncUi() {
     var k;
@@ -763,6 +774,7 @@ na chmurce.</p>
   }
   function hitBird(o) {
     var k, X = W / 2 + (bx - camX) / G.ZB, a, c;
+    if (!PASMO) { skutek(o); return; }   /* Z10: klasa skutku */
     o.hit = true; kolizji++; spinT = G.SPIN; immT = G.IMM;
     sHold *= 0.2; boost *= 0.2; updSpeed();
     vx += (bx >= o.x ? 1 : -1) * 140;
@@ -792,7 +804,7 @@ na chmurce.</p>
       if (live && o.faza === 'aktywny' && o.cd <= 0) {
         for (k = -1; k <= 1; k++) {
           c = o.x + k * 45;
-          if (Math.abs(bx - c) < 20) { o.hit = true; o.cd = 1.2; gradHit++; h = Math.max(0, h - G.HAIL_H); if (h < minH) minH = h; stumbleT = 0.4; break; }
+          if (Math.abs(bx - c) < 20) { o.hit = true; o.cd = 1.2; gradHit++; if (PASMO) h = Math.max(0, h - G.HAIL_H); else utrataH(G.HAIL_H); if (h < minH) minH = h; stumbleT = 0.4; break; }
         }
       }
     }
@@ -823,14 +835,14 @@ na chmurce.</p>
           }
         } else if (o.typ === 'latawiec') {
           if (!o.hit && immT <= 0 && Math.abs(o.z - G.ZB) < G.ZW && Math.abs(o.x - bx) < o.half + 6) {
-            o.hit = true; latHit++; kolizji++; stumbleT = G.STUMBLE; immT = 1.0; sHold *= 0.35; boost *= 0.35; updSpeed();
+            if (!PASMO) { latHit++; skutek(o); } else { o.hit = true; latHit++; kolizji++; stumbleT = G.STUMBLE; immT = 1.0; sHold *= 0.35; boost *= 0.35; updSpeed(); }
           }
         } else if (o.typ === 'burza') {
           if (!o.hit && Math.abs(o.z - G.ZB) < G.ZWR && Math.abs(o.x - bx) < G.HITR) {
-            o.hit = true; burzaHit++; kolizji++; spinT = G.SPIN; immT = G.IMM; dropLevel(); flashK = 1;
+            if (!PASMO) { burzaHit++; skutek(o); flashK = 1; } else { o.hit = true; burzaHit++; kolizji++; spinT = G.SPIN; immT = G.IMM; dropLevel(); flashK = 1; }
           }
         } else if (o.typ === 'mgla') {
-          if (!o.hit && Math.abs(o.z - G.ZB) < G.ZWR && Math.abs(o.x - bx) < G.HITR) { o.hit = true; mglaHit++; fogT = G.FOG_LEN; dropLevel(); }
+          if (!o.hit && Math.abs(o.z - G.ZB) < G.ZWR && Math.abs(o.x - bx) < G.HITR) { o.hit = true; mglaHit++; fogT = G.FOG_LEN; if (!mglaLagodna()) dropLevel(); }
         } else if (!o.hit && Math.abs(o.z - G.ZB) < G.ZWR && Math.abs(o.x - bx) < G.HITR) enterRain(o);
       }
       if (o.z < 0.12) obst.splice(k, 1);
@@ -848,6 +860,7 @@ na chmurce.</p>
      nigdy dwie naraz w odstępie < 3,2 s, nic nowego podczas drapieżnika; drapieżnik od 2:00 i co ok. 90 s (jastrząb za dnia, sowa nocą) */
   function schedule() {
     var n, nm, quietBR, quietNew;
+    if (!PASMO) { planKrainy(); return; }   /* Z10: harmonogram krain, napięcie N(t) */
     if (noObst || gameT < G.OBS_FROM) return;
     var hawkSoon = !haw && gameT >= nextHawk - 3.4, busy = haw !== null || hawkSoon;   /* tuż przed drapieżnikiem nic nowego: jego termin ma pierwszeństwo */
     quietBR = gameT - lastBR > 3.2 && gameT - lastNew > 2.0;   /* ptak, deszcz i drapieżnik: odstęp >= 3,2 s od siebie, 2 s od nowej przeszkody */
@@ -911,7 +924,7 @@ na chmurce.</p>
     var tr = 1 / periodFor(s, hyK);
     dayRate += (tr - dayRate) * Math.min(1, dt * 2);
     if (!poraLock) { phi += dayRate * dt; if (phi >= 1) phi -= 1; }
-    palAt(phi, PAL); nightK = PAL.nightW;
+    palAt(phi, PAL); akcentKrainy(PAL); nightK = PAL.nightW;
   }
 
   /* ---------- poziomy, hiperprzestrzeń, efekty czasowe ---------- */
@@ -962,6 +975,7 @@ na chmurce.</p>
   /* ---------- krok symulacji (dt <= ok. 0,034 s czasu gry) ---------- */
   function endRun(typ) {
     var m = Math.floor(dist), prev = best, hk = isPred(typ);
+    drogaKoniec(typ);   /* Z10: zapis na końcu biegu */
     state = 'koniec'; endKind = typ; runs++; if (m > best) best = m;
     elM.textContent = fmtM(m);
     elEt.textContent = hk ? 'Koniec lotu' : 'Miękkie lądowanie';
@@ -1016,7 +1030,7 @@ na chmurce.</p>
     for (k = prady.length - 1; k >= 0; k--) {
       p = prady[k]; pz = p.z; p.z -= dt * speed; p.flash = Math.max(0, p.flash - dt * 1.8);
       if (!p.hit && pz > G.ZB && p.z <= G.ZB && Math.abs(p.x - bx) < G.HIT) wlot(p);
-      if (p.last && pz > G.ZB && p.z <= G.ZB) nextSpawn = gameT + PAUZY[(cI + 5) % PAUZY.length] * (1 + 0.6 * sm((s - 0.75) / 0.2));   /* seria przeleciała: pauza do następnej */
+      if (p.last && pz > G.ZB && p.z <= G.ZB) nextSpawn = gameT + pauzaPradow(PAUZY[(cI + 5) % PAUZY.length] * (1 + 0.6 * sm((s - 0.75) / 0.2)));   /* seria przeleciała: pauza do następnej */
       if (p.z < 0.12) prady.splice(k, 1);
     }
     stepObst(dt, speed, true);
@@ -1026,7 +1040,7 @@ na chmurce.</p>
       if (gameT < UCZ_DO) { e = PLAN[planI % PLAN.length]; spawnPrad(e[0], planI === 0 ? 1.7 : 2.4 + 2.6 * s); planI++; nextSpawn = gameT + UCZ_GAP; }
       else spawnCluster();
     }
-    schedule(); updHawk(dt);
+    drogaKrok(dt); schedule(); updHawk(dt);
     if (h <= 0 && lockS === null && state === 'gra') { h = 0; minH = 0; state = 'ladowanie'; ladT = 0; haw = null; releaseAll(); testHold = false; }
   }
 
@@ -1563,6 +1577,7 @@ na chmurce.</p>
       case 'latawiec': drawLatawiec(it, front); break;
       case 'mgla': drawMgla(it, front); break;
       case 'prad': drawPrad(it); break;
+      case 'brama': drawBrama(it); break;
     }
   }
   /* niebo: gradient z 8 przystanków; pora doby nadaje odcień, etapy koloru nasycenie, a odcienie palety wchodzą w pasy po kolei */
@@ -1647,6 +1662,7 @@ na chmurce.</p>
     items.length = 0;
     for (k = 0; k < prady.length; k++) items.push(prady[k]);
     for (k = 0; k < obst.length; k++) if (obst[k].z >= G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr') items.push(obst[k]);
+    it = itemBrama(); if (it) items.push(it);   /* Z10: kurtyna bramy */
     items.sort(function (a, b) { return b.z - a.z; });
     for (k = 0; k < flats.length; k++) {
       while (pi < items.length && items[pi].z >= flats[k].z) { it = items[pi++]; drawItem(it, false); }
@@ -1687,6 +1703,7 @@ na chmurce.</p>
     for (k = 0; k < obst.length; k++) if (obst[k].z < G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr') drawItem(obst[k], true);
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'grad') drawGrad(obst[k]);
     drawParts();
+    drawZ10Swiat();   /* Z10: szkice zagrożeń, sowa-pokaz, Fiuk */
 
     /* drapieżnik w pościgu, w odlocie i przy złapaniu (ptaszek odlatuje cały, w szponach) */
     if (hg && !hg.cien) {
@@ -1723,6 +1740,7 @@ na chmurce.</p>
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
     if (state !== 'koniec') drawHUD();
+    drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
     drawLvMsg(); drawModeMsg(dt);
     if (paused && !panelOpen) {
       ctx.fillStyle = 'rgba(13,18,36,0.6)'; ctx.fillRect(0, 0, W, H);
@@ -1732,7 +1750,7 @@ na chmurce.</p>
   }
 
   function frame(now) {
-    var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j; last = now; frames++;
+    var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j, tf0 = performance.now(); last = now; frames++;
     dts.push(dt); if (dts.length > DTN) dts.shift();
     if (!paused) {
       t += dt;
@@ -1740,6 +1758,7 @@ na chmurce.</p>
       for (k = 0; k < n; k++) sim(dtg / n);
     }
     render(dt);
+    if (TEST) { k = performance.now() - tf0; ftAll.push(k); if (ftAll.length > 600) ftAll.shift(); if (kurt && !kurt.scena) { kurtFt.push(k); if (kurtFt.length > 2000) kurtFt.shift(); } }   /* Z10: czas pracy klatki (ogółem i przy bramie) */
 
     /* adaptacyjna jakość: tylko w dół, nigdy w górę; w trybie ?test wyłączona, żeby pomiar był uczciwy */
     if (!TEST && dts.length >= 90) {
@@ -1751,6 +1770,562 @@ na chmurce.</p>
     }
     requestAnimationFrame(frame);
   }
+
+  /* =====================================================================================================================
+     Z10: SZKIELET DŁUGIEJ GRY ("Droga Słońca"). Ta sekcja to logika, dane, harmonogram, zapis i wskaźniki.
+     Nie rysuje ptaszka, chmur, morza chmur ani palet (to Z4). Kurtyna bramy składa się z istniejących sprite'ów kulis (drawFlat),
+     sowa-pokaz używa drawOwl, akcent krainy miesza się z paletą pory PO palAt (tablice PORY i HUES bez zmian).
+     Tryb zgodności ?pasmo=1: stary harmonogram Z3/Z3b bez krain, bez zapisu postępu, stare skutki kolizji (dla starych testów i jako zapas).
+     Oznaczenia: K1-K5 + Dalekie Niebo (id 6) = krainy, brama n = wejście do krainy n (brama 1 = Gniazdo), S0-S3 = klasy skutku.
+     ===================================================================================================================== */
+  var PASMO = Q.get('pasmo') === '1';
+  var TX = window.OKRUSZEK_TEKSTY || {};
+  function tekst(grupa, klucz, pole) { try { var g = TX[grupa] && TX[grupa][klucz]; return String((pole ? (g && g[pole]) : g) || ''); } catch (_) { return ''; } }
+
+  /* klasy skutku (tabela typ -> klasa): S0 brak kary (widowisko, zwiastun, kryjówka), S1 lekka (wirowanie <= 0,8 s, s -0,08, kolor chwilowo gaśnie),
+     S2 mocna (wirowanie 1 s, s w dół najwyżej o jeden poziom, utrata wysokości), S3 koniec biegu: TYLKO jastrząb, sowa i morze chmur.
+     Deszcz (mokre piórka), mgła (gasi kolor, poziom w dół) i grad (wysokość) mają własne skutki z PROJEKT.md; klasa decyduje o harmonogramie i budżecie uwagi. */
+  var KLASA = { ptak: 1, stado: 1, deszcz: 1, latawiec: 1, wiatr: 1, grad: 2, mgla: 2, burza: 2, jastrzab: 3, sowa: 3, morze: 3, sowaPokaz: 0, zwiastun: 0, kryjowka: 0 };
+  var DUZE = { deszcz: 1, burza: 1, mgla: 1 };   /* duże sprite'y (budżet <= 3 na ekranie) */
+  var Z = { ETA_TYP: 2.8, ETA_MIN_Z: 3.8, SZKIC_T: 0.7, PRZEJSCIE: 300, CISZA_BRAMA: 10, CISZA_POSCIG: 15, CISZA_S2: 4, DRAP_PO_S2: 6, START_CISZA: 20, ROZGRZEWKA: 25,
+            N_MAX: 0.85, GAP0: 9, GAP_MIN: 3.2, FALA: 90, FALA_UP: 70, ODDECH_K: 0.4, ROZGRZEWKA_K: 0.3, RAMPA: 0.15, RAMPA_T: 360,
+            RATUNEK_H: 0.2, RATUNEK_CO: 30, RATUNEK_PO: 0.5, H_BRAMA: 0.8, H_PODLOGA: 0.15, NAPIS_T: 2.5, WYTRWALOSC: 3, KROTKI: 60, KROTKIE_N: 3, POMOC_PRAD: 1.15, POMOC_DRAP: 30,
+            DRAP_GNIAZDO: 120, DRAP_BRAMA: 60, HAW_WARN: 2.6, S1_SPIN: 0.8, S1_DS: 0.08, S2_DH: 0.08, MAX_S1: 2, MAX_S2: 1, MAX_S0: 1, MAX_DUZE: 3, MAX_CZASTEK: 120, SCENA_T: 3 };
+
+  /* KRAINY: dane Drogi. Długość krainy = czas typowy x zmierzona prędkość typowa (V_TYP, bot "70%" w K1, raporty/z10-pomiar.md), zaokrąglona do 100 m.
+     pora = pora domowa (phi: 0 noc, 0,25 świt, 0,5 dzień, 0,75 zachód/zmierzch); akcent = barwa mieszana z paletą pory (null = paleta pory bez zmian);
+     sink = opadanie przy machaniu (na sekundę, do strojenia); pradCo = mnożnik przerw między seriami prądów; pradTyp = typ prądu (do Z11 każdy działa jak wstęga);
+     przeszkody = wagi harmonogramu (do Z11 przeszkadzajki z Z3/Z3b); debiut = nowości krainy; drapieznik = okres w s (0 = nie poluje w tej krainie);
+     nBaza = napięcie na start krainy; final = id finału (treść w Z11). Teksty (nazwy, tablice) w teksty.js. */
+  var V_TYP = 18.3;   /* m/s: mediana prędkości bota "70%" w K1 z 10 ziaren (pomiar Z10, raporty/z10-pomiar.md) */
+  var KRAINY = [
+    { id: 1, czasTyp: 90, pora: 0.75, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
+      drapieznik: { jastrzab: 0, sowa: 0 }, nBaza: 0.10, final: 'trzy_w_rytmie' },
+    { id: 2, czasTyp: 120, pora: 0.92, akcent: [200, 196, 240], sink: 0.036, pradCo: 1.05, pradTyp: 'tecza_ks', przeszkody: { ptak: 0.5, deszcz: 1, grad: 0.4 }, debiut: ['deszcz', 'grad', 'sowa'],
+      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.20, final: 'ulewa_i_luk' },
+    { id: 3, czasTyp: 135, pora: 0.25, akcent: [255, 198, 184], sink: 0.038, pradCo: 1.1, pradTyp: 'komin', przeszkody: { ptak: 0.4, deszcz: 0.4, grad: 0.2, mgla: 0.8, stado: 0.8 }, debiut: ['mgla', 'stado'],
+      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.28, final: 'kanion_wiez' },
+    { id: 4, czasTyp: 150, pora: 0.5, akcent: [178, 226, 236], sink: 0.040, pradCo: 1.15, pradTyp: 'poryw', przeszkody: { ptak: 0.4, deszcz: 0.3, grad: 0.2, mgla: 0.3, stado: 0.4, latawiec: 1, wiatr: 0.8 }, debiut: ['latawiec', 'wiatr', 'jastrzab'],
+      drapieznik: { jastrzab: 90, sowa: 100 }, nBaza: 0.36, final: 'festiwal' },
+    { id: 5, czasTyp: 165, pora: 0.62, akcent: [250, 214, 150], sink: 0.040, pradCo: 1.2, pradTyp: 'smuga', przeszkody: { ptak: 0.4, deszcz: 0.3, grad: 0.3, mgla: 0.3, stado: 1.2, latawiec: 0.4, wiatr: 0.4 }, debiut: [],
+      drapieznik: { jastrzab: 120, sowa: 120 }, nBaza: 0.44, final: 'przelot_olbrzyma' },
+    { id: 6, czasTyp: 0, pora: 0.75, akcent: [236, 172, 204], sink: 0.042, pradCo: 1.25, pradTyp: 'wszystkie', przeszkody: { ptak: 0.5, deszcz: 0.5, grad: 0.4, mgla: 0.4, stado: 0.6, latawiec: 0.4, wiatr: 0.5, burza: 0.8 }, debiut: ['burza'],
+      drapieznik: { jastrzab: 90, sowa: 90 }, nBaza: 0.55, final: '' }
+  ];
+  /* metry krain z pomiaru: od/do na Drodze (Dalekie Niebo bez końca) */
+  (function () { var m = 0, k, K; for (k = 0; k < KRAINY.length; k++) { K = KRAINY[k]; K.od = m; K.dl = K.czasTyp ? Math.round(K.czasTyp * V_TYP / 100) * 100 : Infinity; K.do = m + K.dl; m = K.do; } })();
+  function dlugosc(n) { return KRAINY[n - 1].dl; }
+
+  /* ---------- stan Drogi ---------- */
+  var startBrama = 1, kIdx = 0, drogaStart = 0, drogaM = 0, distPrev = 0, sSm = 0, pomiarK1 = false, scenaNext = 0, scenaF = null;
+  var calmUntil = 0, nextObsT = 0, nextPredT = 0, lastThreatT = -99, s2Quiet = -99, predQuiet = -99, hawPrev = false, pokaz = null, pomocBieg = false, pomocTest = false, ziarnoTest = 0;
+  var nTeraz = { N: 0, oddech: false, nb: 0, fala: 0 }, nLog = [], gapLog = [], zapLog = [], zapPend = [], skutkiLog = [], bramaLog = [], ratLog = [], ratLast = -99, ratPlan = -1;
+  var kurt = null, kurtDts = [], kurtFt = [], ftAll = [], napisy = [], napis = null, budzet = { s0: 0, s1: 0, s2: 0, duze: 0, czastki: 0, naruszen: 0 }, zwiastunDla = 0, krM = {};
+
+  /* ---------- zapis okruszek.zapis v1 (localStorage, każdy odczyt i zapis w try/catch; gra działa bez zapisu) ----------
+     Zapis tylko w trzech chwilach: przelot bramy, koniec biegu, zmiana ustawień. Nigdy w pętli klatek. Uszkodzony JSON -> kopia w okruszek.zapis.zly, czysty start. */
+  var ZKEY = 'okruszek.zapis', ZKEY_ZLY = 'okruszek.zapis.zly', zapisow = 0;
+  function nowyZapis() { return { v: 1, bramy: [1], najdalej: 0, najdluzszy: 0, krainy: {}, krotkie: 0, dzien: { d: '', n: 0 } }; }
+  function zapisPoprawny(o) { return !!o && typeof o === 'object' && o.v === 1 && Array.isArray(o.bramy) && typeof o.krainy === 'object' && o.krainy !== null; }
+  function zapisNormalizuj(o) {
+    var z = nowyZapis(), k, e;
+    z.bramy = o.bramy.map(function (b) { return b | 0; }).filter(function (b, i, a) { return b >= 1 && b <= KRAINY.length && a.indexOf(b) === i; });
+    if (z.bramy.indexOf(1) < 0) z.bramy.push(1);
+    z.bramy.sort(function (a, b) { return a - b; });
+    z.najdalej = Math.max(0, +o.najdalej || 0); z.najdluzszy = Math.max(0, +o.najdluzszy || 0); z.krotkie = Math.max(0, o.krotkie | 0);
+    for (k in o.krainy) { e = o.krainy[k]; if (e && (k | 0) >= 1 && (k | 0) <= KRAINY.length) z.krainy[k | 0] = { m: Math.max(0, +e.m || 0), loty: Math.max(0, e.loty | 0) }; }
+    if (o.dzien && typeof o.dzien.d === 'string') z.dzien = { d: o.dzien.d, n: Math.max(0, o.dzien.n | 0) };
+    return z;
+  }
+  function zapisWczytaj() {
+    var raw = null, o = null;
+    if (PASMO) return nowyZapis();
+    try { raw = localStorage.getItem(ZKEY); } catch (_) { return nowyZapis(); }
+    if (raw === null || raw === undefined) return nowyZapis();
+    try { o = JSON.parse(raw); } catch (_) { o = null; }
+    if (!zapisPoprawny(o)) {
+      try { localStorage.setItem(ZKEY_ZLY, String(raw)); } catch (_) { }
+      try { localStorage.removeItem(ZKEY); } catch (_) { }
+      return nowyZapis();
+    }
+    return zapisNormalizuj(o);
+  }
+  function zapisz() {
+    if (PASMO) return false;
+    try { localStorage.setItem(ZKEY, JSON.stringify(ZAP)); zapisow++; return true; } catch (_) { return false; }
+  }
+  var ZAP = zapisWczytaj();
+  function kr(n) { if (!ZAP.krainy[n]) ZAP.krainy[n] = { m: 0, loty: 0 }; return ZAP.krainy[n]; }
+  function dzisiaj() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function hashZiarna(str) { var x = 2166136261, i; for (i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return (x % 2147483646) + 1; }
+
+  /* ---------- bieżąca kraina, przenikanie 300 m przed bramą ---------- */
+  function kTeraz() { return KRAINY[kIdx]; }
+  function kNast() { return kIdx + 1 < KRAINY.length ? KRAINY[kIdx + 1] : null; }
+  function doBramyM() { var K = kTeraz(); return (pomiarK1 || !isFinite(K.do)) ? Infinity : K.do - drogaM; }
+  function uPrzejscia() { var r = doBramyM(); return (!isFinite(r) || !kNast()) ? 0 : sm(1 - r / Z.PRZEJSCIE); }
+  function wagiTeraz() {
+    var A = kTeraz().przeszkody, Bn = kNast(), B = Bn ? Bn.przeszkody : null, u = uPrzejscia(), out = {}, k;
+    for (k in A) out[k] = A[k] * (1 - u);
+    if (B && u > 0) for (k in B) out[k] = (out[k] || 0) + B[k] * u;
+    return out;
+  }
+  function akcentTeraz() {
+    var A = kTeraz().akcent, Bn = kNast(), B = Bn ? Bn.akcent : null, u = uPrzejscia(), wa = A ? 0.2 : 0, wb = B ? 0.2 : 0, w = lerp(wa, wb, u), c;
+    if (w <= 0.001) return null;
+    c = A && B ? mixc(A, B, u) : (A || B);
+    return { c: c, w: w };
+  }
+  /* akcent krainy: mieszany z paletą pory (tylko barwy "pełne", nie tło i nie kontur, więc przy s = 0 nadal same kreski) */
+  var AK_POLA = ['sT', 'sM', 'sH', 'sL', 'cM', 'cB', 'warm', 'glow', 'acc', 'fog', 'ht'];
+  function akcentKrainy(P) {
+    if (PASMO) return;
+    var a = akcentTeraz(), k;
+    if (!a) return;
+    for (k = 0; k < AK_POLA.length; k++) P[AK_POLA[k]] = mixc(P[AK_POLA[k]], a.c, a.w);
+    P.sea = [mixc(P.sea[0], a.c, a.w * 0.6), mixc(P.sea[1], a.c, a.w * 0.6), mixc(P.sea[2], a.c, a.w * 0.6)];
+  }
+  /* przerwa między seriami prądów: x pradCo krainy; cicha pomoc skraca przerwę tak, by cykl "seria + przerwa" był 1,15 raza krótszy (= +15% prądów),
+     ale nie krócej niż 0,4 s (przy L0 przelot serii trwa długo, więc zysk jest wtedy mniejszy) */
+  var klasterT0 = 0, klasterI = -1;
+  function pauzaPradow(P) {
+    var p, Tc;
+    if (PASMO) return P;
+    p = P * lerp(kTeraz().pradCo, kNast() ? kNast().pradCo : kTeraz().pradCo, uPrzejscia());
+    if (pomocBieg) { Tc = Math.max(0, gameT - klasterT0); p = Math.max(0.4, (Tc + p) / Z.POMOC_PRAD - Tc); }
+    return p;
+  }
+
+  /* ---------- napięcie N(t) ----------
+     N = min(0,85; nBaza + 0,15 * min(1; t / 6 min) + fala(t)); fala: piła co 90 s (70 s od -0,10 do +0,10, potem 20 s oddechu: N x 0,4, same prądy);
+     rozgrzewka: pierwsze 25 s N x 0,3. Odstęp przeszkód od 9 s (N = 0) do 3,2 s (N = 0,85), nigdy mniej niż 3,2 s; udział S2 = N^2. */
+  function napiecieCalc(tt) {
+    var nb = lerp(kTeraz().nBaza, kNast() ? kNast().nBaza : kTeraz().nBaza, uPrzejscia()), ph = tt % Z.FALA, odd = ph >= Z.FALA_UP, fala = odd ? 0.10 : -0.10 + 0.20 * ph / Z.FALA_UP, n;
+    n = nb + Z.RAMPA * Math.min(1, tt / Z.RAMPA_T) + fala;
+    if (odd) n *= Z.ODDECH_K;
+    if (tt < Z.ROZGRZEWKA) n *= Z.ROZGRZEWKA_K;
+    return { N: cl(Math.min(Z.N_MAX, n)), oddech: odd, nb: nb, fala: fala };
+  }
+  function odstep(N) { return Math.max(Z.GAP_MIN, lerp(Z.GAP0, Z.GAP_MIN, cl(N / Z.N_MAX))); }
+
+  /* ---------- zapowiedź w sekundach i zasada szkicu ----------
+     Odległość pojawienia się liczona z czasu do kontaktu (ok. 2,8 s przy bieżącej prędkości), ale nigdy bliżej niż ETA_MIN_Z warstw:
+     przy największej prędkości (2,22 warstwy/s) to >= 1,5 s nawet wtedy, gdy ptaszek przyspieszy zaraz po pojawieniu się zagrożenia.
+     Każde zagrożenie najpierw jako jasny, kreskowany szkic (toru albo konturu), farba wchodzi po SZKIC_T s (wiek < 0 ukrywa farbę). Drugi kanał: łuk na krawędzi ekranu. */
+  function zWinOf(typ) { return (typ === 'ptak' || typ === 'stado' || typ === 'latawiec') ? G.ZW : G.ZWR; }
+  function zEta(typ) { var sp = 0.32 + 1.9 * s; return G.ZB + zWinOf(typ) + Math.max(Z.ETA_MIN_Z, (Z.ETA_TYP + (rndE() - 0.5) * 0.4) * sp); }
+  var SPAWN_ALL = { ptak: spawnPtak, deszcz: spawnDeszcz, stado: spawnStado, latawiec: spawnLatawiec, mgla: spawnMgla, burza: spawnBurza, grad: spawnGrad, wiatr: spawnWiatr };
+  function nowaPrzeszkoda(typ, opt) {
+    var o, f = SPAWN_ALL[typ];
+    opt = opt || {};
+    if (!f) return null;
+    if (!PASMO && opt.z === undefined && typ !== 'grad' && typ !== 'wiatr') opt.z = zEta(typ);
+    o = f(opt);
+    if (!o) return null;
+    if (opt.zw) { o.hit = true; o.zw = true; o.kl = 0; return o; }
+    o.kl = KLASA[typ];
+    if (!PASMO) {
+      if (typ !== 'grad' && typ !== 'wiatr') o.age = opt.wiek ? opt.wiek : -Z.SZKIC_T;
+      zapowiedzDodaj(o, typ);
+    }
+    return o;
+  }
+  function zapowiedzDodaj(o, typ) {
+    var e = { id: o ? o.id : -1, typ: typ, klasa: KLASA[typ], poziom: lvl, s: Math.round(s * 1000) / 1000, tSzkic: gameT, tKontakt: null, czas: null };
+    zapLog.push(e); if (zapLog.length > 400) zapLog.shift();
+    zapPend.push({ o: o, e: e });
+    return e;
+  }
+  /* kontakt: płaszczyzna ptaszka (z <= ZB + okno kolizji), dla gradu i wiatru koniec zapowiedzi, dla drapieżnika początek pościgu */
+  function zapowiedziKrok() {
+    var k, p, o, c;
+    for (k = zapPend.length - 1; k >= 0; k--) {
+      p = zapPend[k]; o = p.o; c = false;
+      if (p.e.klasa === 3) c = !haw || haw.faza !== 'zapowiedz';
+      else if (obst.indexOf(o) < 0) { zapPend.splice(k, 1); continue; }
+      else if (o.typ === 'grad' || o.typ === 'wiatr') c = o.faza !== 'zapowiedz';
+      else c = o.z <= G.ZB + zWinOf(o.typ);
+      if (c) {
+        p.e.tKontakt = gameT; p.e.czas = Math.round((gameT - p.e.tSzkic) * 1000) / 1000; zapPend.splice(k, 1);
+        if (p.e.klasa === 2) { s2Quiet = Math.max(s2Quiet, gameT + Z.CISZA_S2); predQuiet = Math.max(predQuiet, gameT + Z.DRAP_PO_S2); }
+      }
+    }
+  }
+
+  /* ---------- skutki klas S1 i S2 (kolizje ptaka, stada, sznura latawca i burzy w trybie krain) ---------- */
+  function utrataH(dh) { if (h > Z.H_PODLOGA) h = Math.max(Z.H_PODLOGA, h - dh); if (h < minH) minH = h; }
+  function zwolnij(ds) { var raw = Math.min(1, sHold + boost), tg = Math.max(0, raw - ds), f; if (raw > 0.001) { f = tg / raw; sHold *= f; boost *= f; } updSpeed(); }
+  function piorka(n) {
+    var k, a, c, X = W / 2 + (bx - camX) / G.ZB;
+    for (k = 0; k < n && plumki.length + kropl.length < Z.MAX_CZASTEK; k++) {
+      a = -Math.PI * (0.08 + 0.84 * rndV()); c = 40 + rndV() * 70;
+      plumki.push({ x: X + (rndV() - 0.5) * 24, y: BIRDY + (rndV() - 0.5) * 20, vx: Math.cos(a) * c, vy: Math.sin(a) * c * 0.8 - 10, r: rndV() * 6, vr: (rndV() - 0.5) * 8, life: 1.3 + rndV() * 0.7 });
+    }
+  }
+  function skutek(o) {
+    var kl = KLASA[o.typ] || 1, l0 = lvl, s0 = s;
+    o.hit = true; kolizji++;
+    if (kl >= 2) { G.SPIN = 1.0; spinT = 1.0; immT = G.IMM; dropLevel(); utrataH(Z.S2_DH); }
+    else { G.SPIN = Z.S1_SPIN; spinT = Z.S1_SPIN; immT = 1.0; zwolnij(Z.S1_DS); fogT = Math.max(fogT, 0.8); }
+    if (o.typ === 'ptak' || o.typ === 'stado') vx += (bx >= o.x ? 1 : -1) * 140;
+    piorka(kl >= 2 ? 7 : 4);
+    updLevel(0);
+    skutkiLog.push({ typ: o.typ, klasa: kl, t: gameT, s0: s0, s1: s, l0: l0, l1: levelOf(Math.min(1, sHold + boost)), h: h });
+    if (skutkiLog.length > 200) skutkiLog.shift();
+  }
+  function mglaLagodna() { return !PASMO && kTeraz().id === 3 && kr(3).loty <= 1; }   /* mgła poranna łagodna przy pierwszej wizycie w K3 */
+
+  /* ---------- harmonogram krain (zastępuje schedule() poza trybem ?pasmo=1) ---------- */
+  function aktywne() {
+    var c = { s0: 0, s1: 0, s2: 0, duze: 0 }, k, o, act;
+    for (k = 0; k < obst.length; k++) {
+      o = obst[k];
+      act = (o.typ === 'grad' || o.typ === 'wiatr') ? !o.done : o.z > G.ZB - 0.25;
+      if (!act) continue;
+      if (o.zw) c.s0++; else if (o.gesta) c.kryj = (c.kryj || 0) + 1; else if (o.kl === 2) c.s2++; else c.s1++;
+      if (DUZE[o.typ] && o.z < FAR + 0.5) c.duze++;
+    }
+    if (pokaz) c.s0++;
+    return c;
+  }
+  function wybierzTyp(N, c) {
+    var w = wagiTeraz(), p1 = [], p2 = [], k, pool, sum = 0, r, i2;
+    for (k in w) {
+      if (w[k] <= 0) continue;
+      if (DUZE[k] && c.duze >= Z.MAX_DUZE) continue;
+      if (KLASA[k] === 2) { if (c.s2 < Z.MAX_S2) p2.push(k); } else if (c.s1 < Z.MAX_S1) p1.push(k);
+    }
+    pool = (p2.length && (rndE() < N * N || !p1.length)) ? p2 : p1;
+    if (!pool.length) return null;
+    for (i2 = 0; i2 < pool.length; i2++) sum += w[pool[i2]];
+    r = rndE() * sum;
+    for (i2 = 0; i2 < pool.length; i2++) { r -= w[pool[i2]]; if (r <= 0) return pool[i2]; }
+    return pool[pool.length - 1];
+  }
+  function pierwszaWizyta(n) { return kr(n).loty <= 1; }
+  function planDrapieznik(K) {
+    var kind = PAL.nightW >= 0.5 ? 'sowa' : 'jastrzab', okres = K.drapieznik[kind];
+    if (!okres) { nextPredT = gameT + 5; return false; }   /* ta kraina o tej porze nie ma drapieżnika: sprawdź za chwilę (pora się zmienia) */
+    if (kind === 'sowa' && K.id === 2 && pierwszaWizyta(2)) {   /* K2, pierwsza wizyta w zapisie: sowa tylko pohukuje i przelatuje w tle (S0) */
+      pokaz = { typ: 'sowaPokaz', t: 0, dir: rndE() < 0.5 ? -1 : 1, len: 4.5 };
+      nextPredT = gameT + okres; return true;
+    }
+    if (!spawnPred(kind, { force: true })) { nextPredT = gameT + 2; return false; }
+    zapowiedzDodaj(null, kind); lastThreatT = gameT; gapLog.push({ t: gameT, typ: kind, N: nTeraz.N });
+    nextPredT = 1e9; return true;
+  }
+  function planKrainy() {
+    var K = kTeraz(), c, typ, o;
+    nTeraz = napiecieCalc(gameT);
+    if (noObst || gameT < Z.START_CISZA) return;
+    if (gameT < calmUntil || nTeraz.oddech) return;
+    c = aktywne();
+    if (!haw && !pokaz && gameT >= nextPredT && gameT >= predQuiet && lvl < 5 && gameT - lastThreatT >= Z.GAP_MIN && c.duze <= Z.MAX_DUZE - 1) { if (planDrapieznik(K)) return; }
+    if (haw || gameT < nextObsT) return;
+    if (gameT - lastThreatT < Z.GAP_MIN) { nextObsT = lastThreatT + Z.GAP_MIN; return; }
+    if (gameT < s2Quiet) { nextObsT = s2Quiet; return; }
+    typ = wybierzTyp(nTeraz.N, c);
+    if (!typ) { nextObsT = gameT + 0.5; return; }
+    o = nowaPrzeszkoda(typ, {});
+    if (!o) { nextObsT = gameT + 0.5; return; }
+    if (firstObsT < 0) firstObsT = gameT;
+    gapLog.push({ t: gameT, typ: typ, N: nTeraz.N, klasa: KLASA[typ] }); if (gapLog.length > 400) gapLog.shift();
+    lastThreatT = lastObsT = gameT; nextObsT = gameT + odstep(nTeraz.N);
+  }
+
+  /* ---------- kolejka dorenderowania sprite'ów krain (1-2 zadania na klatkę, budżet 2 ms, najwyżej dwie pule naraz) ----------
+     W Z10 pula krainy to światło bramy (biały kontur i kolor akcentu); Z11 dokłada tu własne sprite'y krain (wieże, latawce, samolot). */
+  var KOLEJKA = [], PULE = {}, PULE_KOL = [], kolejkaLog = { zadan: 0, maxMs: 0, maxNaKlatke: 0 };
+  function swiatloSprite(c) {
+    var cv2 = document.createElement('canvas'), x = cv2.getContext('2d'), gr, k;
+    cv2.width = 64; cv2.height = 256;
+    gr = x.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, rgba(c, 0)); gr.addColorStop(0.5, rgba(c, 1)); gr.addColorStop(1, rgba(c, 0));
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 256);
+    x.globalCompositeOperation = 'destination-in'; gr = x.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.3, 'rgba(0,0,0,1)'); gr.addColorStop(0.85, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 256); x.globalCompositeOperation = 'source-over';
+    x.strokeStyle = rgba(c, 0.5); x.lineWidth = 1;   /* trzy cienkie promienie w szczelinie */
+    for (k = 0; k < 3; k++) { x.beginPath(); x.moveTo(32 + (k - 1) * 9, 30); x.lineTo(32 + (k - 1) * 14, 230); x.stroke(); }
+    return cv2;
+  }
+  function pulaKrainy(id) {
+    var P, K = KRAINY[id - 1], old;
+    if (PULE[id]) return PULE[id];
+    while (PULE_KOL.length >= 2) { old = PULE_KOL.shift(); delete PULE[old]; }
+    P = { id: id, gotowe: 0, bialy: null, kolor: null }; PULE[id] = P; PULE_KOL.push(id);
+    KOLEJKA.push(function () { P.bialy = swiatloSprite(LINE); P.gotowe++; });
+    KOLEJKA.push(function () { P.kolor = swiatloSprite(K && K.akcent ? K.akcent : [255, 226, 190]); P.gotowe++; });
+    return P;
+  }
+  function dorenderuj() {
+    var t0 = performance.now(), n = 0, ms;
+    while (KOLEJKA.length && n < 2 && (n === 0 || performance.now() - t0 < 2)) { KOLEJKA.shift()(); n++; }
+    if (n) { ms = performance.now() - t0; kolejkaLog.zadan += n; kolejkaLog.maxMs = Math.max(kolejkaLog.maxMs, ms); kolejkaLog.maxNaKlatke = Math.max(kolejkaLog.maxNaKlatke, n); }
+  }
+
+  /* ---------- reset, krok, przelot bramy, koniec biegu ---------- */
+  function wytrwaloscSprawdz() {
+    var n, e;
+    if (PASMO) return 0;
+    for (n = 1; n <= 5; n++) {
+      e = ZAP.krainy[n];
+      if (e && e.m >= Z.WYTRWALOSC * dlugosc(n) && ZAP.bramy.indexOf(n + 1) < 0) { ZAP.bramy.push(n + 1); ZAP.bramy.sort(function (a, b) { return a - b; }); scenaNext = n + 1; return n + 1; }
+    }
+    return 0;
+  }
+  function napiszDodaj(txt) { if (txt) napisy.push({ txt: txt, dur: Z.NAPIS_T }); }
+  function drogaReset() {
+    var K, d, b;
+    zapPend.length = 0; pokaz = null; kurt = null; scenaF = null; napisy.length = 0; napis = null; distPrev = 0; ratLast = -99; ratPlan = -1; hawPrev = false; zwiastunDla = 0; krM = {};
+    lastThreatT = -99; s2Quiet = -99; predQuiet = -99; nLog.length = 0; gapLog.length = 0; zapLog.length = 0; skutkiLog.length = 0; ratLog.length = 0; bramaLog.length = 0; kurtDts.length = 0;
+    budzet = { s0: 0, s1: 0, s2: 0, duze: 0, czastki: 0, naruszen: 0 };
+    if (PASMO) { G.SINK = 0.04; G.HAW_WARN = 2; G.SPIN = 1.0; return; }
+    G.HAW_WARN = Z.HAW_WARN; G.SPIN = 1.0;
+    if (scenaNext) { startBrama = scenaNext; scenaF = { t: 0, brama: scenaNext }; scenaNext = 0; }
+    b = Math.max(1, Math.min(KRAINY.length, startBrama | 0)); startBrama = b;
+    kIdx = b - 1; K = kTeraz(); drogaStart = K.od; drogaM = drogaStart;
+    if (!poraLock) { phi = K.pora; palAt(phi, PAL); akcentKrainy(PAL); nightK = PAL.nightW; forceTint = true; }
+    d = dzisiaj(); if (ZAP.dzien.d !== d) ZAP.dzien = { d: d, n: 0 }; ZAP.dzien.n++;
+    rs = TEST ? 104729 + (ziarnoTest || (+Q.get('seed') || 23)) * 131 : hashZiarna(ZAP.dzien.d + '#' + ZAP.dzien.n);
+    pomocBieg = TEST ? pomocTest : ZAP.krotkie >= Z.KROTKIE_N;
+    calmUntil = Z.START_CISZA; nextObsT = Z.START_CISZA;
+    nextPredT = (b === 1 ? Z.DRAP_GNIAZDO : Z.DRAP_BRAMA) + (pomocBieg ? Z.POMOC_DRAP : 0);
+    G.SINK = K.sink; sSm = 0;
+    kr(K.id).loty++;
+    nTeraz = napiecieCalc(0);
+    if (b > 1) napiszDodaj(tekst('krainy', K.id, 'nazwa'));
+    if (scenaF) { napiszDodaj(tekst('szepty', 'fiuk')); kurt = { z: 2.6, gx: bx, brama: b, scena: true, open: 0 }; pulaKrainy(b); }
+    if (K.id === 6) napiszDodaj(tekst('krainy', 6, 'tablica'));
+  }
+  function przelotBramy() {
+    var K = KRAINY[kIdx + 1];
+    kIdx++;
+    h = Math.max(h, Z.H_BRAMA);
+    calmUntil = Math.max(calmUntil, gameT + Z.CISZA_BRAMA); nextObsT = Math.max(nextObsT, calmUntil);
+    if (ZAP.bramy.indexOf(K.id) < 0) { ZAP.bramy.push(K.id); ZAP.bramy.sort(function (a, b) { return a - b; }); }
+    kr(K.id).loty++;
+    ZAP.najdalej = Math.max(ZAP.najdalej, Math.floor(drogaM)); ZAP.najdluzszy = Math.max(ZAP.najdluzszy, Math.floor(dist));
+    zapisz();   /* zapis bramy w chwili przelotu (zamknięcie karty zaraz potem nie gubi bramy) */
+    napiszDodaj(tekst('krainy', K.id, 'nazwa'));
+    if (K.id === 6) napiszDodaj(tekst('krainy', 6, 'tablica'));
+    bramaLog.push({ brama: K.id, t: gameT, m: Math.round(drogaM), h: h, poziom: lvl });
+    if (kurt && !kurt.scena) { kurt.po = true; kurt.z = Math.min(kurt.z, G.ZB); }
+    G.SINK = K.sink;
+  }
+  function drogaKrok(dt) {
+    var dm, K, rem, sp, c, n2, k, p;
+    if (PASMO) return;
+    dm = dist - distPrev; distPrev = dist; drogaM = drogaStart + dist;
+    if (cI !== klasterI) { klasterI = cI; klasterT0 = gameT; }   /* początek serii prądów (do cichej pomocy) */
+    K = kTeraz();
+    if (dm > 0) { kr(K.id).m += dm; krM[K.id] = (krM[K.id] || 0) + dm; }
+    if (!pomiarK1 && isFinite(K.do) && drogaM >= K.do) { przelotBramy(); K = kTeraz(); }
+    n2 = kNast(); rem = doBramyM();
+    G.SINK = n2 ? lerp(K.sink, n2.sink, uPrzejscia()) : K.sink;
+    /* zwiastun: 300 m przed bramą jeden element następnej krainy (S0, bez kolizji, z boku toru) */
+    if (n2 && rem < Z.PRZEJSCIE && zwiastunDla !== n2.id) {
+      zwiastunDla = n2.id;
+      if (!noObst && (n2.debiut.length || n2.id === 5)) {
+        p = { 2: 'deszcz', 3: 'mgla', 4: 'latawiec', 5: 'stado', 6: 'burza' }[n2.id];
+        if (p && aktywne().duze < Z.MAX_DUZE) nowaPrzeszkoda(p, { zw: true, dx: (rndE() < 0.5 ? -1 : 1) * 1.8, z: Math.min(FAR - 0.3, G.ZB + 3.2 * (0.32 + 1.9 * s) + 1) });
+      }
+      pulaKrainy(n2.id);
+    }
+    /* kurtyna: z liczone z metrów do bramy przy wygładzonej prędkości; w bramie z = ZB */
+    sSm += (s - sSm) * Math.min(1, dt * 0.8);
+    if (kurt && kurt.scena) {
+      kurt.z = lerp(2.6, G.ZB - 0.05, cl(scenaF.t / Z.SCENA_T)); kurt.gx += (bx - kurt.gx) * Math.min(1, dt * 2);
+    } else if (n2 && isFinite(rem)) {
+      sp = (0.32 + 1.9 * sSm) / (G.M0 + G.M1 * sSm);
+      if (G.ZB + rem * sp < FAR + 0.5) {
+        if (!kurt || kurt.brama !== n2.id) kurt = { z: FAR + 0.5, gx: bx, brama: n2.id, open: 0 };
+        kurt.z = G.ZB + Math.max(0, rem) * sp; kurt.gx += (bx - kurt.gx) * Math.min(1, dt * 2);
+      }
+    }
+    if (kurt && kurt.po) { kurt.z -= dt * (0.32 + 1.9 * s); if (kurt.z < NEAR) kurt = null; }
+    if (kurt) kurt.open = sm((3.4 - kurt.z) / 2.6);
+    if (scenaF) { scenaF.t += dt; if (scenaF.t >= Z.SCENA_T) { scenaF = null; if (kurt && kurt.scena) kurt = null; } }
+    /* prąd ratunkowy: h < 0,2 -> w ciągu 3 s osiągalny prąd na wprost (najwyżej raz na 30 s) */
+    if (!noPrady && h < Z.RATUNEK_H && ratPlan < 0 && gameT - ratLast >= Z.RATUNEK_CO) { ratPlan = gameT + Z.RATUNEK_PO; ratLog.push({ t: gameT, h: h, pojawil: null }); }
+    if (ratPlan >= 0 && gameT >= ratPlan) {
+      p = spawnPrad(0, G.ZB + 1.9 * (0.32 + 1.9 * s)); p.ratunek = true; ratLast = gameT; ratPlan = -1;
+      if (ratLog.length) ratLog[ratLog.length - 1].pojawil = gameT;
+    }
+    /* drapieżnik skończył: 15 s spokoju i następny po okresie krainy */
+    if (hawPrev && !haw) { calmUntil = Math.max(calmUntil, gameT + Z.CISZA_POSCIG); nextPredT = gameT + (K.drapieznik[hawPrev] || K.drapieznik.jastrzab || K.drapieznik.sowa || 90) * (0.9 + 0.2 * rndE()); }
+    hawPrev = haw ? haw.kind : false;
+    if (pokaz) { pokaz.t += dt; if (pokaz.t > pokaz.len) pokaz = null; }
+    zapowiedziKrok();
+    /* budżet uwagi: log maksimów (<= 1 widowisko, <= 1 S2, <= 2 S1, <= 3 duże sprite'y, <= 120 cząstek) */
+    c = aktywne();
+    budzet.s0 = Math.max(budzet.s0, c.s0); budzet.s1 = Math.max(budzet.s1, c.s1); budzet.s2 = Math.max(budzet.s2, c.s2); budzet.duze = Math.max(budzet.duze, c.duze);
+    k = plumki.length + kropl.length; budzet.czastki = Math.max(budzet.czastki, k);
+    if (c.s0 > Z.MAX_S0 || c.s1 > Z.MAX_S1 || c.s2 > Z.MAX_S2 || c.duze > Z.MAX_DUZE || k > Z.MAX_CZASTEK) budzet.naruszen++;
+    if (!nLog.length || gameT - nLog[nLog.length - 1].t >= 1) { nLog.push({ t: Math.round(gameT * 10) / 10, N: Math.round(nTeraz.N * 1000) / 1000, oddech: nTeraz.oddech, kraina: K.id }); if (nLog.length > 1200) nLog.shift(); }
+  }
+  function drogaKoniec(typ) {
+    var K;
+    if (PASMO) return;
+    K = kTeraz();
+    ZAP.najdalej = Math.max(ZAP.najdalej, Math.floor(drogaM)); ZAP.najdluzszy = Math.max(ZAP.najdluzszy, Math.floor(dist));
+    ZAP.krotkie = gameT < Z.KROTKI ? ZAP.krotkie + 1 : 0;
+    wytrwaloscSprawdz();
+    zapisz();
+    bramyUi();
+  }
+
+  /* ---------- wybór bramy na ekranie wyniku (minimalnie; pełny ekran startu i Zeszyt to Z12) ---------- */
+  var elBramy = document.getElementById('w-bramy'), elBramyL = document.getElementById('w-bramy-l');
+  function bramyUi() {
+    var k, b, el, nm;
+    if (!elBramy) return;
+    elBramyL.textContent = '';
+    if (PASMO || ZAP.bramy.length < 2) { elBramy.style.display = 'none'; return; }
+    elBramy.style.display = '';
+    for (k = 0; k < ZAP.bramy.length; k++) {
+      b = ZAP.bramy[k]; nm = tekst('krainy', b, 'nazwa');
+      el = document.createElement('button'); el.type = 'button'; el.className = 'br'; el.textContent = String(b); el.tabIndex = 0;
+      el.setAttribute('aria-label', 'Brama ' + b + (nm ? ': ' + nm : '')); el.setAttribute('aria-pressed', b === startBrama ? 'true' : 'false'); el.title = nm;
+      (function (bb) { el.addEventListener('click', function () { startBrama = bb; reset(); }); })(b);
+      elBramyL.appendChild(el);
+    }
+  }
+
+  /* ---------- rysowanie Z10: kurtyna bramy, szkice zagrożeń, sowa-pokaz, Fiuk (w świecie) oraz kreska do bramy, strefa tekstu, łuki (nakładka) ---------- */
+  var kurtFlat = { z: 3, clouds: [] }, kurtBase = [];
+  function kurtynaChmury(it) {
+    var k, j, sgn, gap = szczelina(it.open), sc = 1 / it.z, ymin = (-120 - HORIZON) / sc, ymax = (H + 40 - HORIZON) / sc, y, c, n = 0;
+    if (kurtBase.brama !== it.brama) {   /* stały, ale inny dla każdej bramy układ chmur z puli */
+      kurtBase = []; kurtBase.brama = it.brama;
+      for (k = 0; k < 28; k++) kurtBase.push({ p: (it.brama * 5 + k * 3) % POOLN, ph: (k * 1.37 + it.brama) % 6, j: ((k * 37 + it.brama * 11) % 60) - 30 });
+    }
+    for (sgn = -1; sgn <= 1; sgn += 2) for (j = 0; j < (it.z > 4 ? 1 : 2); j++) for (k = 0; k < 6; k++) {   /* z daleka wystarcza wewnętrzna kolumna */
+      y = -1230 + k * 260 + j * 130; if (y < ymin - 200 || y > ymax + 80) continue;
+      c = kurtFlat.clouds[n] || (kurtFlat.clouds[n] = {});
+      var bb = kurtBase[(k + j * 7 + (sgn > 0 ? 14 : 0)) % kurtBase.length];
+      c.p = bb.p; c.ph = bb.ph; c.x = it.gx + sgn * (gap + 150 + j * 290 + bb.j); c.y = y + bb.j; n++;
+    }
+    kurtFlat.clouds.length = n; kurtFlat.z = it.z;
+  }
+  /* połowa szczeliny kurtyny w jednostkach świata: wąska na początku, przy otwarciu 0,5 skrzydła stoją jeszcze w kadrze, przy 1 poza nim */
+  function szczelina(op) { return lerp(30, 640, Math.pow(op, 1.6)); }
+  /* kurtyna: światło w szczelinie (jeden obraz, bez trybu mieszania) i skrzydła z chmur puli; ta sama alfa co kulisy (drawFlat),
+     ale bez warstwy mgiełki i smug hiperprzestrzeni oraz z odcięciem chmur poza kadrem w pionie (tańsza rasteryzacja przy bramie) */
+  function drawBrama(it) {
+    var z = it.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), X, gw, top, hh, cc, P = PULE[it.brama], a, k, c, p, Xc, Yc, se, gA, olA, fade, bk, am, at, ao, img;
+    if (z < NEAR + 0.02 || z > FAR + 0.6) return;
+    X = W / 2 + (it.gx - camX * (1 - tt * 0.6)) * sc; gw = Math.max(10, Math.min(W * 0.8, szczelina(it.open) * 2 * sc * 0.9));
+    top = Math.max(-20, HORIZON - 1100 * sc); hh = Math.min(H * 0.75, HORIZON + 260 * sc - top);
+    cc = cAll(sk + offAt(tt)); a = (0.22 + 0.5 * sm(it.open / 0.6)) * sm((FAR + 0.6 - z) / 1.2) * (1 - sm((it.open - 0.55) / 0.4));   /* światło gaśnie, gdy kurtyna się rozsuwa */
+    if (P && a > 0.02) {   /* światło następnej krainy: przy L0 białe, od etapu koloru w barwie akcentu krainy */
+      img = cc < 0.5 ? P.bialy : (P.kolor || P.bialy);
+      if (img) { ctx.globalAlpha = a * 0.75; ctx.drawImage(img, X - gw / 2, top, gw, hh); ctx.globalAlpha = 1; }
+    }
+    kurtynaChmury(it);
+    se = sk + offAt(tt); gA = sg(se); olA = gA * lerp(1, 0.4, sm((se - 0.35) / 0.5)); bk = bucketOf(z);
+    fade = sm((z - NEAR) / 0.35) * sm((FAR - z) / 1.0);
+    if (fade <= 0.01) return;
+    am = (1 - tt * 0.45) * (1 - gA * 0.8) * fade; at = gA * (1 - tt * 0.35) * fade; ao = olA * (1 - tt * 0.45) * fade;
+    for (k = 0; k < kurtFlat.clouds.length; k++) {
+      c = kurtFlat.clouds[k]; p = POOL[c.p];
+      Xc = W / 2 + (c.x - camX * (1 - tt * 0.6)) * sc; Yc = HORIZON + c.y * sc;
+      if (Xc + p.g.maxx * sc < -60 || Xc + p.g.minx * sc > W + 60 || Yc < -20 || Yc + p.g.top * sc > H + 20) continue;
+      if (am > 0.01) drawSpr(p.mono[bk], Xc, Yc, sc, am);
+      if (at > 0.01) drawSpr(p.tint, Xc, Yc, sc, at);
+      if (ao > 0.05 && gA < 0.5) drawSpr(p.ol[bk], Xc, Yc, sc, ao);   /* podwójny kontur tylko w etapie szarości */
+    }
+    ctx.globalAlpha = 1;
+  }
+  function szkicA(o) { return o.age < 0 ? 0.85 : 0.85 * (1 - sm(o.age / 0.8)); }
+  function drawSzkice() {
+    var k, o, a, sc, X, Y, Xc, Yc, eta, sp = Math.max(0.3, 0.32 + 1.9 * s);
+    if (PASMO) return;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([7, 7]); ctx.lineDashOffset = reduce ? 0 : -t * 30;
+    for (k = 0; k < obst.length; k++) {
+      o = obst[k]; if (o.zw || o.hit || o.typ === 'grad' || o.typ === 'wiatr' || o.z < G.ZB) continue;
+      a = szkicA(o); if (a < 0.02) continue;
+      sc = 1 / o.z; X = W / 2 + (o.x - camX) * sc;
+      ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
+      if (o.typ === 'ptak' || o.typ === 'stado') {
+        Y = obY(o.z, o.dy); eta = (o.z - G.ZB) / sp; Xc = W / 2 + (o.x + o.v * eta - camX) / G.ZB; Yc = obY(G.ZB, o.dy);
+        ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(Xc, Yc); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(X, Y, Math.max(6, (o.typ === 'stado' ? 80 : 40) * sc), Math.max(4, 18 * sc), 0, 0, Math.PI * 2); ctx.stroke();
+      } else if (o.typ === 'latawiec') {
+        Y = obY(o.z, o.dy); ctx.beginPath(); ctx.moveTo(X - o.half * sc, Y); ctx.quadraticCurveTo(X, Y + o.sag * 2 * sc, X + o.half * sc, Y + o.sag * 0.4 * sc); ctx.stroke();
+      } else {
+        Y = obY(o.z, o.typ === 'mgla' ? 44 : 34) - 60 * sc;
+        ctx.beginPath(); ctx.ellipse(X, Y, Math.max(10, 165 * sc * (o.typ === 'burza' ? 1.2 : 1)), Math.max(5, 62 * sc), 0, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  function drawFiuk() {
+    var u = cl(scenaF.t / Z.SCENA_T), X = W / 2 + (bx - camX) / G.ZB, cx = lerp(X, W / 2, u), cy = lerp(BIRDY - 70, HORIZON - 10, u), r = lerp(26, 8, u), a = sm(u / 0.15) * sm((1 - u) / 0.2), k, ang, rr, col = mixc(LINE, PAL.acc, cAll(sk));
+    if (a < 0.02) return;
+    ctx.save(); ctx.strokeStyle = rgba(col, 0.9 * a); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath();
+    for (k = 0; k <= 40; k++) { ang = k / 40 * Math.PI * 3.2 + (reduce ? 0 : t * 4); rr = r * (0.25 + 0.75 * k / 40); if (k) ctx.lineTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * 0.7); else ctx.moveTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * 0.7); }
+    ctx.lineTo(cx + r * 2.2, cy + r * 0.9); ctx.stroke(); ctx.restore();
+  }
+  function drawPokaz() {
+    var u = cl(pokaz.t / pokaz.len), x = pokaz.dir > 0 ? lerp(-50, W + 50, u) : lerp(W + 50, -50, u), y = H * 0.2 + Math.sin(u * 6) * 8, a = sm(u / 0.1) * sm((1 - u) / 0.1);
+    drawOwl(x, y, 0.34, reduce ? 0.2 : Math.sin(t * 6) * 0.5, cAll(sk - 0.04), a * 0.85, false);
+  }
+  function drawZ10Swiat() {
+    if (PASMO) return;
+    drawSzkice();
+    if (pokaz) drawPokaz();
+    if (scenaF) drawFiuk();
+  }
+  function lukKrawedzi(side, y, a) {
+    var x = side < 0 ? 3 : W - 3;
+    ctx.beginPath(); ctx.arc(side < 0 ? -16 : W + 16, y, 30, side < 0 ? -0.9 : Math.PI - 0.9, side < 0 ? 0.9 : Math.PI + 0.9);
+    ctx.strokeStyle = 'rgba(13,18,36,' + (0.5 * a).toFixed(3) + ')'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 3; ctx.stroke();
+    return x;
+  }
+  function drawLuki() {
+    var k, p, o, X, Y, side, a, pul = reduce ? 0.6 : 0.45 + 0.35 * Math.sin(t * 9), pbx = W / 2 + (bx - camX) / G.ZB, hg;
+    ctx.save(); ctx.lineCap = 'round';
+    for (k = 0; k < zapPend.length; k++) {
+      p = zapPend[k]; o = p.o;
+      if (p.e.klasa === 3) { if (!haw) continue; hg = hawkGeom(); X = hg ? hg.x : W / 2; Y = Math.max(140, Math.min(H - 80, hg ? hg.y : H * 0.3)); }
+      else if (o.typ === 'grad') { X = W / 2 + (o.x - camX) / G.ZB; Y = H * 0.3; }
+      else if (o.typ === 'wiatr') { X = o.dir > 0 ? -10 : W + 10; Y = H * 0.45; }
+      else { if ((o.z - G.ZB - zWinOf(o.typ)) / Math.max(0.3, 0.32 + 1.9 * s) > 3) continue;   /* łuk w ostatnich 3 s przed kontaktem */
+        X = W / 2 + (o.x - camX) / o.z; Y = Math.max(140, Math.min(H - 80, obY(o.z, 34))); }
+      side = X < pbx ? -1 : 1; a = 0.75 * pul;
+      lukKrawedzi(side, Y, a);
+    }
+    ctx.restore();
+  }
+  function drawKreska() {
+    var K = kTeraz(), x0 = 18, w = 107, y = 56.5, f;
+    if (!isFinite(K.do) || pomiarK1) return;
+    f = cl((drogaM - K.od) / (K.do - K.od));
+    ctx.save(); ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(13,18,36,0.5)'; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
+    ctx.strokeStyle = rgba(LINE, 0.28); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
+    if (f > 0.005) { ctx.strokeStyle = rgba(LINE, 0.9); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w * f, y); ctx.stroke(); }
+    ctx.restore();
+  }
+  function drawNapis(dt) {
+    var env, ls = 'letterSpacing' in ctx;
+    if (!napis && napisy.length) napis = { txt: napisy[0].txt, dur: napisy.shift().dur, t: 0 };
+    if (!napis) return;
+    napis.t += dt; if (napis.t > napis.dur) { napis = null; return; }
+    env = sm(napis.t / 0.25) * sm((napis.dur - napis.t) / 0.45);
+    ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.shadowColor = 'rgba(13,18,36,0.9)'; ctx.shadowBlur = 6; if (ls) ctx.letterSpacing = '0.3px';
+    ctx.font = 'italic 400 16px Georgia, "Times New Roman", serif'; ctx.fillStyle = rgba(LINE, 0.96 * env); ctx.fillText(napis.txt, 18, 96, 232);
+    if (ls) ctx.letterSpacing = '0px';
+    ctx.restore();
+  }
+  function drawZ10Nakladka(dt) {
+    if (PASMO) return;
+    dorenderuj();
+    if (kurt && !kurt.scena && kurt.z < FAR + 0.5) { kurtDts.push(dt); if (kurtDts.length > 2000) kurtDts.shift(); }
+    if (state === 'gra') { drawLuki(); drawKreska(); }
+    drawNapis(dt);
+  }
+  function itemBrama() { return (!PASMO && kurt && kurt.z >= G.ZB - 0.2) ? { typ: 'brama', z: kurt.z, gx: kurt.gx, brama: kurt.brama, open: kurt.open } : null; }
 
   /* ---------- hak testowy (?test) ---------- */
   function fpsStat() {
@@ -1873,7 +2448,79 @@ na chmurce.</p>
     };
   }
 
-  buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); resize();
+  /* ---------- Z10: hak testowy Drogi (?test) ----------
+     kraina(n) bez n: bieżąca kraina; z n: przeniesienie na początek krainy n w trwającym biegu (bez przelotu bramy).
+     brama(n): nowy bieg z bramy n. napiecie(): N(t), log N i odstępów. zapowiedzi(): log id, typ, klasa, poziom, czas szkicu, czas kontaktu.
+     zapis() / wyczyscZapis() / wytrwalosc(n, m) / cichaPomoc(v). Do botów: autopilot(fn, ziarno), symuluj(sekundy, dt) (krok symulacji bez rysowania),
+     ziarno(n), pomiar(v) (cała Droga jako K1, do pomiaru prędkości), doBramy(m), droga(), budzet(), bramaLog(), ratunek(), skutki(), napis(). */
+  if (TEST) {
+    (function () {
+      var O = window.__okruszek, zd0 = O.zdarzenie, botFn = null, botR = 1;
+      function botRnd() { botR = (botR * 16807) % 2147483647; return (botR - 1) / 2147483646; }
+      function botKrok(dt) {
+        var A = { t: gameT, dt: dt, s: s, sk: sk, h: h, lvl: lvl, bx: bx, vx: vx, prady: prady, obst: obst, haw: haw, ZB: G.ZB, HIT: G.HIT, HITB: G.HITB, HITR: G.HITR, PRAD_DX: PRAD_DX,
+                  speed: 0.32 + 1.9 * s, r: botRnd, kraina: kTeraz().id, lancuch: chainNow(), w12: hitsN(12) }, r = botFn(A) || {};
+        mouseX = W / 2 + Math.max(-1, Math.min(1, r.u || 0)) * (W / 2) / 1.25;
+        testHold = !!r.hold;
+      }
+      function info() {
+        var K = kTeraz(), n2 = kNast();
+        return { kraina: K.id, nazwa: tekst('krainy', K.id, 'nazwa'), od: K.od, do: K.do, dl: K.dl, drogaM: drogaM, dystans: dist, startBrama: startBrama, doBramy: doBramyM(), nastepna: n2 ? n2.id : null,
+                 sink: G.SINK, pora: phi, poraDomowa: K.pora, nightW: PAL.nightW, pomoc: pomocBieg, przejscie: uPrzejscia(), kurtyna: kurt ? { z: kurt.z, open: kurt.open, brama: kurt.brama, scena: !!kurt.scena, po: !!kurt.po } : null,
+                 scena: scenaF ? { t: scenaF.t, brama: scenaF.brama } : null, pokaz: pokaz ? { typ: pokaz.typ, t: pokaz.t } : null, pasmo: PASMO, pomiar: pomiarK1, nastDrapieznik: nextPredT, cisza: calmUntil, krM: JSON.parse(JSON.stringify(krM)),
+                 HAW_WARN: G.HAW_WARN, V_TYP: V_TYP };
+      }
+      var extra = {
+        kraina: function (n) {
+          if (n !== undefined && !PASMO) { n = Math.max(1, Math.min(KRAINY.length, n | 0)); kIdx = n - 1; drogaStart = KRAINY[kIdx].od + 1 - dist; drogaM = drogaStart + dist; distPrev = dist; kurt = null; zwiastunDla = 0; G.SINK = kTeraz().sink; }
+          return info();
+        },
+        brama: function (n) { startBrama = Math.max(1, Math.min(KRAINY.length, n | 0)); scenaNext = 0; reset(); return info(); },
+        droga: info,
+        krainy: function () { return KRAINY.map(function (K) { return { id: K.id, nazwa: tekst('krainy', K.id, 'nazwa'), od: K.od, do: K.do, dl: K.dl, czasTyp: K.czasTyp, pora: K.pora, sink: K.sink, nBaza: K.nBaza, pradCo: K.pradCo, pradTyp: K.pradTyp, przeszkody: K.przeszkody, debiut: K.debiut, drapieznik: K.drapieznik, final: K.final, akcent: K.akcent }; }); },
+        doBramy: function (m) { var K = kTeraz(); if (!isFinite(K.do)) return false; drogaStart = K.do - Math.max(1, +m || 1) - dist; drogaM = drogaStart + dist; distPrev = dist; return info(); },
+        napiecie: function () { return { teraz: nTeraz, odstep: odstep(nTeraz.N), log: nLog.slice(), przeszkody: gapLog.slice(), cisza: calmUntil, nastepna: nextObsT, s2Cisza: s2Quiet, drapCisza: predQuiet }; },
+        zapowiedzi: function () { return zapLog.map(function (e) { return { id: e.id, typ: e.typ, klasa: e.klasa, poziom: e.poziom, s: e.s, tSzkic: e.tSzkic, tKontakt: e.tKontakt, czas: e.czas }; }); },
+        zapis: function () { var ls = null; try { ls = localStorage.getItem(ZKEY); } catch (_) { ls = 'BRAK DOSTĘPU'; } return { pamiec: JSON.parse(JSON.stringify(ZAP)), localStorage: ls, zly: (function () { try { return localStorage.getItem(ZKEY_ZLY); } catch (_) { return null; } })(), zapisow: zapisow, bajtow: JSON.stringify(ZAP).length }; },
+        wyczyscZapis: function () { try { localStorage.removeItem(ZKEY); localStorage.removeItem(ZKEY_ZLY); } catch (_) { } ZAP = nowyZapis(); startBrama = 1; scenaNext = 0; bramyUi(); return true; },
+        wytrwalosc: function (n, m) { kr(n).m += Math.max(0, +m || 0); var b = wytrwaloscSprawdz(); zapisz(); bramyUi(); return { odblokowana: b, krainy: JSON.parse(JSON.stringify(ZAP.krainy)), bramy: ZAP.bramy.slice() }; },
+        cichaPomoc: function (v) { pomocTest = v === undefined ? true : !!v; return pomocTest; },
+        ziarno: function (n) { ziarnoTest = Math.max(0, n | 0); return ziarnoTest; },
+        pomiar: function (v) { pomiarK1 = v === undefined ? true : !!v; return pomiarK1; },
+        budzet: function () { var c = aktywne(); return { max: JSON.parse(JSON.stringify(budzet)), teraz: c, czastki: plumki.length + kropl.length, limity: { s0: Z.MAX_S0, s1: Z.MAX_S1, s2: Z.MAX_S2, duze: Z.MAX_DUZE, czastki: Z.MAX_CZASTEK }, kolejka: JSON.parse(JSON.stringify(kolejkaLog)), pule: PULE_KOL.slice() }; },
+        bramaLog: function () { return { przeloty: bramaLog.slice(), fpsKurtyna: (function () { var n = kurtDts.length, sum = 0, a = kurtDts.slice().sort(function (x, y) { return x - y; }), k; if (!n) return { n: 0 }; for (k = 0; k < n; k++) sum += kurtDts[k]; return { n: n, avg: Math.round(n / sum * 10) / 10, p5: Math.round(1 / a[Math.min(n - 1, Math.floor(n * 0.95))] * 10) / 10, min: Math.round(1 / a[n - 1] * 10) / 10 }; })() }; },
+        zerujKurtyne: function () { kurtDts.length = 0; kurtFt.length = 0; ftAll.length = 0; },
+        /* czas pracy klatki (symulacja + rysowanie, ms) w czasie przelotu bramy: średnia i 95. percentyl */
+        pracaKlatki: function (wszystkie) { var a = (wszystkie ? ftAll : kurtFt).slice().sort(function (x, y) { return x - y; }), n = a.length, s2 = 0, k; if (!n) return { n: 0 }; for (k = 0; k < n; k++) s2 += a[k]; return { n: n, avg: Math.round(s2 / n * 100) / 100, p95: Math.round(a[Math.min(n - 1, Math.floor(n * 0.95))] * 100) / 100, max: Math.round(a[n - 1] * 100) / 100 }; },
+        ratunek: function () { return ratLog.slice(); },
+        skutki: function () { return skutkiLog.slice(); },
+        napis: function () { return napis ? napis.txt : (napisy.length ? napisy[0].txt : ''); },
+        klasy: function () { return JSON.parse(JSON.stringify(KLASA)); },
+        z10: function () { return JSON.parse(JSON.stringify(Z)); },
+        autopilot: function (fn, ziarno) { botFn = typeof fn === 'function' ? fn : null; botR = ((ziarno | 0) % 2147483646) + 1; if (!botFn) { testHold = false; mouseX = null; } return !!botFn; },
+        /* krok symulacji bez rysowania (dt domyślnie 1/60 s); z autopilotem bot steruje w każdym kroku. Zwraca stan po zakończeniu biegu albo po czasie. */
+        symuluj: function (sek, dt) {
+          var n, i, d = dt || 1 / 60;
+          n = Math.round((+sek || 1) / d);
+          for (i = 0; i < n; i++) { if (botFn && state === 'gra') botKrok(d); sim(d); if (state === 'koniec') break; }
+          return { tryb: state, koniec: endKind, graCzas: gameT, dystans: dist, drogaM: drogaM, kraina: kTeraz().id, h: h, s: s, poziom: lvl, poziomMax: lvlMax, poziomT: lvlFirst.slice(), czasPoziom: lvlTime.slice(), wloty: wlotow, hiperRazy: hiperRazy,
+                   l5bezLancucha: l5bez + hyLog.filter(function (x) { return x.w12 < G.GATE5; }).length, jastrzabLog: hawkLog, kolizje: kolizji, bramy: bramaLog.slice() };
+        },
+        zdarzenie: function (nazwa, opt) {
+          var o;
+          if (PASMO) return zd0(nazwa, opt);
+          opt = opt || {};
+          if (nazwa === 'jastrzab' || nazwa === 'sowa') { if (!spawnPred(nazwa, opt)) return false; zapowiedzDodaj(null, nazwa); return true; }
+          if (SPAWN_ALL[nazwa]) { o = nowaPrzeszkoda(nazwa, opt); return !!o; }
+          if (nazwa === 'sowaPokaz') { pokaz = { typ: 'sowaPokaz', t: 0, dir: 1, len: 4.5 }; return true; }
+          return zd0(nazwa, opt);
+        }
+      };
+      for (var k in extra) O[k] = extra[k];
+    })();
+  }
+
+  buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); resize(); bramyUi();
   window.addEventListener('resize', resize);
   if (firstRun) openPanel(true);   /* pierwsze uruchomienie bez zapisanego wyboru i bez ?sterowanie=: ekran "Wybierz sterowanie" */
   requestAnimationFrame(function (n) { last = n; frame(n); });
