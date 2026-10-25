@@ -154,3 +154,14 @@ właściciel testuje na telefonie, uwagi wdrażać od razu. Nie zmieniać decyzj
 „Przeczytaj `Desktop\projekty\gra-okruszek\PROJEKT.md`, `ZLECENIA.md`, `ZLECENIA-Z10-Z13.md` i `fabula\00-wybor.md` (sekcje 1-3). Wykonaj zlecenie Zn w worktree `gra-okruszek-Zn` od najnowszego scalonego `index.html`.
 Nie zmieniaj decyzji z sekcji 2 `PROJEKT.md` ani rozstrzygnięć C1-C30. Po zmianach uruchom `preflight.cjs`, testy z kryteriów i zrzuty 390 px (przy ekranach także 1440 px).
 Raport: co zrobione, co nie, zmierzone liczby, jak sprawdzić (link podglądu i hak `?test`).”
+
+
+---
+
+## Zmiana kursu 26.10: nowy rdzeń „Tor” (PROJEKT.md sekcja 15)
+Z12 (Zeszyt i ekrany) i Z13 (nuty wiatru, rzadkie zdarzenia, Bączek) są WSTRZYMANE do decyzji po teście toru; część ich treści (Bączek UFO, wiatry z nutami) wchodzi do toru.
+
+| Nr | Zlecenie | Silnik | Zależy od | Kryterium odbioru (skrót) |
+|----|----------|--------|-----------|-------------------|
+| Z14 | Tor 3x3: siatka komórek, plastry w głąb, biblioteka >= 40 wzorców plus generator z gwarancją wolnej ścieżki, sterowanie lotem (stukanie, szybowanie, nurkowanie i wybicie, boki i ukosy), wiatry wszystkich typów, łańcuch wiatrów daje E=1 i L5, chmury kolorowe spowalniające, burzowe, gradowe, tornada, ptaki, samoloty, motolotnie, UFO bączek, adaptacja trzech trybów sterowania, jastrząb i sowa jako pościg po komórkach, przełącznik ?tor=1, tor graficznie wytyczony, hak ?test | Opus 5.5 high | Z11 | bot po torze 60 s bez lądowania przy trafianiu w wiatry, bot bierny ląduje po ok. 20-40 s, gwarancja ścieżki w 1000 wylosowanych plastrów, zapowiedzi >= 1,5 s, 0 końców biegu poza S3, trzy tryby sterowania wykonują wszystkie ruchy (test dotyku), łańcuch 3 wiatrów = E=1, 5 w 12 s plus nurkowanie = L5, testy Z2-Z11 zielone w ?swobodny=1 |
+| Z15 | Grafika bez ciemnych konturów: chmury warstwami tonów, płynne przejście ciemne -> kolory, tor wytyczony wizualnie (wspólnie z Z14), L0 nie czarny | Opus 5.5 high | Z11 (równolegle z Z14) | zrzuty L0-L5 bez jednolitego ciemnego obrysu, brak skoku jasności powyżej progu między etapami, pamięć sprite'ów <= 60 MB, fps bez spadku > 10% |
