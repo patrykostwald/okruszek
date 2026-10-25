@@ -1,0 +1,54 @@
+<title>Okruszek nad chmurami</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+  /* Układ: jedna próbka na środku (telefon 390x640), obok krótki opis; ciemny motyw spin.clinic. */
+  :root { --bg:#0b0d12; --boks:#151922; --ramka:#262c38; --tekst:#eef0f4; --szary:#9aa3b5; --akcent:#ffb347; --ziel:#3fcf8e;
+          --disp:'Baloo 2','Trebuchet MS',system-ui,sans-serif; --tresc:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; color-scheme:dark; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg:#f3f4f7; --boks:#ffffff; --ramka:#d6dae3; --tekst:#141821; --szary:#5a6274; --akcent:#c8761b; --ziel:#1f9a5f; color-scheme:light; } }
+  :root[data-theme="light"] { --bg:#f3f4f7; --boks:#ffffff; --ramka:#d6dae3; --tekst:#141821; --szary:#5a6274; --akcent:#c8761b; --ziel:#1f9a5f; color-scheme:light; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tekst); font:15px/1.5 var(--tresc); padding-block:24px 48px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:900px; margin:0 auto; display:grid; grid-template-columns:1fr 390px; gap:24px; align-items:start; }
+  h1 { font:800 30px/1.1 var(--disp); margin:0 0 8px; text-wrap:balance; }
+  p { margin:0 0 12px; } .szary { color:var(--szary); }
+  ul { margin:0 0 12px; padding-left:18px; } li { margin:4px 0; }
+  .eyebrow { font:600 12px/1.3 var(--tresc); letter-spacing:.08em; text-transform:uppercase; color:var(--szary); margin:0 0 8px; }
+  .tel { width:min(390px,100%); aspect-ratio:390/640; border:1px solid var(--ramka); border-radius:24px; overflow:hidden; background:#0d1224; margin:0 auto; position:relative; }
+  .tel canvas { display:block; width:100%; height:100%; touch-action:none; cursor:pointer; }
+  .tel .podpowiedz { position:absolute; left:0; right:0; bottom:12px; margin:0; text-align:center; font:600 12px/1.3 var(--tresc); letter-spacing:.04em; color:#eef0f4; opacity:.75; pointer-events:none; }
+  .tel.trzymam .podpowiedz { opacity:0; }
+  .ster { display:flex; align-items:center; gap:12px; margin:10px auto 0; width:min(390px,100%); }
+  .ster label { font:600 13px var(--tresc); color:var(--szary); white-space:nowrap; }
+  .ster input[type=range] { flex:1; min-height:44px; accent-color:var(--akcent); }
+  .ster output { font:700 13px var(--disp); color:var(--akcent); min-width:118px; text-align:right; }
+  input:focus-visible { outline:3px solid var(--akcent); outline-offset:2px; }
+  @media (max-width: 720px) { body { padding-block:20px 40px; } .wrap { grid-template-columns:1fr; gap:16px; } h1 { font-size:26px; } .opis { order:2; } }
+</style>
+<div class="wrap">
+  <div class="opis">
+    <p class="eyebrow">Próbka 2, 25.10.2026</p>
+    <h1>Okruszek nad chmurami</h1>
+    <p>Malutki ptaszek wleciał za wysoko. Lecisz za nim, w głąb ekranu. Chmury to kulisy teatru: dziewięć warstw, jedna za drugą, każda rośnie, gdy się zbliża, i zsuwa się na bok, gdy skręcasz. Dalekie toną we mgle, bliskie mają podświetlony spód. Pod Tobą morze chmur.</p>
+    <ul>
+      <li><b>Przytrzymaj:</b> przyspieszasz, kolor wraca, gwiazdy gasną, słońce rośnie.</li>
+      <li><b>Przesuń palec w bok:</b> skręcasz, kulisy rozjeżdżają się jak na scenie.</li>
+      <li><b>Puść:</b> zwalniasz, świat wraca do białych kresek. Zostaje tylko czerwony szalik.</li>
+    </ul>
+    <p class="szary">Ptaszek, chmury i morze chmur rysowane od zera w Canvas 2D, bez obrazków. Imię „Okruszek” robocze.</p>
+  </div>
+  <div>
+    <div class="tel" id="tel2">
+      <canvas id="kulisy" width="390" height="640" aria-label="Próbka: mały ptaszek leci w głąb ekranu przez warstwy chmur jak kulisy teatru"></canvas>
+      <p class="podpowiedz">przytrzymaj i przesuwaj w bok</p>
+    </div>
+    <div class="ster">
+      <label for="kulisy-v">Prędkość</label>
+      <input type="range" id="kulisy-v" min="0" max="100" value="0" aria-label="Prędkość lotu">
+      <output id="kulisy-txt" for="kulisy-v">tylko kreski</output>
+    </div>
+  </div>
+</div>
+<script>
+/*KULISY_JS*/
+</script>
