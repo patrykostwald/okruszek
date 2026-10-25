@@ -14,6 +14,9 @@
    Z3c: hak energii koloru (energia, lancuchE, ustawEnergie, rozkwit, pelnyKolor, serie, stala), potem pełny test gra_test_z3c.cjs (model E, boty w symulacji, kolejność koloru przy E = 0/0,3/0,62/1,
    rozkwit, iskierki HUD, fps względem bazy). SKIP_Z3C=1 pomija go (ok. 2,5 min).
    Z5: manifest, ikony, sw.js, wstęp, dźwięk (wywołania podpięte), przełączniki M/N, prywatność i „Usuń zapis”, service worker na localhost: pełny test gra_test_z5.cjs. SKIP_Z5=1 pomija go (ok. 1,5 min).
+   Z11: hak krain K2-K5 (z11, z11Zbuduj, ptakEkran, budzetLog; zdarzenie szpile / komin / latawce / poryw / przelot / tecza_ks / rogal widoczne w gdzie()), potem pełny test gra_test_z11.cjs
+   (wymuszenia, szczeliny i kolizje, komin / tęcza / poryw / smuga / wiry, budżet prędkości z bonusami, 400 wymuszeń, zapowiedzi, kolejność koloru i brak czerwieni przy s = 0,
+   słońce, finały i zwiastuny, Rogal, pamięć <= 60 MB, klatki względem Z5). SKIP_Z11=1 pomija go (ok. 8 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -102,9 +105,12 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     await page.evaluate(() => window.__okruszek.przesun(null));
 
     /* Z2: hak sterowania i fizyki lotu */
-    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory', 'poziom', 'ustawPoziom', 'lancuch', 'pora', 'ustawPore', 'tempoDoby', 'warstwy', 'odcienie', 'sterowanie', 'tryb', 'czulosc', 'panel', 'wskaznik', 'kraina', 'brama', 'napiecie', 'zapowiedzi', 'zapis', 'wyczyscZapis', 'wytrwalosc', 'cichaPomoc', 'energia', 'lancuchE', 'ustawEnergie', 'rozkwit', 'pelnyKolor', 'serie', 'stala'];
+    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory', 'poziom', 'ustawPoziom', 'lancuch', 'pora', 'ustawPore', 'tempoDoby', 'warstwy', 'odcienie', 'sterowanie', 'tryb', 'czulosc', 'panel', 'wskaznik', 'kraina', 'brama', 'napiecie', 'zapowiedzi', 'zapis', 'wyczyscZapis', 'wytrwalosc', 'cichaPomoc', 'energia', 'lancuchE', 'ustawEnergie', 'rozkwit', 'pelnyKolor', 'serie', 'stala', 'z11', 'z11Zbuduj', 'ptakEkran', 'budzetLog'];
     const miss = await page.evaluate(n => n.filter(k => typeof window.__okruszek[k] !== 'function'), need);
-    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z1-Z3b, Z2b, Z10 i Z3c kompletny (' + need.length + ' funkcji)');
+    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z1-Z3b, Z2b, Z10, Z3c i Z11 kompletny (' + need.length + ' funkcji)');
+    /* Z11: nowe elementy krain wymuszalne hakiem i widoczne w gdzie() */
+    const z11 = await page.evaluate(() => { const o = __okruszek, r = {}; for (const [nm, br, typ] of [['szpile', 3, 'szpile'], ['komin', 3, 'komin'], ['latawce', 4, 'latawce'], ['poryw', 4, 'poryw'], ['przelot', 5, 'przelot'], ['tecza_ks', 2, 'tecza'], ['rogal', 2, 'rogal']]) { o.pauza(true); o.bezPrzeszkod(true); o.bezPradow(true); o.brama(br); r[nm] = o.zdarzenie(nm, { dx: 0 }) === true && o.gdzie().some(x => x.typ === typ); } o.brama(1); o.bezPrzeszkod(false); o.bezPradow(false); o.pauza(false); return r; });
+    Object.values(z11).every(Boolean) ? ok('Z11: szpile, komin, latawce, poryw, przelot, tęcza księżycowa i Rogal wymuszalne i widoczne w gdzie()') : bad('hak Z11: ' + JSON.stringify(z11));
     const z2 = await page.evaluate(() => { const o = window.__okruszek; o.odblokuj(); o.bezPradow(true); o.nowyBieg(); return { h: o.wysokosc(), k: o.koniec(), d: o.dystans() }; });
     (z2.h > 0.7 && z2.k === false) ? ok('nowy bieg: wysokość ' + z2.h + ', gra trwa') : bad('nowy bieg nie resetuje stanu: ' + JSON.stringify(z2));
     const ds = await page.evaluate(() => { const o = window.__okruszek; o.dotyk('dol', 1, 0.3); o.dotyk('dol', 2, 0.6); o.dotyk('gora', 1); const m = o.stan().palce; o.dotyk('gora', 2); return [m, o.stan().palce, o.stan().nurkuje]; });
@@ -202,6 +208,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z3c|BŁĄD|^\(| info (stałe|zanik|idealny|bot 50|geometria|rozkwit|fps|piksele)/.test(l));
       lines.forEach(l => console.log('  z3c> ' + l.trim()));
       code === 0 && /TEST Z3c OK/.test(out) ? ok('test Z3c (gra_test_z3c.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z3c nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z11: treść krain K2-K5, pełny test w osobnym procesie */
+  if (process.env.SKIP_Z11) console.log('  info pominięto test Z11 (SKIP_Z11)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z11.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z11.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 1500000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z11|BŁĄD|^[(]| info (klatki|CPU|czerwone|boty|bot idealny|finały)/.test(l));
+      lines.forEach(l => console.log('  z11> ' + l.trim()));
+      code === 0 && /TEST Z11 OK/.test(out) ? ok('test Z11 (gra_test_z11.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z11 nie przeszedł (kod ' + code + ')');
     }
   }
   /* Z5: intro, dźwięk, PWA, prywatność; własny lokalny serwer na localhost, pełny test w osobnym procesie */

@@ -56,8 +56,9 @@ const NZ = +process.env.ZIAREN || 10;
   chk(JSON.stringify(KR.map(k => k.sink)) === '[0.032,0.036,0.038,0.04,0.04,0.042]' && JSON.stringify(KR.map(k => k.nBaza)) === '[0.1,0.2,0.28,0.36,0.44,0.55]', 'SINK 0,032/0,036/0,038/0,040/0,040/0,042 i nBaza 0,10/0,20/0,28/0,36/0,44/0,55 jak w specyfikacji');
   const pola = ['id', 'od', 'do', 'czasTyp', 'pora', 'akcent', 'sink', 'pradCo', 'pradTyp', 'przeszkody', 'debiut', 'drapieznik', 'nBaza', 'final'];
   chk(KR.every(k => pola.every(p => p in k)), 'każda kraina ma pola: ' + pola.join(', '));
-  chk(Object.keys(KR[0].przeszkody).join() === 'ptak' && KR[1].przeszkody.deszcz && KR[1].przeszkody.grad && KR[2].przeszkody.mgla && KR[2].przeszkody.stado && KR[3].przeszkody.latawiec && KR[3].przeszkody.wiatr && KR[4].przeszkody.stado >= 1 && KR[5].przeszkody.burza && !KR.slice(0, 5).some(k => k.przeszkody.burza),
-    'przeszkadzajki: K1 ptak, K2 deszcz + grad, K3 mgła + stado, K4 latawiec + wiatr, K5 stado, burza dopiero w Dalekim Niebie');
+  /* Z11 (uczciwe dostosowanie): w Z10 stado było w K3 tylko „zastępstwem wież” (ZLECENIA-Z10-Z13, Z10 pkt 2); Z11 wstawia szpile miasta, więc K3 = szpile + mgła, K4 = festiwal latawców + wiatr, K5 = Wielki przelot + stado */
+  chk(Object.keys(KR[0].przeszkody).join() === 'ptak' && KR[1].przeszkody.deszcz && KR[1].przeszkody.grad && KR[2].przeszkody.mgla && KR[2].przeszkody.szpile && KR[3].przeszkody.latawce && KR[3].przeszkody.wiatr && KR[4].przeszkody.stado >= 1 && KR[4].przeszkody.przelot && KR[5].przeszkody.burza && !KR.slice(0, 5).some(k => k.przeszkody.burza),
+    'przeszkadzajki: K1 ptak, K2 deszcz + grad, K3 szpile + mgła, K4 latawce + wiatr, K5 przelot + stado, burza dopiero w Dalekim Niebie');
   chk(!KR[0].drapieznik.jastrzab && !KR[0].drapieznik.sowa && !KR[1].drapieznik.jastrzab && KR[1].drapieznik.sowa && !KR[2].drapieznik.jastrzab && KR[3].drapieznik.jastrzab && KR[4].drapieznik.jastrzab === 120, 'drapieżniki: K1 brak, K2 sowa, K3 sowa nocą, od K4 jastrząb, K5 jastrząb co ok. 120 s');
   const KL = await ev(() => __okruszek.klasy());
   chk(Object.keys(KL).filter(k => KL[k] === 3).sort().join() === 'jastrzab,morze,sowa', 'klasa S3 (koniec biegu) tylko: jastrząb, sowa, morze chmur');

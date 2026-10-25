@@ -212,7 +212,9 @@ Słońce obiecało wrócić rano.</p>
    Z2b: trzy tryby sterowania (1 jeden kciuk, 2 dwa kciuki jak skrzydła, 3 drążek), wybór w grze (przycisk w rogu, klawisz T, ?sterowanie=n), czułość skrętu, zapis w localStorage.
    Z10: Droga Słońca (krainy K1-K5 + Dalekie Niebo jako dane, bramy-kurtyny, start z bramy, wytrwałość, napięcie N(t), zapowiedź w sekundach i szkic,
    klasy skutku S0-S3, prąd ratunkowy, cicha pomoc, ziarno dnia, zapis okruszek.zapis v1, tryb zgodności ?pasmo=1). Sekcja "Z10" niżej.
-   Finalny ptaszek i akwarela to Z4; intro, pauza z historią, PWA to Z5; dźwięk to Z6. */
+   Finalny ptaszek i akwarela to Z4; intro, pauza z historią, PWA to Z5; dźwięk to Z6.
+   Z11: treść krain K2-K5 (Rogal i tęcza księżycowa, szpile miasta i komin ciepła, festiwal latawców i poryw, Wielki przelot ze smugą i wirami),
+   finały i zwiastuny krain, kierunek słońca (świt za plecami, zachód przed Okruszkiem). Sekcja "Z11" niżej. */
 (function () {
   'use strict';
   var Q = new URLSearchParams(location.search), TEST = Q.has('test');
@@ -757,7 +759,8 @@ Słońce obiecało wrócić rano.</p>
   function paintInto(S, C) {
     var tmp;
     if (S.prev && S.ver !== -1) { tmp = S.c; S.c = S.prev.c; S.prev.c = tmp; S.mix = 0; }
-    if (S.kind === 'tint') paintTint(S, S.M, C);
+    if (S.z11) S.z11.paint(S, C);   /* Z11: wieże, okna, samoloty (własne malowanie, ten sam rejestr i budżet) */
+    else if (S.kind === 'tint') paintTint(S, S.M, C);
     else if (S.kind === 'stint') paintTint(S, S.M, C.storm);
     else if (S.kind === 'sea') paintSea(S, C);
     else if (S.kind === 'ftint') paintBank(S, S.M, C);
@@ -936,7 +939,7 @@ Słońce obiecało wrócić rano.</p>
     {
       sw = (220 + row.sh * 160) * sc; X = W / 2 + (md(row.sh * 900 + t * 9, 900) - 450 - camX * 0.5) * sc; Y = y + 30 * sc;
       shc = stageCol(NAVY, mixc(PAL.sh, PAL.sea[2], 0.5), PAL.warm);
-      if (!lekki && z < 4.2 && X + sw > -20 && X - sw < W + 20) { ctx.globalAlpha = (0.16 + 0.1 * gA) * fade; drawShadowBlob(X, Y, sw, sw * 0.16, shc); }
+      if (!lekki && z < 4.2 && X + sw > -20 && X - sw < W + 20) { var db = SUNP.b || 0; ctx.globalAlpha = (0.16 + 0.1 * gA) * fade * (1 + 0.4 * db); drawShadowBlob(X, Y - sw * 0.22 * db, sw, sw * 0.16 * (1 + 2.6 * db), shc); }   /* Z11: o świcie (słońce za plecami) długie cienie w głąb */
     }
     ctx.globalAlpha = 1;
   }
@@ -1265,6 +1268,7 @@ Słońce obiecało wrócić rano.</p>
   function wlot(p) {
     var ideal = Math.abs(p.x - bx) < ((p.ratunek || gameT < UCZ_DO) ? G.HIT_IDEAL_UCZ : G.HIT_IDEAL), S;   /* Z3c: nauka na starcie i prąd ratunkowy mają szersze "idealne wejście" */
     p.hit = true; wlotow++; snd('prad');
+    if (p.pt === 'tecza') { teczaLog.push({ t: gameT, idealne: ideal, mokroPrzed: wetT, lancuchPrzed: chainN }); wetT = 0; }   /* Z11: przelot pod tęczą księżycową = suche piórka */
     if (!ideal) {   /* Z3c: brzeg prądu: mały skok, bez łańcucha, bez energii koloru */
       p.flash = 0.45; tint = 0.4; wlotBrzeg++;
       boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * G.EDGE_K); updSpeed(); h = Math.min(1, h + G.PRAD_H * G.EDGE_K);
@@ -1282,13 +1286,14 @@ Słońce obiecało wrócić rano.</p>
   /* harmonogram prądów: nauka (co 3 s czasu), potem SERIE (łańcuchy) rozstawione w świecie co CL_DZ w głąb: im szybszy lot, tym krócej między prądami,
      więc łańcuch (okno 3 s) da się zebrać tylko z prędkością; kolejna seria dopiero po przelocie poprzedniej i pauzie; w L4-L5 pauzy dłuższe (prądy rzadsze) */
   function spawnCluster() {
-    var size = CPLAN[cI % CPLAN.length], side = (cI % 2) ? -1 : 1, i2, dx, z0 = 2.4 + 2.6 * s, p;
+    var size = finalRytm === 1 ? 3 : CPLAN[cI % CPLAN.length], side = (cI % 2) ? -1 : 1, i2, dx, z0 = 2.4 + 2.6 * s, p, ps = [];   /* Z11: finał K1 = trzy prądy w rytmie */
     seriaLog[cI] = { id: cI, n: size, ideal: 0, maxChain: 0, tTrojka: -1, t0: gameT };
     for (i2 = 0; i2 < size; i2++) {
       /* Z3c: prądy serii na przemian po dwóch stronach osi (zygzak), odstęp w x ok. 2 * ZIG * PRAD_DX: trzeba skręcać, nie da się lecieć prosto */
       dx = side * (0.3 + G.ZIG * (1 + G.ZIG_V) + ((i2 % 2) ? -1 : 1) * G.ZIG * (1 + G.ZIG_V * Math.sin((i2 + cI * 2.3) * 1.7)));   /* nigdy bliżej osi niż 0,3 PRAD_DX: bierny ptaszek nie łapie prądów serii przypadkiem */
-      p = spawnPrad(dx, z0 + i2 * CL_DZ); p.last = (i2 === size - 1); p.seria = cI;
+      p = spawnPrad(dx, z0 + i2 * CL_DZ); p.last = (i2 === size - 1); p.seria = cI; ps.push(p);
     }
+    z11Seria(ps);   /* Z11: tęcza księżycowa (K2), poryw latawcowy (K4), rytm finału K1; wygląd z rndV, harmonogram bez zmian */
     nextSpawn = 1e9; cI++;
   }
 
@@ -1412,6 +1417,7 @@ Słońce obiecało wrócić rano.</p>
     for (k = obst.length - 1; k >= 0; k--) {
       o = obst[k]; o.age += dt;
       if (o.typ === 'grad' || o.typ === 'wiatr') { stepPhase(o, dt, live); if (o.done) obst.splice(k, 1); continue; }
+      if (Z11S[o.typ]) { Z11S[o.typ](o, dt, speed, live); if (o.usun) obst.splice(k, 1); continue; }   /* Z11: szpile, latawce, przelot, ulewa, festiwal, tęcza */
       o.z -= dt * speed;
       if (o.typ === 'ptak') { o.x += o.v * dt; o.ph += dt * 9; }
       else if (o.typ === 'stado') { o.x += o.v * dt; o.ph += dt * 8; }
@@ -1611,7 +1617,7 @@ Słońce obiecało wrócić rano.</p>
     sHold += ((hold ? G.DIVE_TOP : 0) - sHold) * Math.min(1, dt * (hold ? G.DIVE_UP : G.DIVE_DOWN) * (spinT > 0 ? 0.35 : 1));
     dec = (1 / G.TAU) * (1 + G.DECAY_HI * sm((boost - G.DECAY_FROM) / G.DECAY_W));   /* zanik zależy od skoku z prądów (nurkowanie go nie przyspiesza) */
     if (chainN >= G.MOM_CHAIN && gameT - lastHitT < G.CHAIN_W) dec *= (chainN >= 5 ? G.MOM_K5 : G.MOM_K);   /* rozpęd łańcucha */
-    boost *= Math.exp(-dt * dec);
+    if (!smugaInPrev) boost *= Math.exp(-dt * dec);   /* Z11: w smudze (prąd długi, do 3 s) rozpęd nie gaśnie */
     eStep(dt); sparkPulse = Math.max(0, sparkPulse - dt * 2.5);
     updSpeed(); updHyper(dt); updSpeed(); updLevel(dt);
     /* wysokość jako zasób (przy zablokowanej prędkości z haka testu wysokość stoi) */
@@ -1622,7 +1628,7 @@ Słońce obiecało wrócić rano.</p>
     }
     /* skręt: ptaszek naprawdę zmienia x w świecie, kamera idzie za nim */
     inp = steerInput();
-    vx += (inp * G.VX * sens - vx) * Math.min(1, dt * 6);
+    vx += (inp * G.VX * sens * (wirSensT > 0 ? Z11.WIR_SENS : 1) - vx) * Math.min(1, dt * 6);   /* Z11: po wirze czułość skrętu -40% przez 1,2 s */
     bx += vx * dt; camX += (bx - camX) * Math.min(1, dt * 7); steer = vx / G.VX;
     /* ruch w głąb */
     speed = 0.32 + s * 1.9;
@@ -1642,7 +1648,7 @@ Słońce obiecało wrócić rano.</p>
       if (gameT < UCZ_DO) { e = PLAN[planI % PLAN.length]; spawnPrad(e[0], planI === 0 ? 1.7 : 2.4 + 2.6 * s); planI++; nextSpawn = gameT + UCZ_GAP; }
       else spawnCluster();
     }
-    drogaKrok(dt); schedule(); updHawk(dt);
+    drogaKrok(dt); schedule(); updHawk(dt); z11Krok(dt);
     if (h <= 0 && lockS === null && state === 'gra') { h = 0; minH = 0; state = 'ladowanie'; ladT = 0; haw = null; releaseAll(); testHold = false; snd('ladowanie'); }
   }
 
@@ -1712,6 +1718,7 @@ Słońce obiecało wrócić rano.</p>
     tintAcc = Math.min(2, tintAcc + (lekki ? 0.2 : 0.35) * (1 - 0.45 * hyK)); budget = forceTint ? 99999 : tintAcc;
     for (k = 0; k < visits && n < budget; k++) {
       S = REG[(regRR + k) % REG.length];
+      if (S.z11) { C = S.z11.par(S); key = S.z11.key(C); if (key !== S.key) { S.key = key; paintInto(S, C); n += S.z11.koszt; } continue; }   /* Z11 */
       if (S.kind === 'sea') C = seaParams(S.ci);
       else if (S.kind === 'stint') { C = cloudParams(S.ci * 3 + 1, false); C.storm = cloudParams(S.ci * 3 + 1, true); }
       else C = cloudParams(S.kind === 'ftint' ? 0 : S.ci, false);
@@ -1850,6 +1857,7 @@ Słońce obiecało wrócić rano.</p>
     var bounce = mixc(stageCol(PAL.bg, PAL.sea[0], PAL.warm), [255, 214, 196], 0.25 * (1 - nW)), shake = shakeT > 0 && !reduce ? Math.sin(t * 46) * 0.16 * (shakeT / 0.6) : 0;
     var hx, hy, fa, sg, pts, gr, k, ex, ey, rr, sc1, kx, ky, w, c, rb, poly, aL, aS, j, u, bob;
     if (sleep > 0) lk = lerp(lk, 0.8, sleep);
+    if (patrzZ11 && sleep <= 0) lk = lerp(lk, patrzZ11.v, patrzZ11.k);   /* Z11: Okruszek ogląda się w stronę nadlatującego samolotu */
     lk = Math.max(-1, Math.min(1, lk));
     if (wet > 0.01) { bodyC = mixc(bodyC, mixc([40, 52, 84], [74, 98, 146], e), wet * 0.5); darkC = mixc(darkC, mixc([30, 40, 70], [52, 70, 120], e), wet * 0.5); liteC = mixc(liteC, bodyC, wet * 0.6); }
     bob = sleep > 0 && !reduce ? Math.sin(t * 1.6) * 0.025 * sleep : 0;
@@ -2002,6 +2010,7 @@ Słońce obiecało wrócić rano.</p>
       ctx.beginPath(); ctx.moveTo(X0 + (reduce ? 0 : Math.sin(G.PRAD_HY * 0.014 + t * 2.2 + p.ph) * 4) * sc, Y0 - hy * 0.7); ctx.lineTo(X0, Y0 + hy * 0.7);
       ctx.strokeStyle = rgba(mixc(col, [255, 244, 214], zn * 0.6), ga); ctx.lineWidth = 1 + zn * 1.2; ctx.stroke();
     }
+    if (p.pt || p.rytm) drawPradZ11(p, X0, Y0, sc, fade, amt, (z - G.ZB) / Math.max(0.3, curSpeed));   /* Z11: łuk tęczy, latawce porywu, nutki finału K1 */
   }
 
   /* ---------- rysowanie przeszkód ---------- */
@@ -2471,6 +2480,7 @@ Słońce obiecało wrócić rano.</p>
       case 'sea': if (!DBG.sea) drawSeaRow(it, it.dy); break;
       case 'slab': if (!DBG.slab) drawHazeSlab(it); break;
       case 'rays': if (!DBG.rays) drawRaysZ(); break;
+      default: z11DrawItem(it, front);   /* Z11: wieże, samolot, ślad, latawce, ulewa, tęcza, festiwal */
     }
   }
   /* niebo: gradient z 8 przystanków; pora doby nadaje odcień, etapy koloru nasycenie, a odcienie palety wchodzą w pasy po kolei */
@@ -2493,12 +2503,16 @@ Słońce obiecało wrócić rano.</p>
   var LIGHTX = 0, LW_L = 0.5, LIGHTC = [255, 226, 170], SUNP = { x: 0, y: 0, a: 0, e: 0, mx: 0, my: 0, ma: 0 }, lekki = Q.get('lekki') === '1', hazeCol = [13, 18, 36], TCACHE = {}, PAT = {};
   function inkCol() { return mixc([62, 46, 80], [38, 44, 100], PAL.nightW); }
   function updLight() {
-    var ths = (phi - 0.25) / 0.5 * Math.PI, esun = Math.sin(ths), pm = phi < 0.25 ? phi + 1 : phi, thm = (pm - 0.75) / 0.5 * Math.PI, em = Math.sin(thm), lx;
-    SUNP.e = esun; SUNP.x = W / 2 + (phi - 0.75) / 0.5 * W * 0.24 - camX * 0.04; SUNP.y = HORIZON - 30 - Math.max(-0.3, esun) * H * 0.3;
-    SUNP.a = sm((esun + 0.12) / 0.3) * (phi > 0.2 && phi < 0.8 ? 1 : 0);
+    /* Z11: kierunek słońca (00-wybor.md: wschód ZA PLECAMI gracza, zachód PRZED Okruszkiem): u = 0 świt (słońce za kamerą, niewidoczne, światło od widza: SUNP.b),
+       u = 0,5 dzień (słońce wysoko u góry kadru), u = 1 zachód (słońce na wprost nad horyzontem). Kąt wzniesienia liczony od przodu: th = (1 - u) * pi. */
+    var u = (phi - 0.25) / 0.5, th = (1 - u) * Math.PI, esun = Math.sin(th), yT = 78, pm = phi < 0.25 ? phi + 1 : phi, thm = (pm - 0.75) / 0.5 * Math.PI, em = Math.sin(thm), lx;
+    SUNP.e = esun; SUNP.x = W / 2 + W * 0.07 * Math.sin(cl(u) * Math.PI) - camX * 0.04;
+    SUNP.y = th <= Math.PI / 2 ? HORIZON - 30 - (HORIZON - 30 - yT) * Math.max(-0.3, esun) : yT - (th - Math.PI / 2) * 420;
+    SUNP.a = sm((u - 0.3) / 0.16) * sm((0.8 - phi) / 0.035) * (phi > 0.2 ? 1 : 0);
+    SUNP.b = sm((phi - 0.13) / 0.09) * sm((0.44 - phi) / 0.1);   /* światło zza pleców (świt) */
     SUNP.mx = W * 0.62 + (pm - 1.0) / 0.5 * W * 0.18 - camX * 0.03; SUNP.my = HORIZON - 20 - Math.max(-0.2, em) * HORIZON * 0.55;
     SUNP.ma = (pm >= 0.75 && pm <= 1.25) ? sm((em + 0.1) / 0.3) : 0;
-    lx = (SUNP.x * SUNP.a + SUNP.mx * SUNP.ma + W / 2 * 0.001) / (SUNP.a + SUNP.ma + 0.001);   /* płynnie między słońcem a księżycem */
+    lx = (SUNP.x * SUNP.a + SUNP.mx * SUNP.ma + W / 2 * (0.001 + SUNP.b)) / (SUNP.a + SUNP.ma + 0.001 + SUNP.b);   /* płynnie między słońcem, księżycem i światłem zza pleców */
     LIGHTX = Math.max(-1, Math.min(1, (lx - W / 2) / (W * 0.3)));
     LW_L = Math.round((0.5 - 0.5 * LIGHTX) * 8) / 8;
     LIGHTC = mixc(mixc([255, 212, 146], [255, 244, 224], PAL.dayW), [200, 214, 255], PAL.nightW);
@@ -2540,19 +2554,13 @@ Słońce obiecało wrócić rano.</p>
         ctx.globalAlpha = 0.7 * (1 - cSky); ctx.stroke(); ctx.globalAlpha = 1;
       }
     }
-    if (SUNP.ma > 0.01) {
+    if (SUNP.ma > 0.01) {   /* Z11: księżyc to Rogal (jedno oko z profilu, szlafmyca z chmurki, mruga od L3, poświata jak rozlane mleko) */
       a = SUNP.ma; gc = stageCol(LINE, MOON, PAL.warm); pm = 105 + cSky * 40;
       ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = a * (0.14 + 0.3 * cSky); ctx.drawImage(tintTex('ksiezyc', TEX.glow, gc), SUNP.mx - pm, SUNP.my - pm, pm * 2, pm * 2); ctx.restore();
-      ctx.save(); wobRing(SUNP.mx, SUNP.my, 17, 2.1, 0.015); ctx.clip();
-      mc = mixc(gc, [255, 252, 240], 0.5);
-      gr = ctx.createRadialGradient(SUNP.mx - 6, SUNP.my - 6, 1, SUNP.mx, SUNP.my, 19); gr.addColorStop(0, rgba(mixc(mc, [255, 255, 250], 0.6), 1)); gr.addColorStop(1, rgba(mixc(mc, [180, 190, 240], 0.35), 1));
-      ctx.fillStyle = gr; ctx.globalAlpha = (0.3 + 0.62 * cSky) * a; ctx.beginPath(); ctx.rect(SUNP.mx - 20, SUNP.my - 20, 40, 40); ctx.arc(SUNP.mx + 8, SUNP.my - 3, 15, 0, TAU); ctx.fill('evenodd');
-      ctx.fillStyle = rgba(mixc(mc, [150, 156, 214], 0.6), 0.35 * cSky * a); ctx.beginPath(); ctx.arc(SUNP.mx - 9, SUNP.my + 3, 2.6, 0, TAU); ctx.arc(SUNP.mx - 5, SUNP.my - 8, 1.7, 0, TAU); ctx.fill();
-      ctx.restore();
-      ctx.strokeStyle = rgba(mixc(LINE, inkCol(), sm((cSky - 0.3) / 0.4) * 0.6), (0.6 - 0.3 * cSky) * a); ctx.lineWidth = 1.3; ctx.lineCap = 'round';
-      ctx.beginPath(); for (k = 0; k <= 24; k++) { an = 0.9 + k / 24 * 4.4; pm = 17 * (1 + 0.015 * Math.sin(an * 3 + 2.1)); if (k) ctx.lineTo(SUNP.mx + Math.cos(an) * pm, SUNP.my + Math.sin(an) * pm); else ctx.moveTo(SUNP.mx + Math.cos(an) * pm, SUNP.my + Math.sin(an) * pm); } ctx.stroke();
-      ctx.beginPath(); for (k = 0; k <= 18; k++) { an = 1.75 + k / 18 * 2.8; ctx.lineTo(SUNP.mx + 8 + Math.cos(an) * 15, SUNP.my - 3 + Math.sin(an) * 15); } ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1;
+      drawMleko(SUNP.mx, SUNP.my, 17, a, cSky);
+      drawRogal(SUNP.mx, SUNP.my, 17, a, cSky, cSky, lvl >= 3 && (t % 3.4) < 0.16);
     }
+    drawRogalScena(cSky);   /* Z11: K2: Rogal wychyla się zza chmur i pokazuje drogę */
   }
   /* mgiełka powietrzna między kulisami: pas w barwie horyzontu zakrywa wszystko, co za nim (dalekie bledną, także w L0) */
   var SLABS = [{ typ: 'slab', z: 5.2, k: 0 }, { typ: 'slab', z: 2.6, k: 1 }], RAYS = { typ: 'rays', z: 4.3 };
@@ -2700,6 +2708,7 @@ Słońce obiecało wrócić rano.</p>
     ctx.globalAlpha = 1; ctx.fillStyle = rgba(PAL.bg, 1); ctx.fillRect(0, 0, W, H);
     ctx.save();
     if (fovZ !== 1) { ctx.translate(W / 2, HORIZON); ctx.scale(fovZ, fovZ); ctx.translate(-W / 2, -HORIZON); }
+    if (camShakeT > 0 && !reduce) { var shk = Z11.WIR_SHAKE * sm(camShakeT / Z11.WIR_T); ctx.translate(Math.sin(t * 47) * shk, Math.cos(t * 39) * shk * 0.6); }   /* Z11: drżenie kamery po wirze (bez ruchu przy prefers-reduced-motion) */
     var sk2 = skyStops(), gs = ctx.createLinearGradient(0, 0, 0, HORIZON + 40);
     for (k = 0; k < sk2.pos.length; k++) gs.addColorStop(sk2.pos[k], rgba(sk2.col[k], 1));
     ctx.fillStyle = gs; ctx.fillRect(-70, -70, W + 140, HORIZON + 110);
@@ -2732,7 +2741,8 @@ Słońce obiecało wrócić rano.</p>
     var pi = 0, it;
     items.length = 0;
     for (k = 0; k < prady.length; k++) items.push(prady[k]);
-    for (k = 0; k < obst.length; k++) if (obst[k].z >= G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr') items.push(obst[k]);
+    for (k = 0; k < obst.length; k++) if (obst[k].z >= G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr' && !Z11MULTI[obst[k].typ]) items.push(obst[k]);
+    z11Items(items);   /* Z11: wieże, samolot i ślad (każda część na swojej głębokości) */
     it = itemBrama(); if (it) items.push(it);   /* Z10: kurtyna bramy */
     for (k = 0; k < seaRows.length; k++) {
       seaRows[k].typ = 'sea'; seaRows[k].dy = seaDY; seaRows[k].ymax = H + 30;
@@ -2748,6 +2758,7 @@ Słońce obiecało wrócić rano.</p>
     }
     while (pi < items.length) { it = items[pi++]; drawItem(it, false); }
     if (!DBG.motes) drawMotes();
+    drawSwitZ11(cSky);   /* Z11: świt: słońce za plecami, poświata od kamery */
 
     if (aStr > 0.02) {   /* smugi prędkości: barwa pory, liczba rośnie z poziomem */
       var ns = 10 + Math.round(14 * f4), scol = mixc(LINE, PAL.acc, aStr);
@@ -2770,6 +2781,7 @@ Słońce obiecało wrócić rano.</p>
     if (introOn) { dip += introY; bsc *= introS; }   /* Z5: Okruszek wlatuje w kadr od dołu */
     if (spinT > 0) { var su = 1 - spinT / G.SPIN; spinA = (1 - (1 - su) * (1 - su)) * Math.PI * 4; bsc = 1 - 0.12 * Math.sin(Math.PI * su); }
     if (stumbleT > 0 && !reduce) spinA += Math.sin((1 - stumbleT / G.STUMBLE) * Math.PI * 3) * 0.5 * (stumbleT / G.STUMBLE);
+    if (camShakeT > 0) spinA += Math.sin(t * (reduce ? 6 : 11)) * 0.14 * (camShakeT / Z11.WIR_T);   /* Z11: wir kołysze ptaszkiem (przy ograniczeniu ruchu tylko to) */
     /* Z4: otrzepanie po zmoknięciu i drzemka po lądowaniu (tylko wygląd) */
     if (wk > 0.05) wasWet = 1; else if (wasWet && wk <= 0.001) { wasWet = 0; shakeT = 0.6; }
     shakeT = Math.max(0, shakeT - dt); birdSleep = lad;
@@ -2781,10 +2793,12 @@ Słońce obiecało wrócić rano.</p>
         gr.addColorStop(0, hsla(hueFlow() + 30, 90, 70, 0.55 * gl)); gr.addColorStop(1, hsla(hueFlow() + 30, 90, 70, 0)); ctx.fillStyle = gr; ctx.fillRect(bxs - 80, BIRDY + bob - 80, 160, 160); ctx.restore();
       }
       if (!DBG.bird) drawBird(bxs, BIRDY + bob + dip, sk, steer, diveV, wk, spinA, bsc, ctrlMode === 2 ? wfL : undefined, ctrlMode === 2 ? wfR : undefined);
+      if (!DBG.bird) drawPlecyZ11(bxs, BIRDY + bob + dip, spinA);   /* Z11: jasny brzeg na plecach o świcie */
     }
 
     /* przeszkody, które już minęły płaszczyznę ptaszka: przelatują tuż przed kamerą; grad i wiatr w płaszczyźnie ptaszka */
-    for (k = 0; k < obst.length; k++) if (obst[k].z < G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr') drawItem(obst[k], true);
+    for (k = 0; k < obst.length; k++) if (obst[k].z < G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr' && !Z11MULTI[obst[k].typ]) drawItem(obst[k], true);
+    z11Front();   /* Z11: wieże, ślad i samolot, które minęły płaszczyznę ptaszka; żółty latawiec finału K4 */
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'grad') drawGrad(obst[k]);
     drawParts();
     drawZ10Swiat();   /* Z10: szkice zagrożeń, sowa-pokaz, Fiuk */
@@ -2818,6 +2832,7 @@ Słońce obiecało wrócić rano.</p>
       if (bz.flash > 0.02 && !reduce) flashK = Math.max(flashK, bz.flash * 0.9);
     }
     if (darkK > 0.01) { ctx.fillStyle = 'rgba(4,6,18,' + (0.5 * darkK).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    z11Nakladki();   /* Z11: cień samolotu nad głową (olbrzym przykrywa ekran), kierunek spojrzenia Okruszka */
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'wiatr') drawWiatr(obst[k]);
     drawEdgeGlow(); drawHyper(); drawRozkwit();
     if (flashK > 0.02 && !reduce) { ctx.fillStyle = 'rgba(232,238,255,' + (0.55 * Math.min(1, flashK)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
@@ -2878,8 +2893,9 @@ Słońce obiecało wrócić rano.</p>
   /* klasy skutku (tabela typ -> klasa): S0 brak kary (widowisko, zwiastun, kryjówka), S1 lekka (wirowanie <= 0,8 s, s -0,08, kolor chwilowo gaśnie),
      S2 mocna (wirowanie 1 s, s w dół najwyżej o jeden poziom, utrata wysokości), S3 koniec biegu: TYLKO jastrząb, sowa i morze chmur.
      Deszcz (mokre piórka), mgła (gasi kolor, poziom w dół) i grad (wysokość) mają własne skutki z PROJEKT.md; klasa decyduje o harmonogramie i budżecie uwagi. */
-  var KLASA = { ptak: 1, stado: 1, deszcz: 1, latawiec: 1, wiatr: 1, grad: 2, mgla: 2, burza: 2, jastrzab: 3, sowa: 3, morze: 3, sowaPokaz: 0, zwiastun: 0, kryjowka: 0 };
-  var DUZE = { deszcz: 1, burza: 1, mgla: 1 };   /* duże sprite'y (budżet <= 3 na ekranie) */
+  var KLASA = { ptak: 1, stado: 1, deszcz: 1, latawiec: 1, wiatr: 1, grad: 2, mgla: 2, burza: 2, jastrzab: 3, sowa: 3, morze: 3, sowaPokaz: 0, zwiastun: 0, kryjowka: 0,
+                szpile: 1, latawce: 1, przelot: 1, wir: 1, ulewa: 1, festiwal: 0, tecza: 0, komin: 0 };   /* Z11: szpile, sznury festiwalu, wiry przelotu (kadłub S0), ulewa = S1; widowiska i bonusy S0 */
+  var DUZE = { deszcz: 1, burza: 1, mgla: 1, szpile: 1, przelot: 1, ulewa: 1 };   /* duże sprite'y (budżet <= 3 na ekranie) */
   var Z = { ETA_TYP: 2.8, ETA_MIN_Z: 3.8, SZKIC_T: 0.7, PRZEJSCIE: 300, CISZA_BRAMA: 10, CISZA_POSCIG: 15, CISZA_S2: 4, DRAP_PO_S2: 6, START_CISZA: 20, ROZGRZEWKA: 25,
             N_MAX: 0.85, GAP0: 9, GAP_MIN: 3.2, FALA: 90, FALA_UP: 70, ODDECH_K: 0.4, ROZGRZEWKA_K: 0.3, RAMPA: 0.15, RAMPA_T: 360,
             RATUNEK_H: 0.2, RATUNEK_CO: 30, RATUNEK_PO: 0.5, H_BRAMA: 0.8, H_PODLOGA: 0.15, NAPIS_T: 2.5, WYTRWALOSC: 3, KROTKI: 60, KROTKIE_N: 3, POMOC_PRAD: 1.15, POMOC_DRAP: 30,
@@ -2887,24 +2903,25 @@ Słońce obiecało wrócić rano.</p>
 
   /* KRAINY: dane Drogi. Długość krainy = czas typowy x zmierzona prędkość typowa (V_TYP, bot "70%" w K1, raporty/z10-pomiar.md), zaokrąglona do 100 m.
      pora = pora domowa (phi: 0 noc, 0,25 świt, 0,5 dzień, 0,75 zachód/zmierzch); akcent = barwa mieszana z paletą pory (null = paleta pory bez zmian);
-     sink = opadanie przy machaniu (na sekundę, do strojenia); pradCo = mnożnik przerw między seriami prądów; pradTyp = typ prądu (do Z11 każdy działa jak wstęga);
-     przeszkody = wagi harmonogramu (do Z11 przeszkadzajki z Z3/Z3b); debiut = nowości krainy; drapieznik = okres w s (0 = nie poluje w tej krainie);
-     nBaza = napięcie na start krainy; final = id finału (treść w Z11). Teksty (nazwy, tablice) w teksty.js. */
+     sink = opadanie przy machaniu (na sekundę, do strojenia); pradCo = mnożnik przerw między seriami prądów; pradTyp = typ prądu krainy (Z11: tęcza, komin, poryw, smuga; zawsze liczony jako jeden prąd albo bez łańcucha);
+     przeszkody = wagi harmonogramu (Z3/Z3b + Z11: szpile, latawce, przelot); debiut = nowości krainy; drapieznik = okres w s (0 = nie poluje w tej krainie);
+     nBaza = napięcie na start krainy; final = id finału (Z11); zwiastun = element krainy pokazywany 300 m przed jej bramą. Teksty (nazwy, tablice) w teksty.js. */
   var V_TYP = 18.3;   /* m/s: mediana prędkości bota "70%" w K1 z 10 ziaren (pomiar Z10, raporty/z10-pomiar.md) */
   var KRAINY = [
     { id: 1, czasTyp: 90, pora: 0.75, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
       drapieznik: { jastrzab: 0, sowa: 0 }, nBaza: 0.10, final: 'trzy_w_rytmie' },
-    { id: 2, czasTyp: 120, pora: 0.92, akcent: [200, 196, 240], sink: 0.036, pradCo: 1.05, pradTyp: 'tecza_ks', przeszkody: { ptak: 0.5, deszcz: 1, grad: 0.4 }, debiut: ['deszcz', 'grad', 'sowa'],
-      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.20, final: 'ulewa_i_luk' },
-    { id: 3, czasTyp: 135, pora: 0.25, akcent: [255, 198, 184], sink: 0.038, pradCo: 1.1, pradTyp: 'komin', przeszkody: { ptak: 0.4, deszcz: 0.4, grad: 0.2, mgla: 0.8, stado: 0.8 }, debiut: ['mgla', 'stado'],
-      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.28, final: 'kanion_wiez' },
-    { id: 4, czasTyp: 150, pora: 0.5, akcent: [178, 226, 236], sink: 0.040, pradCo: 1.15, pradTyp: 'poryw', przeszkody: { ptak: 0.4, deszcz: 0.3, grad: 0.2, mgla: 0.3, stado: 0.4, latawiec: 1, wiatr: 0.8 }, debiut: ['latawiec', 'wiatr', 'jastrzab'],
-      drapieznik: { jastrzab: 90, sowa: 100 }, nBaza: 0.36, final: 'festiwal' },
-    { id: 5, czasTyp: 165, pora: 0.62, akcent: [250, 214, 150], sink: 0.040, pradCo: 1.2, pradTyp: 'smuga', przeszkody: { ptak: 0.4, deszcz: 0.3, grad: 0.3, mgla: 0.3, stado: 1.2, latawiec: 0.4, wiatr: 0.4 }, debiut: [],
-      drapieznik: { jastrzab: 120, sowa: 120 }, nBaza: 0.44, final: 'przelot_olbrzyma' },
-    { id: 6, czasTyp: 0, pora: 0.75, akcent: [236, 172, 204], sink: 0.042, pradCo: 1.25, pradTyp: 'wszystkie', przeszkody: { ptak: 0.5, deszcz: 0.5, grad: 0.4, mgla: 0.4, stado: 0.6, latawiec: 0.4, wiatr: 0.5, burza: 0.8 }, debiut: ['burza'],
-      drapieznik: { jastrzab: 90, sowa: 90 }, nBaza: 0.55, final: '' }
+    { id: 2, czasTyp: 120, pora: 0.92, akcent: [200, 196, 240], sink: 0.036, pradCo: 1.05, pradTyp: 'tecza_ks', przeszkody: { ptak: 0.5, deszcz: 1, grad: 0.4 }, debiut: ['deszcz', 'grad', 'sowa', 'tecza'],
+      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.20, final: 'ulewa_i_luk', zwiastun: 'tecza' },
+    { id: 3, czasTyp: 135, pora: 0.25, akcent: [255, 198, 184], sink: 0.038, pradCo: 1.1, pradTyp: 'komin', przeszkody: { ptak: 0.4, deszcz: 0.35, grad: 0.2, mgla: 0.8, szpile: 1.1 }, debiut: ['szpile', 'mgla', 'komin'],
+      drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.28, final: 'kanion_wiez', zwiastun: 'szpile' },
+    { id: 4, czasTyp: 150, pora: 0.5, akcent: [178, 226, 236], sink: 0.040, pradCo: 1.15, pradTyp: 'poryw', przeszkody: { ptak: 0.3, deszcz: 0.2, grad: 0.2, mgla: 0.2, stado: 0.3, latawiec: 0.4, latawce: 1.3, wiatr: 1.1 }, debiut: ['latawce', 'wiatr', 'jastrzab', 'poryw'],
+      drapieznik: { jastrzab: 90, sowa: 100 }, nBaza: 0.36, final: 'festiwal', zwiastun: 'latawce' },
+    { id: 5, czasTyp: 165, pora: 0.62, akcent: [250, 214, 150], sink: 0.040, pradCo: 1.2, pradTyp: 'smuga', przeszkody: { ptak: 0.3, deszcz: 0.3, grad: 0.2, mgla: 0.2, stado: 1.0, latawiec: 0.2, wiatr: 0.3, przelot: 1.1 }, debiut: ['przelot', 'stado'],
+      drapieznik: { jastrzab: 120, sowa: 120 }, nBaza: 0.44, final: 'przelot_olbrzyma', zwiastun: 'przelot' },
+    { id: 6, czasTyp: 0, pora: 0.75, akcent: [236, 172, 204], sink: 0.042, pradCo: 1.25, pradTyp: 'wszystkie', przeszkody: { ptak: 0.5, deszcz: 0.5, grad: 0.4, mgla: 0.4, stado: 0.6, latawiec: 0.3, wiatr: 0.5, burza: 0.8, szpile: 0.4, latawce: 0.4, przelot: 0.4 }, debiut: ['burza'],
+      drapieznik: { jastrzab: 90, sowa: 90 }, nBaza: 0.55, final: '', zwiastun: 'burza' }
   ];
+  KRAINY[0].zwiastun = '';   /* Z11: zwiastun = element tej krainy pokazany 300 m przed jej bramą (S0, z boku toru) */
   /* metry krain z pomiaru: od/do na Drodze (Dalekie Niebo bez końca) */
   (function () { var m = 0, k, K; for (k = 0; k < KRAINY.length; k++) { K = KRAINY[k]; K.od = m; K.dl = K.czasTyp ? Math.round(K.czasTyp * V_TYP / 100) * 100 : Infinity; K.do = m + K.dl; m = K.do; } })();
   function dlugosc(n) { return KRAINY[n - 1].dl; }
@@ -3178,9 +3195,10 @@ Słońce obiecało wrócić rano.</p>
      Odległość pojawienia się liczona z czasu do kontaktu (ok. 2,8 s przy bieżącej prędkości), ale nigdy bliżej niż ETA_MIN_Z warstw:
      przy największej prędkości (2,22 warstwy/s) to >= 1,5 s nawet wtedy, gdy ptaszek przyspieszy zaraz po pojawieniu się zagrożenia.
      Każde zagrożenie najpierw jako jasny, kreskowany szkic (toru albo konturu), farba wchodzi po SZKIC_T s (wiek < 0 ukrywa farbę). Drugi kanał: łuk na krawędzi ekranu. */
-  function zWinOf(typ) { return (typ === 'ptak' || typ === 'stado' || typ === 'latawiec') ? G.ZW : G.ZWR; }
+  function zWinOf(typ) { return (typ === 'ptak' || typ === 'stado' || typ === 'latawiec' || typ === 'latawce' || typ === 'szpile') ? G.ZW : G.ZWR; }
   function zEta(typ) { var sp = 0.32 + 1.9 * s; return G.ZB + zWinOf(typ) + Math.max(Z.ETA_MIN_Z, (Z.ETA_TYP + (rndE() - 0.5) * 0.4) * sp); }
-  var SPAWN_ALL = { ptak: spawnPtak, deszcz: spawnDeszcz, stado: spawnStado, latawiec: spawnLatawiec, mgla: spawnMgla, burza: spawnBurza, grad: spawnGrad, wiatr: spawnWiatr };
+  var SPAWN_ALL = { ptak: spawnPtak, deszcz: spawnDeszcz, stado: spawnStado, latawiec: spawnLatawiec, mgla: spawnMgla, burza: spawnBurza, grad: spawnGrad, wiatr: spawnWiatr,
+                    szpile: spawnSzpile, latawce: spawnLatawce, przelot: spawnPrzelot, ulewa: spawnUlewa, festiwal: spawnFestiwal, tecza: spawnTecza };   /* Z11 */
   function nowaPrzeszkoda(typ, opt) {
     var o, f = SPAWN_ALL[typ];
     opt = opt || {};
@@ -3248,7 +3266,8 @@ Słońce obiecało wrócić rano.</p>
       o = obst[k];
       act = (o.typ === 'grad' || o.typ === 'wiatr') ? !o.done : o.z > G.ZB - 0.25;
       if (!act) continue;
-      if (o.zw) c.s0++; else if (o.gesta) c.kryj = (c.kryj || 0) + 1; else if (o.kl === 2) c.s2++; else c.s1++;
+      if (o.zw) c.s0++; else if (o.gesta) c.kryj = (c.kryj || 0) + 1; else if (o.kl === 0) c.s0++; else if (o.kl === 2) c.s2++; else c.s1++;
+      if (o.widowisko && !o.zw) c.s0++;   /* Z11: Wielki przelot = widowisko (kadłub S0) z wirami S1 */
       if (DUZE[o.typ] && o.z < FAR + 0.5) c.duze++;
     }
     if (pokaz) c.s0++;
@@ -3259,6 +3278,7 @@ Słońce obiecało wrócić rano.</p>
     for (k in w) {
       if (w[k] <= 0) continue;
       if (DUZE[k] && c.duze >= Z.MAX_DUZE) continue;
+      if (WIDOWISKO[k] && c.s0 >= Z.MAX_S0) continue;   /* Z11: najwyżej jedno widowisko naraz */
       if (KLASA[k] === 2) { if (c.s2 < Z.MAX_S2) p2.push(k); } else if (c.s1 < Z.MAX_S1) p1.push(k);
     }
     pool = (p2.length && (rndE() < N * N || !p1.length)) ? p2 : p1;
@@ -3284,6 +3304,7 @@ Słońce obiecało wrócić rano.</p>
     var K = kTeraz(), c, typ, o;
     nTeraz = napiecieCalc(gameT);
     if (noObst || gameT < Z.START_CISZA) return;
+    if (finalSt) return;   /* Z11: finał krainy = widowisko bez presji (bez nowych zagrożeń i drapieżników) */
     if (gameT < calmUntil || nTeraz.oddech) return;
     c = aktywne();
     if (!haw && !pokaz && gameT >= nextPredT && gameT >= predQuiet && lvl < 5 && gameT - lastThreatT >= Z.GAP_MIN && c.duze <= Z.MAX_DUZE - 1) { if (planDrapieznik(K)) return; }
@@ -3341,6 +3362,7 @@ Słońce obiecało wrócić rano.</p>
   function napiszDodaj(txt) { if (txt) napisy.push({ txt: txt, dur: Z.NAPIS_T }); }
   function drogaReset() {
     var K, d, b;
+    z11Reset();   /* Z11 */
     zapPend.length = 0; pokaz = null; kurt = null; scenaF = null; napisy.length = 0; napis = null; distPrev = 0; ratLast = -99; ratPlan = -1; hawPrev = false; zwiastunDla = 0; krM = {};
     lastThreatT = -99; s2Quiet = -99; predQuiet = -99; nLog.length = 0; gapLog.length = 0; zapLog.length = 0; skutkiLog.length = 0; ratLog.length = 0; bramaLog.length = 0; kurtDts.length = 0;
     budzet = { s0: 0, s1: 0, s2: 0, duze: 0, czastki: 0, naruszen: 0 };
@@ -3351,7 +3373,7 @@ Słońce obiecało wrócić rano.</p>
     kIdx = b - 1; K = kTeraz(); drogaStart = K.od; drogaM = drogaStart;
     if (!poraLock) { phi = K.pora; palAt(phi, PAL); akcentKrainy(PAL); nightK = PAL.nightW; forceTint = true; }
     d = dzisiaj(); if (ZAP.dzien.d !== d) ZAP.dzien = { d: d, n: 0 }; if (!zapBezLicz) ZAP.dzien.n++;
-    rs = TEST ? 104729 + (ziarnoTest || (+Q.get('seed') || 23)) * 131 : hashZiarna(ZAP.dzien.d + '#' + ZAP.dzien.n);
+    rs = TEST ? hashZiarna('test#' + (ziarnoTest || (+Q.get('seed') || 23))) : hashZiarna(ZAP.dzien.d + '#' + ZAP.dzien.n);   /* Z11: ziarno testowe przez ten sam skrót co produkcyjne (liniowe 104729 + n * 131 dawało w LCG prawie te same pierwsze losowania dla sąsiednich ziaren) */
     pomocBieg = TEST ? pomocTest : ZAP.krotkie >= Z.KROTKIE_N;
     calmUntil = Z.START_CISZA; nextObsT = Z.START_CISZA;
     nextPredT = (b === 1 ? Z.DRAP_GNIAZDO : Z.DRAP_BRAMA) + (pomocBieg ? Z.POMOC_DRAP : 0);
@@ -3388,11 +3410,11 @@ Słońce obiecało wrócić rano.</p>
     n2 = kNast(); rem = doBramyM();
     G.SINK = n2 ? lerp(K.sink, n2.sink, uPrzejscia()) : K.sink;
     /* zwiastun: 300 m przed bramą jeden element następnej krainy (S0, bez kolizji, z boku toru) */
-    if (n2 && rem < Z.PRZEJSCIE && zwiastunDla !== n2.id) {
+    if (n2 && rem < Z.PRZEJSCIE && zwiastunDla !== n2.id && (aktywne().s0 === 0 || rem < Z11.FINAL_M)) {   /* Z11: zwiastun czeka, aż zejdzie trwające widowisko (najwyżej jedno naraz) */
       zwiastunDla = n2.id;
       if (!noObst && (n2.debiut.length || n2.id === 5)) {
-        p = { 2: 'deszcz', 3: 'mgla', 4: 'latawiec', 5: 'stado', 6: 'burza' }[n2.id];
-        if (p && aktywne().duze < Z.MAX_DUZE) nowaPrzeszkoda(p, { zw: true, dx: (rndE() < 0.5 ? -1 : 1) * 1.8, z: Math.min(FAR - 0.3, G.ZB + 3.2 * (0.32 + 1.9 * s) + 1) });
+        p = n2.zwiastun;   /* Z11: tęcza (K2), szpila (K3), latawiec (K4), mały samolot (K5), burza (Dalekie Niebo) */
+        if (p && aktywne().duze < Z.MAX_DUZE && aktywne().s0 === 0) { nowaPrzeszkoda(p, { zw: true, dx: (rndE() < 0.5 ? -1 : 1) * 1.8, z: Math.min(FAR - 0.3, G.ZB + 3.2 * (0.32 + 1.9 * s) + 1) }); z11N(tekst('zwiastuny', n2.id)); }
       }
       pulaKrainy(n2.id);
     }
@@ -3425,7 +3447,7 @@ Słońce obiecało wrócić rano.</p>
     c = aktywne();
     budzet.s0 = Math.max(budzet.s0, c.s0); budzet.s1 = Math.max(budzet.s1, c.s1); budzet.s2 = Math.max(budzet.s2, c.s2); budzet.duze = Math.max(budzet.duze, c.duze);
     k = plumki.length + kropl.length; budzet.czastki = Math.max(budzet.czastki, k);
-    if (c.s0 > Z.MAX_S0 || c.s1 > Z.MAX_S1 || c.s2 > Z.MAX_S2 || c.duze > Z.MAX_DUZE || k > Z.MAX_CZASTEK) budzet.naruszen++;
+    if (c.s0 > Z.MAX_S0 || c.s1 > Z.MAX_S1 || c.s2 > Z.MAX_S2 || c.duze > Z.MAX_DUZE || k > Z.MAX_CZASTEK) { budzet.naruszen++; if (budzetLog.length < 40) budzetLog.push({ t: Math.round(gameT * 10) / 10, kraina: K.id, c: JSON.parse(JSON.stringify(c)), typy: obst.filter(function (q) { return (q.typ === 'grad' || q.typ === 'wiatr') ? !q.done : q.z > G.ZB - 0.25; }).map(function (q) { return q.typ + (q.zw ? '(zw)' : '') + (q.gesta ? '(g)' : ''); }), pokaz: !!pokaz, final: finalSt ? finalSt.k : 0 }); }
     if (!nLog.length || gameT - nLog[nLog.length - 1].t >= 1) { nLog.push({ t: Math.round(gameT * 10) / 10, N: Math.round(nTeraz.N * 1000) / 1000, oddech: nTeraz.oddech, kraina: K.id }); if (nLog.length > 1200) nLog.shift(); }
   }
   function drogaKoniec(typ) {
@@ -3508,6 +3530,7 @@ Słońce obiecało wrócić rano.</p>
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([7, 7]); ctx.lineDashOffset = reduce ? 0 : -t * 30;
     for (k = 0; k < obst.length; k++) {
       o = obst[k]; if (o.zw || o.hit || o.typ === 'grad' || o.typ === 'wiatr' || o.z < G.ZB) continue;
+      if (Z11SZK[o.typ]) { Z11SZK[o.typ](o); continue; }   /* Z11: trzony wież, sznury latawców, tory śladu samolotu, ulewa */
       a = szkicA(o); if (a < 0.02) continue;
       sc = 1 / o.z; X = W / 2 + (o.x - camX) * sc;
       ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
@@ -3534,6 +3557,11 @@ Słońce obiecało wrócić rano.</p>
   function drawPokaz() {
     var u = cl(pokaz.t / pokaz.len), x = pokaz.dir > 0 ? lerp(-50, W + 50, u) : lerp(W + 50, -50, u), y = H * 0.2 + Math.sin(u * 6) * 8, a = sm(u / 0.1) * sm((1 - u) / 0.1);
     drawOwl(x, y, 0.34, reduce ? 0.2 : Math.sin(t * 6) * 0.5, cAll(sk - 0.04), a * 0.85, false);
+    /* Z11: sowa pohukuje: „hu… huu” tuszem przy sowie (obraz zamiast samego dźwięku) */
+    var hu = (pokaz.t % 1.6) / 1.6, k2;
+    ctx.save(); ctx.font = 'italic 400 15px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillStyle = rgba(LINE, 0.85 * a * sm(hu / 0.15) * sm((1 - hu) / 0.3));
+    for (k2 = 0; k2 < 2; k2++) ctx.fillText(k2 ? 'huu' : 'hu', x + (pokaz.dir > 0 ? 34 : -34) + k2 * 14 * pokaz.dir, y - 26 - k2 * 15 - hu * 10);
+    ctx.restore();
   }
   function drawZ10Swiat() {
     if (PASMO) return;
@@ -3592,6 +3620,898 @@ Słońce obiecało wrócić rano.</p>
     drawNapis(dt);
   }
   function itemBrama() { return (!PASMO && kurt && kurt.z >= G.ZB - 0.2) ? { typ: 'brama', z: kurt.z, gx: kurt.gx, brama: kurt.brama, open: kurt.open } : null; }
+
+  /* =====================================================================================================================
+     Z11: TREŚĆ KRAIN K2-K5 w stylu Z4 (kontur tuszem w L0, akwarela poza konturem w kolorze), wg ZLECENIA-Z10-Z13.md (Z11) i fabula/00-wybor.md.
+     K2 Morze Pierzyn (noc): Rogal = księżyc z jednym okiem z profilu i szlafmycą z chmurki (mruga od L3, poświata jak rozlane mleko; scena „Rogal wychyla się”),
+        tęcza księżycowa = prąd z bladym łukiem (przelot pod łukiem = 1 prąd w łańcuchu + suche piórka; w L0-L1 alfa <= 0,35, kolor tylko łuku),
+        sowa pohukująca (pokaz z Z10 + „huu”), deszcz i krótki grad (Z3b).
+     K3 Kamienny Las (świt): szpile miasta = 8 własnych sylwetek drapaczy (kreska odręczna, pochylenie 1-2 stopnie, okna białe kreski w L0, nocą konstelacje okien,
+        światła białe i miodowe, kołnierz chmury u podstawy); układy rząd / aleja / strzała / skos; kolizja tylko trzonu (60% rysunku); niska wieża
+        przelatywalna górą przy h > szczyt + 0,1; uderzenie S1 (odbicie, wirowanie 0,8 s, s -0,08, piórka).
+        Komin ciepła nad niskim dachem: przelot tuż nad dachem = wysokość +0,2 i s najwyżej +0,5 j. (G.PRAD_S), bez łańcucha, nigdy ponad CAP4, kolor stoi;
+        gaśnie 5 s po wlocie, każdy komin działa raz.
+     K4 Wietrzne Schody (dzień): festiwal latawców (3-7 latawców, sznury z chorągiewkami co 40 px, sznur >= 3 px; zapowiedź: latawiec wyżej, sznur rysuje się w dół 1,5 s;
+        kontakt S1, sznur się nie zrywa), poryw latawcowy (latawce szarpią w górę ok. 1 s przed prądem; ten prąd = 1 prąd w łańcuchu), wiatr boczny częściej.
+     K5 Szlak Żelaznych Gęsi (popołudnie): Wielki przelot: okrągły, bajkowy samolot nadlatuje z przodu i przechodzi nad głową (kadłub S0, nie koliduje;
+        warianty jumbo, odrzutowiec, nocny; pilot w kokpicie robi „o” i macha; nocą tylko białe i miodowe światła). Ślad opada do wysokości ptaszka:
+        środek = smuga (prąd długi ok. 3 s, liczony jako JEDEN prąd w łańcuchu, skok najwyżej 1,5 j., od s >= 0,35), po bokach dwa wiry (S1: drżenie kamery
+        do 8 px przez 1,2 s, przy ograniczeniu ruchu tylko kołysanie ptaszka, znos do 1 szerokości ptaszka, czułość skrętu -40% przez 1,2 s). Pierwszy przelot w zapisie = sam pokaz.
+     Finały (ostatnie ok. 220 m krainy; w finale nie ma nowych zagrożeń ani drapieżników): K1 trzy prądy w rytmie, K2 ulewa i łuk, K3 kanion wież z kominami,
+        K4 festiwal z żółtym latawcem do bramy, K5 przelot olbrzyma (cień przykrywa ekran, smuga do bramy). Zwiastuny 300 m przed bramą (S0): tęcza, szpila, latawiec, mały samolot.
+     Kierunek słońca: świt = słońce za plecami (światło od kamery: poświata od dołu, jasny brzeg na plecach Okruszka, długie cienie chmur w głąb), dzień = wysoko, zachód = przed Okruszkiem.
+     Sprite'y wież i samolotów rysowane kodem, budowane leniwie w kolejce krain Z10 (1 zadanie na klatkę), akwarela przemalowywana w rejestrze REG (updTint), pamięć w SPRMEM.
+     ===================================================================================================================== */
+  var BIRD_W = 50, PTAK_POL = 14;   /* szerokość ptaszka w jednostkach świata na płaszczyźnie ptaszka (ok. 71 px przy 390); pół trafienia ptaszka = 55% sylwetki */
+  var Z11 = { FINAL_M: 220, ROGAL_PO: 12, ROGAL_LEN: 7, TECZA_P: 0.3, TECZA_PO_DESZCZU: 14, PORYW_P: 0.35, PORYW_T: 1.0,
+              KOMIN_H: 0.2, KOMIN_S: 0.5, KOMIN_GAS: 5, KOMIN_NAD: 0.42,
+              SMUGA_S: 1.5, SMUGA_T: 3, SMUGA_MIN_S: 0.35, SMUGA_HALF: 52, WIR_DX: 96, WIR_HALF: 26, WIR_R: 22, WIR_T: 1.2, WIR_DS: 0.06, WIR_SENS: 0.6, WIR_SHAKE: 8, WIR_ZNOS: 270,
+              PRZELOT_ETA: 2.7, PLANE_V: 2.4, PLANE_Y: -430, HK: 160, WIEZA_L: 700, NAPIS_ODST: 9, DEBIUT_DT: 1, KOLEJKA_PO: 12 };
+  var Z11MULTI = { szpile: 1, przelot: 1, festiwal: 1 }, WIDOWISKO = { przelot: 1 };
+  var smugaInPrev = false, smugaInNow = false, smugaLog = [], kominLog = [], wirLog = [], teczaLog = [], wirSensT = 0, camShakeT = 0, patrzZ11 = null, rogalSc = null, rogalDone = false, rogalPlan = 1e9;
+  var kolejkaZ11 = null, budzetLog = [], finalSt = null, finalLog = [], finalRytm = 0, z11Log = { tecz: 0, poryw: 0, rytm: 0 }, deszczT = -99, kIdxPrev = -1, napisZ11T = -99, debiuty = {}, towarzysz = null, przelotWidziany = false, gegawaDone = false, stadoN0 = 0, cienZ11 = 0;
+  function z11Reset() {
+    smugaInPrev = smugaInNow = false; smugaLog = []; kominLog = []; budzetLog = []; kolejkaZ11 = null; wirLog = []; teczaLog = []; wirSensT = 0; camShakeT = 0; patrzZ11 = null; rogalSc = null; rogalDone = false; rogalPlan = 1e9;
+    finalSt = null; finalLog = []; finalRytm = 0; z11Log = { tecz: 0, poryw: 0, rytm: 0 }; deszczT = -99; kIdxPrev = -1; napisZ11T = -99; debiuty = {}; towarzysz = null; przelotWidziany = false; gegawaDone = false; stadoN0 = 0; cienZ11 = 0;
+  }
+  function z11N(txt) { if (!txt || gameT - napisZ11T < Z11.NAPIS_ODST) return false; napisZ11T = gameT; napiszDodaj(txt); return true; }
+  function zX(x, z) { return W / 2 + (x - camX) / z; }
+  function zY(y, z) { return HORIZON + y / z; }
+  function szczelinaMin() { return (lvl <= 2 ? 2.2 : (lvl <= 4 ? 1.8 : 1.5)) * BIRD_W; }   /* szczelina między trzonami / sznurami wg poziomu */
+  function gestwo(pts, step, closed) {
+    var out = [], k, a, b, n, j, L, m = closed ? pts.length : pts.length - 1;
+    for (k = 0; k < m; k++) { a = pts[k]; b = pts[(k + 1) % pts.length]; L = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1])); n = Math.max(1, Math.ceil(L / step)); for (j = 0; j < n; j++) out.push([a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n]); }
+    out.push(closed ? pts[0].slice() : pts[pts.length - 1].slice());
+    return out;
+  }
+  function arcPts(cx, cy, rx, ry, a0, a1, n) { var out = [], k, a; for (k = 0; k <= n; k++) { a = a0 + (a1 - a0) * k / n; out.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); } return out; }
+  function polyPath(x, P, closed) { var k; x.moveTo(P[0][0], P[0][1]); for (k = 1; k < P.length; k++) x.lineTo(P[k][0], P[k][1]); if (closed) x.closePath(); }
+
+  /* ---------- Z11: szpile miasta: 8 sylwetek (lokalnie: x w poprzek, y w dół od dachu, trzon do y = WIEZA_L; żadnych znanych budynków) ---------- */
+  var WD = [], WS = [];
+  var TOWER_F = [[244, 206, 214], [168, 192, 222], [214, 206, 222], [234, 212, 176], [200, 218, 236], [240, 224, 204], [186, 182, 204], [222, 232, 242]];
+  function wiezaDefs() {
+    var L = Z11.WIEZA_L, P, d, k, r = R32(4242), y, j, w, x0, hw, row, ink;
+    for (k = 0; k < 8; k++) {
+      d = { k: k, det: [], polys: [], ogrod: [], antena: null, dachY: 0, plaski: false, szklo: false, okna: [], top0: 0 };
+      ink = null;
+      if (k === 0) {   /* iglica z anteną */
+        w = 96; P = [[-48, L], [-48, 150], [-38, 128], [-38, 92], [-24, 64], [-11, 14], [0, -26], [11, 14], [24, 64], [38, 92], [38, 128], [48, 150], [48, L]];
+        d.antena = [-26, -112]; d.det = [[[-38, 128], [38, 128]], [[-38, 92], [38, 92]], [[-24, 64], [24, 64]], [[0, -20], [0, 60]]]; d.szklo = true; d.top0 = 160;
+      } else if (k === 1) {   /* ścięty daszek z ogrodem */
+        w = 132; P = [[-66, L], [-66, 38], [66, -6], [66, L]]; d.ogrod = [[-50, 31, 12], [-29, 24, 10], [-7, 17, 13], [17, 9, 11], [41, 1, 12], [57, -3, 8]]; d.plaski = true; d.dachY = 16; d.top0 = 60;
+      } else if (k === 2) {   /* walec z kopułką i pasami */
+        w = 112; P = [[-56, L], [-56, 46]].concat(arcPts(0, 46, 56, 44, Math.PI * 1.03, Math.PI * 1.97, 16)).concat([[56, 46], [56, L]]);
+        for (y = 140; y < L - 40; y += 130) d.det.push(arcPts(0, y, 56, 9, 0.06, Math.PI - 0.06, 14)); d.top0 = 76; d.antena = [2, -34];
+      } else if (k === 3) {   /* wieża z tarasem */
+        w = 104; P = [[-52, L], [-52, 104], [-74, 104], [-74, 92], [-40, 92], [-40, 20], [-27, 4], [27, 4], [40, 20], [40, 92], [74, 92], [74, 104], [52, 104], [52, L]];
+        d.det = [[[-74, 76], [-40, 76]], [[40, 76], [74, 76]]]; for (j = -70; j <= 70; j += 8) if (Math.abs(j) > 43) d.det.push([[j, 76], [j, 92]]); d.top0 = 118;
+      } else if (k === 4) {   /* schodkowa */
+        w = 140; P = [[-70, L], [-70, 168], [-52, 168], [-52, 96], [-33, 96], [-33, 34], [-14, 34], [-14, 0], [14, 0], [14, 34], [33, 34], [33, 96], [52, 96], [52, 168], [70, 168], [70, L]]; d.top0 = 180; d.szklo = true;
+      } else if (k === 5) {   /* kopuła cebulka z iglicą */
+        w = 100; P = [[-50, L], [-50, 92], [-57, 70], [-51, 46], [-35, 22], [-15, 6], [0, -2], [15, 6], [35, 22], [51, 46], [57, 70], [50, 92], [50, L]];
+        d.antena = [-2, -46]; d.det = [[[-50, 92], [50, 92]], [[-50, 106], [50, 106]], [[0, 6], [-8, 80]], [[0, 6], [8, 80]]]; d.top0 = 116;
+      } else if (k === 6) {   /* płaski dach ze zbiornikiem na wodę */
+        w = 124; P = [[-62, L], [-62, 42], [62, 42], [62, L]]; d.plaski = true; d.dachY = 42;
+        d.polys = [[[-6, 14], [-6, -34], [2, -48], [16, -55], [30, -48], [38, -34], [38, 14]]]; d.det = [[[-2, 14], [-2, 42]], [[34, 14], [34, 42]], [[16, 14], [16, 42]], [[-6, -12], [38, -12]], [[-6, 4], [38, 4]]]; d.top0 = 62;
+      } else {   /* bliźniacze wieże z kładką */
+        w = 126; P = [[-63, L], [-63, 44], [-40, 0], [-17, 44], [-17, 200], [17, 200], [17, 72], [63, 72], [63, L], [17, L], [17, 234], [-17, 234], [-17, L]];
+        ink = [[[-63, L], [-63, 44], [-40, 0], [-17, 44], [-17, 200], [17, 200], [17, 72], [63, 72], [63, L]], [[17, L], [17, 234], [-17, 234], [-17, L]]]; d.det = [[[-63, 44], [-17, 44]]]; d.top0 = 90;
+      }
+      d.w = w; d.fill = P; d.ink = ink || [P]; d.trunk = 0.3 * w; d.half = w / 2; d.tilt = (r() - 0.5) * 0.05;
+      /* okna: rzędy co 34, kolumny co 20; część zgaszona; nocą ok. 38% świeci (konstelacje) */
+      for (y = d.top0 + 22; y < L - 30; y += 34) {
+        row = [];
+        if (k === 7) { for (x0 = -54; x0 <= 54; x0 += 18) if (Math.abs(x0) > 20 && !(x0 > 0 && y < 92) && !(y > 196 && y < 240 && Math.abs(x0) < 20)) row.push(x0); }
+        else { hw = w / 2 - 13; for (x0 = -hw + 6; x0 <= hw - 6; x0 += 20) row.push(x0); }
+        for (j = 0; j < row.length; j++) if (r() < 0.64) d.okna.push([row[j] + (r() - 0.5) * 2, y + (r() - 0.5) * 2, r() < 0.38]);
+      }
+      WD.push(d);
+    }
+  }
+  function wRama(d, spr) { var c = mkS((d.w + 150) * spr, (Z11.WIEZA_L + 150) * spr); return { c: c, spr: spr, ox: (d.w / 2 + 75) * spr, oy: 140 * spr, w: c.width, h: c.height, pad: 0, ver: -1, key: '', mix: 1 }; }
+  function wCtx(S, d) { var x = S.c.getContext('2d'); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy); x.translate(0, 320); x.rotate(d.tilt); x.translate(0, -320); x.lineJoin = 'round'; x.lineCap = 'round'; return x; }
+  function wFillAll(x, d, rr) {   /* każda część wypełniana osobno (bez dziur z reguły nonzero) */
+    var k, q;
+    x.beginPath(); polyPath(x, d.fill, true); x.fill();
+    for (k = 0; k < d.polys.length; k++) { x.beginPath(); polyPath(x, d.polys[k], true); x.fill(); }
+    for (k = 0; k < d.ogrod.length; k++) { q = d.ogrod[k]; x.beginPath(); blobPath2(x, q[0], q[1], q[2], rr, 0.85); x.fill(); }
+  }
+  function wiezaMono(d, spr, lw, kreska) {
+    var S = wRama(d, spr), x = wCtx(S, d), r = R32(7000 + d.k * 53 + Math.round(lw * 10)), L = Z11.WIEZA_L, k, q, j, segs, pl, y, hw = d.w / 2;
+    if (!kreska) { x.fillStyle = rgba(MONO, 1); wFillAll(x, d, R32(77 + d.k)); }
+    x.save(); x.beginPath(); polyPath(x, d.fill, true); x.clip(); x.strokeStyle = rgba(LINE, 1); x.lineWidth = Math.max(0.8, lw * 0.4);   /* kreskowanie strony cienia, delikatnie */
+    for (y = d.top0 - 20; y < L; y += 8 + r() * 3) { x.globalAlpha = (kreska ? 0 : 1) * (0.09 + r() * 0.07); x.beginPath(); x.moveTo(hw * 0.2, y); x.lineTo(hw * 1.05, y - 15); x.stroke(); }
+    x.globalAlpha = kreska ? 0 : 0.62; x.lineWidth = Math.max(1, lw * 0.6);   /* okna: białe kreski (w wersji „sama kreska” pominięte, okna maluje akwarela) */
+    x.beginPath(); for (k = 0; k < d.okna.length; k++) { q = d.okna[k]; x.moveTo(q[0] - 4, q[1]); x.lineTo(q[0] + 4 + (r() - 0.5), q[1] + (r() - 0.5) * 0.8); } x.stroke();
+    x.restore(); x.globalAlpha = 1;
+    for (k = 0; k < d.det.length; k++) inkLine(x, gestwo(d.det[k], 4, false), lw * 0.55, rgba(LINE, 0.72), r, { taper: 3, wob: 0.35 });
+    for (k = 0; k < d.polys.length; k++) inkLine(x, gestwo(d.polys[k], 3, true), lw * 0.8, rgba(LINE, 0.9), r, { taper: 0, wob: 0.4 });
+    for (k = 0; k < d.ogrod.length; k++) { q = d.ogrod[k]; x.fillStyle = rgba(MONO, 1); x.beginPath(); blobPath2(x, q[0], q[1], q[2], R32(500 + k), 0.85); if (!kreska) x.fill(); x.strokeStyle = rgba(LINE, 0.85); x.lineWidth = lw * 0.6; x.stroke(); }
+    for (k = 0; k < d.ink.length; k++) {
+      pl = gestwo(d.ink[k], 4, false); segs = gaps(pl, r, 0.012);
+      for (j = 0; j < segs.length; j++) inkLine(x, segs[j], lw, rgba(LINE, 0.95), r, { taper: 2, wob: 0.5 });
+      segs = gaps(offsetPts(gestwo(d.ink[k], 7, false), lw * 1.7), r, 0.05); for (j = 0; j < segs.length; j++) inkLine(x, segs[j], lw * 0.42, rgba(LINE, 0.38), r, { taper: 4, wob: 0.7 });   /* drugi, szkicowy kontur */
+    }
+    if (d.antena) { inkLine(x, gestwo([[0, d.antena[0]], [0.6, d.antena[1]]], 3, false), lw * 0.6, rgba(LINE, 0.9), r, { taper: 2, wob: 0.2 }); x.strokeStyle = rgba(LINE, 0.9); x.lineWidth = lw * 0.55; x.beginPath(); blobPath2(x, 0.6, d.antena[1] - 3, 3.2, R32(9), 1); x.stroke(); }
+    return S;
+  }
+  function wiezaOkna(d, spr) {   /* świecące okna (białe; kolor nadaje rejestr albo tryb rysowania) */
+    var S = wRama(d, spr), x = wCtx(S, d), k, q;
+    x.fillStyle = '#fff';
+    for (k = 0; k < d.okna.length; k++) { q = d.okna[k]; if (!q[2]) continue; x.globalAlpha = 0.35; x.fillRect(q[0] - 7, q[1] - 5, 14, 10); x.globalAlpha = 1; x.fillRect(q[0] - 4.5, q[1] - 2.2, 9, 4.4); }
+    return S;
+  }
+  /* akwarela wieży malowana wprost (ścieżki): gradient pionowy (kamień / szkło), strona cienia i jasny brzeg wg kierunku światła, szkło, okna, ogród, granulacja */
+  function paintWieza(S, C) {
+    var d = WD[S.ci], L = Z11.WIEZA_L, hw = d.w / 2, x = S.c.getContext('2d'), gr, k, q, rr = R32(300 + d.k);
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, S.w, S.h);
+    x = wCtx(S, d); x.translate(BLEED[0], BLEED[1]);
+    gr = x.createLinearGradient(0, -60, 0, L); gr.addColorStop(0, rgba(C.top, 1)); gr.addColorStop(0.28, rgba(C.mid, 1)); gr.addColorStop(0.62, rgba(C.bot, 1)); gr.addColorStop(1, rgba(C.fog, 1));
+    x.fillStyle = gr; wFillAll(x, d, R32(77 + d.k));
+    x.save(); x.beginPath(); polyPath(x, d.fill, true); x.clip(); x.globalCompositeOperation = 'source-atop';
+    var sd = C.wShR >= C.wShL ? 1 : -1, xb = sd * hw * 0.26, mc = mixc([255, 255, 255], C.shade, 0.85);   /* bryła: ściana boczna w cieniu od wyraźnej krawędzi (jak narożnik budynku); mnożenie barwy, więc kontrast w każdym etapie koloru */
+    x.globalCompositeOperation = 'multiply';
+    gr = x.createLinearGradient(xb, 0, sd * hw * 1.05, 0); gr.addColorStop(0, rgba(mixc([255, 255, 255], mc, 0.6), 1)); gr.addColorStop(0.08, rgba(mc, 1)); gr.addColorStop(1, rgba(mixc(mc, C.shade, 0.5), 1));
+    x.fillStyle = gr; x.fillRect(Math.min(xb, sd * hw * 1.3), -150, Math.abs(sd * hw * 1.3 - xb), L + 160);
+    gr = x.createLinearGradient(-sd * hw, 0, xb, 0); gr.addColorStop(0, rgba(mixc([255, 255, 255], mc, 0.15), 1)); gr.addColorStop(1, rgba(mixc([255, 255, 255], mc, 0.35), 1)); x.fillStyle = gr; x.fillRect(Math.min(-sd * hw * 1.3, xb), -150, Math.abs(xb + sd * hw * 1.3), L + 160);
+    gr = x.createLinearGradient(0, -60, 0, L); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, rgba(mixc([255, 255, 255], mc, 0.25), 1)); gr.addColorStop(1, rgba(mixc([255, 255, 255], mc, 0.5), 1)); x.fillStyle = gr; x.fillRect(-hw - 80, -150, d.w + 160, L + 160);   /* niżej ciemniej (głębia ku chmurom) */
+    x.globalCompositeOperation = 'source-atop';
+    gr = x.createLinearGradient(-hw, 0, hw, 0); gr.addColorStop(0, rgba(C.rim, C.rimA * C.wRimL)); gr.addColorStop(0.13, rgba(C.rim, 0)); gr.addColorStop(0.87, rgba(C.rim, 0)); gr.addColorStop(1, rgba(C.rim, C.rimA * C.wRimR));
+    x.fillStyle = gr; x.fillRect(-hw - 80, -150, d.w + 160, L + 160);
+    if (d.szklo) for (k = 0; k < 3; k++) { gr = x.createLinearGradient(0, -40, 0, L * 0.7); gr.addColorStop(0, rgba(C.glass, C.glassA)); gr.addColorStop(1, rgba(C.glass, 0)); x.fillStyle = gr; x.fillRect([-0.62, -0.18, 0.32][k] * hw, -60, [7, 11, 5][k], L); }
+    x.globalCompositeOperation = 'multiply'; x.fillStyle = rgba(mixc([255, 255, 255], C.okno, 0.9), C.oknoA); for (k = 0; k < d.okna.length; k++) { q = d.okna[k]; x.fillRect(q[0] - 4.5, q[1] - 2.4, 9, 4.8); } x.globalCompositeOperation = 'source-atop';   /* okna: ciemniejsze szkło (mnożenie) */
+    gr = x.createLinearGradient(0, L * 0.45, 0, L); gr.addColorStop(0, rgba(C.fog, 0)); gr.addColorStop(1, rgba(C.fog, 0.85)); x.fillStyle = gr; x.fillRect(-hw - 80, L * 0.45, d.w + 160, L * 0.6);   /* mgiełka u podstawy */
+    x.restore();
+    if (d.ogrod.length) { x.fillStyle = rgba(C.mint, 0.92); for (k = 0; k < d.ogrod.length; k++) { q = d.ogrod[k]; x.beginPath(); blobPath2(x, q[0] + 1, q[1] + 1, q[2] * 1.05, R32(500 + k), 0.85); x.fill(); } }
+    if (d.polys.length) { x.fillStyle = rgba(C.drew, 0.95); for (k = 0; k < d.polys.length; k++) { x.beginPath(); polyPath(x, d.polys[k], true); x.fill(); } }
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = C.granA; if (!S.c._pat) S.c._pat = x.createPattern(TEX.grain, 'repeat'); x.fillStyle = S.c._pat; x.fillRect(0, 0, S.w, S.h);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    if (S.far) { var xf = S.far.c.getContext('2d'); xf.setTransform(1, 0, 0, 1, 0, 0); xf.clearRect(0, 0, S.far.w, S.far.h); xf.drawImage(S.c, 0, 0, S.far.w, S.far.h); }
+  }
+  function wiezaParams(S) {
+    var P = PAL, F = TOWER_F[S.ci], C = {};
+    C.top = stageCol(MONO, mixc(F, [255, 250, 244], 0.18), P.warm); C.mid = stageCol(MONO, mixc(F, P.sh, 0.22), P.warm); C.bot = stageCol(MONO, mixc(F, P.sh, 0.5), P.warm); C.fog = stageCol(MONO, mixc(P.fog, P.cM, 0.45), P.warm);
+    C.shade = stageCol(NAVY, mixc(P.sh, [92, 84, 146], 0.55), P.warm); C.shadeA = 0.62 + 0.2 * ST.p;
+    C.rim = mixc(stageCol(LINE, P.rim, P.warm), LIGHTC, 0.35 * ST.w); C.rimA = 0.85 * sm((sk + 0.02 - 0.3) / 0.3);
+    C.wShL = 1 - LW_L; C.wShR = LW_L; C.wRimL = LW_L; C.wRimR = 1 - LW_L;
+    C.glass = stageCol(MONO, mixc(P.sL, [236, 244, 255], 0.5), P.warm); C.glassA = 0.42;
+    C.okno = stageCol(MONO, mixc(P.sh, [112, 128, 182], 0.45), P.warm); C.oknoA = 0.72 * (1 - 0.6 * P.nightW);
+    C.mint = stageCol(MONO, [168, 217, 184], P.warm); C.drew = stageCol(MONO, [206, 176, 146], P.warm); C.granA = 0.1 + 0.08 * (1 - ST.p);
+    C.key = keyC(C.top) + keyC(C.mid) + keyC(C.bot) + keyC(C.fog) + keyC(C.shade) + keyC(C.rim) + keyC(C.glass) + keyC(C.okno) + Math.round(C.rimA * 10) + '/' + Math.round(C.oknoA * 10) + C.wShR;
+    return C;
+  }
+  var WIEZA_REG = { par: wiezaParams, key: function (C) { return C.key; }, paint: paintWieza, koszt: 1 };
+  var INK_REG = { par: function () { return { c: mixc(LINE, inkCol(), sm((sk + 0.02 - 0.3) / 0.22)) }; }, key: function (C) { return keyC(C.c); }, paint: function (S, C) { recolor(S, C.c); }, koszt: 0.2 };   /* kontur tuszem w kolorze (jak kreska chmur 'ln') */
+  var OKNA_REG = { par: function () { return { c: stageCol(LINE, [255, 214, 140], PAL.warm) }; }, key: function (C) { return keyC(C.c); }, paint: function (S, C) { recolor(S, C.c); }, koszt: 0.2 };
+  /* budowa wieży w krokach (po jednym na zadanie kolejki krain, każdy kilka ms); wiezaS(k) kończy budowę od razu, gdy wieża jest potrzebna wcześniej */
+  var FLX = null;
+  function flushS(S) { if (!FLX) FLX = mkC(1, 1).getContext('2d', { willReadFrequently: true }); FLX.drawImage(S.c, 0, 0, 1, 1); FLX.getImageData(0, 0, 1, 1); return S; }   /* wymusza rasteryzację sprite'u w kroku budowy (koszt w zadaniu kolejki, nie w przypadkowej klatce gry) */
+  var WB = {};
+  function wiezaKroki(k) {
+    var d, M;
+    if (!WD.length) wiezaDefs();
+    d = WD[k]; M = WB[k] || (WB[k] = { k: k, mono: null, monoF: null, oknaB: null, okna: null, tint: null, ln: null });
+    return [
+      function () { if (!M.mono) M.mono = flushS(wiezaMono(d, 0.62, 2.6)); },
+      function () { if (!M.monoF) M.monoF = flushS(wiezaMono(d, 0.3, 6)); },
+      function () { if (!M.ln) { M.ln = addReg(flushS(wiezaMono(d, 0.5, 3.6, true)), 'lnw', k); M.ln.z11 = INK_REG; M.ln.mix = 1; paintInto(M.ln, INK_REG.par()); flushS(M.ln); } },
+      function () { if (!M.okna) { M.oknaB = flushS(wiezaOkna(d, MSL)); M.okna = addReg(wiezaOkna(d, MSL), 'okna', k); M.okna.z11 = OKNA_REG; M.okna.mix = 1; paintInto(M.okna, OKNA_REG.par(M.okna)); flushS(M.okna); } },
+      function () { var S; if (!M.tint) { S = withPrev(addReg(wRama(d, MSC), 'wieza', k)); S.z11 = WIEZA_REG; S.far = wRama(d, MFAR); paintInto(S, wiezaParams(S)); S.mix = 1; flushS(S); flushS(S.far); M.tint = S; } WS[k] = M; }
+    ];
+  }
+  function wiezaS(k) { var kr, i; if (WS[k]) return WS[k]; kr = wiezaKroki(k); for (i = 0; i < kr.length; i++) kr[i](); return WS[k]; }
+
+  /* ---------- Z11: Wielki przelot: samolot z przodu (okrągły, bajkowy, bez znaków linii), 2 kształty: 0 jumbo (4 silniki), 1 odrzutowiec (2 silniki) ---------- */
+  var PL = [], PLS = [];
+  function samolotDef(v) {
+    var R = v ? 62 : 82, span = v ? 300 : 392, d = { v: v, R: R, span: span, eng: [], okna: [], koraliki: [] }, k, a;
+    d.wing = [[-R * 0.78, R * 0.16], [-span, -R * 0.06], [-span - 6, R * 0.04], [-span + 4, R * 0.12], [-R * 0.78, R * 0.44]];
+    d.wingP = d.wing.map(function (p) { return [-p[0], p[1]]; });
+    d.winglet = [[-span + 2, -R * 0.02], [-span - 8, -R * 0.46], [-span + 6, -R * 0.4], [-span + 10, -R * 0.02]];
+    d.fin = [[-R * 0.1, -R * 0.82], [-R * 0.06, -R * 2.05], [R * 0.08, -R * 2.12], [R * 0.11, -R * 0.82]];
+    d.stab = [[-R * 1.5, -R * 0.62], [-R * 0.1, -R * 0.74], [R * 0.1, -R * 0.74], [R * 1.5, -R * 0.62], [R * 1.48, -R * 0.55], [-R * 1.48, -R * 0.55]];
+    d.eng = v ? [[-R * 1.62, R * 0.66, R * 0.32], [R * 1.62, R * 0.66, R * 0.32]] : [[-R * 1.5, R * 0.62, R * 0.3], [R * 1.5, R * 0.62, R * 0.3], [-R * 2.75, R * 0.48, R * 0.27], [R * 2.75, R * 0.48, R * 0.27]];
+    d.okna = [[-R * 0.48, -R * 0.36, 0.22], [-R * 0.17, -R * 0.42, 0.24], [R * 0.17, -R * 0.42, 0.24], [R * 0.48, -R * 0.36, 0.22]];   /* kokpit */
+    for (k = 0; k < 5; k++) { a = Math.PI * (1.13 + k * 0.045); d.koraliki.push([Math.cos(a) * R * 0.8, Math.sin(a) * R * 0.8]); a = Math.PI * (1.87 - k * 0.045); d.koraliki.push([Math.cos(a) * R * 0.8, Math.sin(a) * R * 0.8]); }   /* okienka jak koraliki */
+    d.minx = -span - 24; d.maxx = span + 24; d.top = -R * 2.25; d.bot = R * 1.05;
+    return d;
+  }
+  function okragly(x, cx, cy, r, sq, ph) { var k, a, q, n = 56; for (k = 0; k <= n; k++) { a = k / n * TAU; q = r * (1 + 0.012 * Math.sin(3 * a + ph) + 0.007 * Math.sin(5 * a + ph * 1.7)); if (k) x.lineTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q * sq); else x.moveTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q * sq); } x.closePath(); }   /* koło odręczne, prawie równe */
+  function plRama(d, spr) { var c = mkS((d.maxx - d.minx) * spr, (d.bot - d.top) * spr); return { c: c, spr: spr, ox: -d.minx * spr, oy: -d.top * spr, w: c.width, h: c.height, pad: 0, ver: -1, key: '', mix: 1 }; }
+  function plCtx(S) { var x = S.c.getContext('2d'); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy); x.lineJoin = 'round'; x.lineCap = 'round'; return x; }
+  function plKsztalty(x, d, rr, fn) {   /* kolejność: statecznik, skrzydła, kadłub, silniki, płetwa (fn(nazwa) ustawia styl i wypełnia / obrysowuje) */
+    var k, e;
+    x.beginPath(); polyPath(x, d.stab, true); fn('stab');
+    x.beginPath(); polyPath(x, d.wing, true); polyPath(x, d.wingP, true); fn('skrzydlo');
+    x.beginPath(); polyPath(x, d.winglet, true); polyPath(x, d.winglet.map(function (p) { return [-p[0], p[1]]; }), true); fn('skrzydlo');
+    x.beginPath(); polyPath(x, d.fin, true); fn('stab');
+    x.beginPath(); okragly(x, 0, 0, d.R, 0.94, 1.3); fn('kadlub');
+    for (k = 0; k < d.eng.length; k++) { e = d.eng[k]; x.beginPath(); x.moveTo(e[0] - e[2] * 0.25, e[1] - e[2] * 0.9); x.lineTo(e[0] - e[2] * 0.12, e[1] - e[2] * 1.5); x.lineTo(e[0] + e[2] * 0.12, e[1] - e[2] * 1.5); x.lineTo(e[0] + e[2] * 0.25, e[1] - e[2] * 0.9); fn('pylon'); x.beginPath(); okragly(x, e[0], e[1], e[2], 0.96, k + 2); fn('silnik'); x.beginPath(); okragly(x, e[0], e[1] + e[2] * 0.06, e[2] * 0.58, 0.96, k + 5); fn('wlot'); }
+  }
+  function samolotMono(d, spr, lw, kreska) {
+    var S = plRama(d, spr), x = plCtx(S), r = R32(9100 + d.v * 7 + Math.round(lw * 10)), k, o;
+    plKsztalty(x, d, R32(31 + d.v), function (n) {
+      if (kreska) { x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; x.fill(); x.globalCompositeOperation = 'source-over'; } else { x.fillStyle = rgba(n === 'wlot' ? [16, 20, 40] : MONO, 1); x.fill(); }
+      x.strokeStyle = rgba(LINE, n === 'wlot' ? 0.6 : 0.95); x.lineWidth = n === 'wlot' ? lw * 0.6 : lw; x.stroke();
+    });
+    x.strokeStyle = rgba(LINE, 0.85); x.lineWidth = lw * 0.6;
+    for (k = 0; k < d.okna.length; k++) { o = d.okna[k]; x.beginPath(); blobPath2(x, o[0], o[1], d.R * o[2] * 0.5, R32(70 + k), 0.55); x.stroke(); }
+    for (k = 0; k < d.koraliki.length; k++) { o = d.koraliki[k]; x.beginPath(); blobPath2(x, o[0], o[1], d.R * 0.055, R32(90 + k), 1); x.stroke(); }
+    x.globalAlpha = 0.5; x.beginPath(); x.arc(0, d.R * 0.12, d.R * 0.3, Math.PI * 0.15, Math.PI * 0.85); x.stroke();   /* nos (owiewka) */
+    x.beginPath(); x.moveTo(-d.R * 0.7, d.R * 0.3); x.quadraticCurveTo(0, d.R * 0.7, d.R * 0.7, d.R * 0.3); x.stroke(); x.globalAlpha = 1;
+    inkLine(x, gestwo([[-d.span * 0.9, d.R * 0.1], [-d.R * 0.9, d.R * 0.33]], 6, false), lw * 0.4, rgba(LINE, 0.4), r, { taper: 4, wob: 0.6 });
+    inkLine(x, gestwo([[d.span * 0.9, d.R * 0.1], [d.R * 0.9, d.R * 0.33]], 6, false), lw * 0.4, rgba(LINE, 0.4), r, { taper: 4, wob: 0.6 });
+    return S;
+  }
+  function paintSamolot(S, C) {
+    var d = PL[S.ci], x = S.c.getContext('2d'), gr, k, o;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, S.w, S.h);
+    x = plCtx(S); x.translate(BLEED[0] * 1.6, BLEED[1] * 1.4);
+    plKsztalty(x, d, R32(31 + d.v), function (n) {
+      if (n === 'kadlub') { gr = x.createRadialGradient(-d.R * 0.3 + LIGHTX * d.R * 0.3, -d.R * 0.45, d.R * 0.1, 0, 0, d.R * 1.05); gr.addColorStop(0, rgba(C.jasny, 1)); gr.addColorStop(0.6, rgba(C.kadlub, 1)); gr.addColorStop(1, rgba(C.cien, 1)); x.fillStyle = gr; }
+      else if (n === 'skrzydlo') { gr = x.createLinearGradient(0, -d.R * 0.1, 0, d.R * 0.45); gr.addColorStop(0, rgba(C.skrzydloJ, 1)); gr.addColorStop(1, rgba(C.skrzydlo, 1)); x.fillStyle = gr; }
+      else if (n === 'stab') x.fillStyle = rgba(C.skrzydloJ, 1);
+      else if (n === 'silnik') { gr = x.createRadialGradient(-6, -8, 2, 0, 0, d.R * 0.32); gr.addColorStop(0, rgba(C.jasny, 1)); gr.addColorStop(1, rgba(C.silnik, 1)); x.fillStyle = gr; }
+      else if (n === 'wlot') x.fillStyle = rgba(C.wlot, 1);
+      else x.fillStyle = rgba(C.skrzydlo, 1);
+      x.fill();
+    });
+    x.fillStyle = rgba(C.szyba, 1);
+    for (k = 0; k < d.okna.length; k++) { o = d.okna[k]; x.beginPath(); blobPath2(x, o[0], o[1], d.R * o[2] * 0.5, R32(70 + k), 0.55); x.fill(); }
+    x.fillStyle = rgba(C.koralik, 1); for (k = 0; k < d.koraliki.length; k++) { o = d.koraliki[k]; x.beginPath(); blobPath2(x, o[0], o[1], d.R * 0.06, R32(90 + k), 1); x.fill(); }
+    gr = x.createRadialGradient(0, d.R * 0.12, 1, 0, d.R * 0.12, d.R * 0.32); gr.addColorStop(0, rgba(C.nos, 0.9)); gr.addColorStop(1, rgba(C.nos, 0)); x.fillStyle = gr; x.beginPath(); x.arc(0, d.R * 0.12, d.R * 0.32, 0, TAU); x.fill();
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = C.granA; if (!S.c._pat) S.c._pat = x.createPattern(TEX.grain, 'repeat'); x.fillStyle = S.c._pat; x.fillRect(0, 0, S.w, S.h);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    if (S.far) { var xf = S.far.c.getContext('2d'); xf.setTransform(1, 0, 0, 1, 0, 0); xf.clearRect(0, 0, S.far.w, S.far.h); xf.drawImage(S.c, 0, 0, S.far.w, S.far.h); }
+  }
+  function samolotParams() {
+    var P = PAL, C = {}, n = P.nightW;
+    C.kadlub = stageCol(MONO, mixc([222, 226, 238], P.cM, 0.2), P.warm); C.jasny = stageCol(MONO, mixc([255, 252, 246], LIGHTC, 0.25), P.warm); C.cien = stageCol(NAVY, mixc([150, 150, 196], P.sh, 0.4), P.warm);
+    C.skrzydlo = stageCol(MONO, mixc([176, 178, 214], P.sh, 0.25), P.warm); C.skrzydloJ = stageCol(MONO, [214, 216, 234], P.warm); C.silnik = stageCol(MONO, [198, 204, 224], P.warm); C.wlot = stageCol(NAVY, [92, 96, 140], P.warm);
+    C.szyba = stageCol(MONO, mixc([120, 138, 186], [255, 214, 140], n * 0.8), P.warm); C.koralik = stageCol(MONO, mixc([236, 222, 196], [255, 214, 140], n), P.warm); C.nos = stageCol(MONO, [250, 236, 214], P.warm);
+    C.granA = 0.2 + 0.15 * (1 - ST.p);
+    C.key = keyC(C.kadlub) + keyC(C.jasny) + keyC(C.cien) + keyC(C.skrzydlo) + keyC(C.szyba) + keyC(C.koralik) + Math.round(LIGHTX * 4);
+    return C;
+  }
+  var SAMOLOT_REG = { par: samolotParams, key: function (C) { return C.key; }, paint: paintSamolot, koszt: 1 };
+  var PB = {};
+  function samolotKroki(v) {
+    var d, M;
+    if (!PL.length) { PL.push(samolotDef(0)); PL.push(samolotDef(1)); }
+    d = PL[v]; M = PB[v] || (PB[v] = { mono: null, monoF: null, tint: null, ln: null });
+    return [
+      function () { if (!M.mono) M.mono = flushS(samolotMono(d, 0.62, 3.2)); },
+      function () { if (!M.monoF) M.monoF = flushS(samolotMono(d, 0.26, 7)); },
+      function () { if (!M.ln) { M.ln = addReg(flushS(samolotMono(d, 0.45, 3.2, true)), 'lnp', v); M.ln.z11 = INK_REG; M.ln.mix = 1; paintInto(M.ln, INK_REG.par()); flushS(M.ln); } },
+      function () { var S; if (!M.tint) { S = withPrev(addReg(plRama(d, 0.5), 'samolot', v)); S.z11 = SAMOLOT_REG; S.far = plRama(d, 0.16); paintInto(S, samolotParams()); S.mix = 1; flushS(S); flushS(S.far); M.tint = S; } PLS[v] = M; }
+    ];
+  }
+  function samolotS(v) { var kr, i; if (PLS[v]) return PLS[v]; kr = samolotKroki(v); for (i = 0; i < kr.length; i++) kr[i](); return PLS[v]; }
+  /* kolejka krain (Z10): sprite'y krainy dorenderowywane po 1 na klatkę; przy wymuszeniu hakiem budowane od razu */
+  var z11Kol = {};
+  function z11Kolejka(id) {
+    var k;
+    if (z11Kol[id]) return; z11Kol[id] = 1;
+    function wW(kk) { wiezaKroki(kk).forEach(function (f) { KOLEJKA.push(f); }); }
+    function wP(kk) { samolotKroki(kk).forEach(function (f) { KOLEJKA.push(f); }); }
+    if (id === 3 || id === 6) for (k = 0; k < 8; k++) wW(k);
+    if (id === 5 || id === 6) for (k = 0; k < 2; k++) wP(k);
+    if (id === 2) { wW(0); wW(4); }   /* zwiastun K3 (szpila) */
+    if (id === 4) wP(1);   /* zwiastun K5 (mały samolot) */
+  }
+  function z11Zbuduj() { var k; for (k = 0; k < 8; k++) wiezaS(k); samolotS(0); samolotS(1); return { MB: Math.round(SPRMEM / 1048576 * 10) / 10, sprite: SPRN, rejestr: REG.length }; }
+
+  /* ---------- Z11: spawn: szpile (układy), latawce, przelot, ulewa, festiwal, tęcza (zwiastun) ---------- */
+  var WYSOKIE = [0, 2, 3, 4, 5, 7], NISKIE = [1, 6];
+  function nowaWieza(x, z, rodzaj) {   /* rodzaj: 'wysoka' | 'niska' | 'komin' */
+    var k = rodzaj === 'wysoka' ? WYSOKIE[Math.floor(rndE() * WYSOKIE.length)] : NISKIE[Math.floor(rndE() * NISKIE.length)], d;
+    if (!WD.length) wiezaDefs();
+    d = WD[k];
+    return { x: x, z: z, k: k, top: rodzaj === 'wysoka' ? 2.2 + rndE() * 1.8 : (rodzaj === 'komin' ? 0.16 + rndE() * 0.1 : 0.34 + rndE() * 0.18), trunk: d.trunk, half: d.half, komin: rodzaj === 'komin', kominUzyty: false, kominGas: 1, hit: false, ci: Math.floor(rndE() * POOLN) };
+  }
+  function debiutDz(typ, opt) {   /* debiut pierwszy raz w zapisie: zapowiedź +1 s i jedno zdanie w strefie tekstu */
+    var K = kTeraz();
+    if ((opt && opt.bezDebiutu) || debiuty[typ] || PASMO || K.debiut.indexOf(typ) < 0 || !pierwszaWizyta(K.id)) return 0;
+    debiuty[typ] = true; z11N(tekst('debiuty', typ));
+    return Z11.DEBIUT_DT * (0.32 + 1.9 * s);
+  }
+  function spawnSzpile(o) {
+    o = o || {};
+    var z = (o.z || zWarn(2.3)), uk = o.uklad || ['rzad', 'aleja', 'strzala', 'skos'][Math.floor(rndE() * 4)], g = szczelinaMin(), ws = [], k, n, c, gi, xs, pos, tgt, sd, w, S, ob;
+    if (!o.zw) z += debiutDz('szpile', o);
+    if (o.zw) ws.push(nowaWieza(bx + (o.dx !== undefined ? o.dx : 1.8) * PRAD_DX, z, 'wysoka'));
+    else if (uk === 'komin' || uk === 'niska' || uk === 'wysoka') { w = nowaWieza(bx + (o.dx || 0) * PRAD_DX, z, uk); if (o.top !== undefined) w.top = o.top; ws.push(w); }   /* pojedyncza wieża (hak, testy) */
+    else if (uk === 'rzad') {
+      n = o.n || 3 + Math.floor(rndE() * 3); for (k = 0; k < n; k++) ws.push(nowaWieza(0, z + (rndE() - 0.5) * 0.12, (k > 0 && k < n - 1 && rndE() < 0.45 && !ws.some(function (q) { return q.komin; })) ? 'komin' : 'wysoka'));
+      pos = [0]; for (k = 1; k < n; k++) pos.push(pos[k - 1] + ws[k - 1].trunk + ws[k].trunk + g * (1 + rndE() * 0.5));
+      gi = Math.floor(rndE() * (n - 1)); tgt = (o.dx !== undefined ? bx + o.dx * PRAD_DX : bx + (rndE() - 0.5) * 120);
+      c = tgt - (pos[gi] + ws[gi].trunk + pos[gi + 1] - ws[gi + 1].trunk) / 2;   /* jedna szczelina zawsze blisko toru lotu */
+      for (k = 0; k < n; k++) ws[k].x = c + pos[k];
+    } else if (uk === 'aleja' || uk === 'kanion') {
+      c = o.dx !== undefined ? bx + o.dx * PRAD_DX : bx + (rndE() - 0.5) * (uk === 'kanion' ? 40 : 140);
+      sd = uk === 'kanion' ? 1.5 * BIRD_W : g * (0.55 + rndE() * 0.2);
+      n = uk === 'kanion' ? 4 : 3;
+      for (k = 0; k < n; k++) { w = nowaWieza(0, z + k * (uk === 'kanion' ? 0.8 : 0.9), 'wysoka'); w.x = c - sd - w.trunk; ws.push(w); w = nowaWieza(0, z + k * (uk === 'kanion' ? 0.8 : 0.9) + 0.1, 'wysoka'); w.x = c + sd + w.trunk; ws.push(w); }
+      if (uk === 'kanion') for (k = 0; k < 3; k++) { w = nowaWieza(c, z + 0.4 + k * 0.8, 'komin'); ws.push(w); }
+      else if (rndE() < 0.4) ws.push(nowaWieza(c, z + 0.45, 'komin'));
+    } else if (uk === 'strzala') {
+      c = o.dx !== undefined ? bx + o.dx * PRAD_DX : bx + (rndE() - 0.5) * 100;
+      w = nowaWieza(c, z, 'wysoka'); ws.push(w);
+      for (k = 1; k <= 2; k++) { xs = ws[0].trunk + g * 1.1 * k + 22 * k; w = nowaWieza(0, z + 0.65 * k, 'wysoka'); w.x = c - xs - w.trunk * (k - 0.5); ws.push(w); w = nowaWieza(0, z + 0.65 * k, 'wysoka'); w.x = c + xs + w.trunk * (k - 0.5); ws.push(w); }
+    } else {   /* skos: linia ukośna w głąb */
+      sd = rndE() < 0.5 ? -1 : 1; c = (o.dx !== undefined ? bx + o.dx * PRAD_DX : bx) - sd * 60;
+      for (k = 0; k < 4; k++) { w = nowaWieza(0, z + k * 0.55, k === 3 && rndE() < 0.3 ? 'komin' : 'wysoka'); w.x = c + sd * k * (2 * w.trunk + g * 1.2); ws.push(w); }
+    }
+    ob = { typ: 'szpile', id: ++oid, uklad: o.zw ? 'zwiastun' : uk, wieze: ws, x: 0, z: z, hit: false, age: 0, czesci: [], gmin: g, zw: !!o.zw };
+    ob.x = ws.reduce(function (a, q) { return a + q.x; }, 0) / ws.length;
+    obst.push(ob); spawnN.szpile = (spawnN.szpile | 0) + 1;
+    z11Kolejka(3); return ob;
+  }
+  function spawnLatawce(o) {
+    o = o || {};
+    var z = o.z || zWarn(2.3), n = o.zw ? 1 : 3 + Math.floor(rndE() * 5), g = szczelinaMin(), xs = [], k, x0, ky, sl, sz = [], ob, wiatr = rndE() < 0.5 ? -1 : 1;
+    if (!o.zw) z += debiutDz('latawce', o);
+    x0 = (o.dx !== undefined ? bx + o.dx * PRAD_DX : bx) - (n - 1) * (g * 1.25) / 2 + (rndE() - 0.5) * 60;
+    for (k = 0; k < n; k++) { xs.push(x0); x0 += g * (1.05 + rndE() * 0.45) + 6; }
+    for (k = 0; k < n; k++) {
+      ky = -330 - rndE() * 230; sl = wiatr * (0.3 + rndE() * 0.16);   /* sznury ukośne, prawie równoległe (jeden wiatr dla całej grupy) */
+      sz.push({ xb: xs[k], ky: ky, sl: sl, rodzaj: Math.floor(rndE() * 4), kol: Math.floor(rndE() * 5), ph: rndE() * 6, hit: false });
+    }
+    ob = { typ: 'latawce', id: ++oid, z: z, sznury: sz, x: xs.reduce(function (a, b) { return a + b; }, 0) / n, hit: false, age: 0, czesci: [], gmin: g, zw: !!o.zw };
+    obst.push(ob); spawnN.latawce = (spawnN.latawce | 0) + 1; return ob;
+  }
+  function spawnPrzelot(o) {
+    o = o || {};
+    var sp = 0.32 + 1.9 * s, zA, len, lane, ob, pierwszy;
+    lane = o.dx !== undefined ? bx + o.dx * PRAD_DX : bx + (rndE() - 0.5) * 160;
+    if (o.zw) { ob = { typ: 'przelot', id: ++oid, zw: true, hit: true, lane: lane, x: lane, pz: FAR + 0.2, pzv: FAR + 0.2, zA: 99, zB: 99, z: FAR, wariant: 1, skala: 0.8, wys: 1.5, age: 0, czesci: [], wiry: false };
+      obst.push(ob); spawnN.przelot = (spawnN.przelot | 0) + 1; z11Kolejka(5); return ob; }
+    zA = o.zA || (G.ZB + G.ZWR + Math.max(Z11.PRZELOT_ETA * 2.22, 3.4 * sp) + debiutDz('przelot', o));   /* o.zA tylko z haka testowego */
+    len = o.olbrzym ? Math.max(Z11.SMUGA_T * sp, o.dlugosc || 0) : Z11.SMUGA_T * sp;
+    pierwszy = !przelotWidziany && kTeraz().id === 5 && pierwszaWizyta(5); przelotWidziany = true;
+    ob = { typ: 'przelot', id: ++oid, lane: lane, x: lane, zA: zA, zB: zA + len, pz: Math.min(FAR + 0.4, zA + 1.2), pzv: Math.min(FAR + 0.4, zA + 1.2), z: zA, hit: false, age: 0, czesci: [],
+           wariant: PAL.nightW >= 0.5 ? 2 : (oid % 2), olbrzym: !!o.olbrzym, skala: o.olbrzym ? 1.7 : 1, wys: 1, wiry: o.wiry !== undefined ? !!o.wiry : (!o.olbrzym && !pierwszy), pokaz: !!pierwszy, smugaHit: false, smugaT0: -99, widowisko: true };
+    obst.push(ob); spawnN.przelot = (spawnN.przelot | 0) + 1; z11Kolejka(5); return ob;
+  }
+  function spawnUlewa(o) {
+    o = o || {};
+    var z = o.z || zWarn(2.4), gx = o.dx !== undefined ? bx + o.dx * PRAD_DX : bx + (rndE() - 0.5) * 80, gh = 1.4 * BIRD_W, ob;
+    ob = { typ: 'ulewa', id: ++oid, gx: gx, x: gx, gh: gh, z: z, hit: false, age: 0, ph: rndE() * 6, czesci: [{ x: gx - gh - 600, half: 600, z: z }, { x: gx + gh + 600, half: 600, z: z }] };
+    obst.push(ob); spawnN.ulewa = (spawnN.ulewa | 0) + 1; return ob;
+  }
+  function spawnFestiwal(o) {
+    o = o || {};
+    var k, kites = [], sd, ob;
+    for (k = 0; k < 14; k++) { sd = k % 2 ? 1 : -1; kites.push({ x: bx + sd * (150 + rndE() * 330), y: -200 - rndE() * 220, z: 1.8 + k * 0.38 + rndE() * 0.3, rodzaj: Math.floor(rndE() * 4), kol: k % 5, ph: rndE() * 6, sl: sd * (0.15 + rndE() * 0.25) }); }
+    ob = { typ: 'festiwal', id: ++oid, kites: kites, x: bx, z: kites[0].z, zw: true, hit: true, age: 0 };
+    obst.push(ob); spawnN.festiwal = (spawnN.festiwal | 0) + 1; return ob;
+  }
+  function spawnTecza(o) {   /* sam łuk (zwiastun K2, S0): bez prądu */
+    o = o || {};
+    var ob = { typ: 'tecza', id: ++oid, x: bx + (o.dx !== undefined ? o.dx : 1.8) * PRAD_DX, z: o.z || zWarn(2.3), zw: true, hit: true, age: 0, tw: 1 };
+    obst.push(ob); return ob;
+  }
+  function porywKites() { var k, n = 2 + Math.floor(rndV() * 2), out = []; for (k = 0; k < n; k++) out.push({ dx: (k - (n - 1) / 2) * 70 + (rndV() - 0.5) * 20, dy: (rndV() - 0.5) * 60, rodzaj: Math.floor(rndV() * 4), kol: Math.floor(rndV() * 5), ph: rndV() * 6 }); return out; }
+  /* seria prądów: tęcza (K2, po deszczu albo losowo), poryw (K4); K1 finał = trzy prądy w rytmie. Losowanie wyglądu z rndV: harmonogram (rndE) i świat (rnd) bez zmian */
+  function z11Seria(ps) {
+    var K, typ, p;
+    if (PASMO || !ps.length) return;
+    if (finalRytm === 1) { ps.forEach(function (q) { q.rytm = true; }); finalRytm = 2; z11Log.rytm++; return; }
+    K = kTeraz(); typ = K.pradTyp;
+    if (typ === 'wszystkie') typ = PAL.nightW >= 0.5 ? 'tecza_ks' : 'poryw';
+    if (typ === 'tecza_ks' && (rndV() < Z11.TECZA_P || gameT - deszczT < Z11.TECZA_PO_DESZCZU)) { p = ps[Math.floor(rndV() * ps.length)]; p.pt = 'tecza'; p.tw = Math.floor(rndV() * 3); z11Log.tecz++; deszczT = -99; debiutPradu('tecza', K); }
+    else if (typ === 'poryw' && rndV() < Z11.PORYW_P) { p = ps[Math.floor(rndV() * ps.length)]; p.pt = 'poryw'; p.kites = porywKites(); z11Log.poryw++; debiutPradu('poryw', K); }
+  }
+  function debiutPradu(typ, K) { if (!debiuty[typ] && K.debiut.indexOf(typ) >= 0 && pierwszaWizyta(K.id)) { debiuty[typ] = true; z11N(tekst('debiuty', typ)); } }   /* pierwszy raz w zapisie: jedno zdanie w strefie tekstu */
+
+  /* ---------- Z11: krok (ruch, kolizje, bonusy) ---------- */
+  function skutekZ11(typ, x, push) {
+    var o = { typ: typ, x: x };
+    skutek(o);
+    if (push) vx += (bx >= x ? 1 : -1) * push;
+  }
+  function kominWlot(w) {
+    var raw = Math.min(1, sHold + boost), room = Math.max(0, G.CAP4 - raw), add = Math.min(Z11.KOMIN_S * G.PRAD_S, room), c0 = chainN, n0 = hitsN(12), s0 = s, h0 = h;
+    w.kominUzyty = true; w.kominGas = 1;
+    h = Math.min(1, h + Z11.KOMIN_H); boost = Math.min(G.BOOSTMAX, boost + add); updSpeed();
+    kominLog.push({ t: gameT, dodane: add, s0: s0, s1: s, h0: h0, h1: h, lancuchPrzed: c0, lancuchPo: chainN, w12Przed: n0, w12Po: hitsN(12), cap4: G.CAP4 });
+    if (!debiuty.komin && pierwszaWizyta(3)) { debiuty.komin = true; z11N(tekst('debiuty', 'komin')); }
+  }
+  function krokSzpile(o, dt, speed, live) {
+    var k, w, pz, dx, near = 1e9, anyLeft = false;
+    for (k = 0; k < o.wieze.length; k++) {
+      w = o.wieze[k]; pz = w.z; w.z -= dt * speed;
+      if (live && !o.zw && pz > G.ZB && w.z <= G.ZB) {
+        dx = bx - w.x;
+        if (Math.abs(dx) < w.trunk + PTAK_POL && h <= w.top + 0.1) { if (immT <= 0 && !w.hit) { w.hit = true; skutekZ11('szpile', w.x, 160); } }
+        else if (w.komin && !w.kominUzyty && Math.abs(dx) < w.half + 12 && h > w.top + 0.1 && h <= w.top + Z11.KOMIN_NAD) kominWlot(w);
+      }
+      if (w.kominUzyty) w.kominGas = Math.max(0, w.kominGas - dt / Z11.KOMIN_GAS);
+      if (w.z > G.ZB - 0.3) { anyLeft = true; if (w.z < near) near = w.z; }
+    }
+    o.z = anyLeft ? near : Math.min.apply(null, o.wieze.map(function (q) { return q.z; }));
+    o.czesci.length = 0;
+    if (!o.zw) for (k = 0; k < o.wieze.length; k++) { w = o.wieze[k]; if (w.z > G.ZB - 0.05) o.czesci.push({ x: w.x, half: w.trunk + PTAK_POL, z: w.z, aktywna: h <= w.top + 0.12 }); }
+    if (!o.wieze.some(function (q) { return q.z > 0.12; })) o.usun = true;
+  }
+  function sznurX(sn, y) { return sn.xb + (y - YP) * sn.sl; }   /* x sznura na wysokości y świata (YP = wysokość ptaszka) */
+  function krokLatawce(o, dt, speed, live) {
+    var pz = o.z, k, sn;
+    o.z -= dt * speed;
+    if (live && !o.zw && !o.hit && pz > G.ZB && o.z <= G.ZB && immT <= 0) {
+      for (k = 0; k < o.sznury.length; k++) { sn = o.sznury[k]; if (Math.abs(bx - sn.xb) < 2 + PTAK_POL) { sn.hit = true; o.hit = true; latHit++; skutekZ11('latawce', sn.xb, 90); break; } }
+    }
+    o.czesci.length = 0;
+    if (!o.zw && !o.hit && o.z > G.ZB - 0.05) for (k = 0; k < o.sznury.length; k++) o.czesci.push({ x: o.sznury[k].xb, half: 2 + PTAK_POL, z: o.z });
+    if (o.z < 0.12) o.usun = true;
+  }
+  function smugaWlot(o, ideal) {
+    var c0 = chainN, n0 = hitsN(12), s0 = s;
+    o.smugaHit = true; o.smugaT0 = gameT; o.smugaIdealne = ideal; wlotow++; snd('prad');
+    if (ideal) {
+      chainN = (gameT - lastHitT <= G.CHAIN_W) ? chainN + 1 : 1; lastHitT = gameT; hitLog.push(gameT); while (hitLog.length && gameT - hitLog[0] > 12.5) hitLog.shift();
+      eHit(chainN); sparkPulse = 1; wlotIdeal++; tint = 1;
+      boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * Math.min(Z11.SMUGA_S, 1 + G.CH_STEP * (chainN - 1)));   /* jeden prąd w łańcuchu, skok najwyżej 1,5 j. */
+      h = Math.min(1, h + G.PRAD_H);
+    } else { wlotBrzeg++; tint = 0.4; boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * G.EDGE_K); h = Math.min(1, h + G.PRAD_H * G.EDGE_K); }
+    updSpeed();
+    smugaLog.push({ t: gameT, idealne: ideal, lancuchPrzed: c0, lancuchPo: chainN, w12Przed: n0, w12Po: hitsN(12), s0: s0, s1: s, olbrzym: o.olbrzym });
+  }
+  function wirHit(o, side) {
+    var s0 = s, l0 = lvl;
+    immT = Math.max(immT, Z11.WIR_T); camShakeT = Z11.WIR_T; wirSensT = Z11.WIR_T; kolizji++;
+    zwolnij(Z11.WIR_DS); fogT = Math.max(fogT, 0.8); vx += side * Z11.WIR_ZNOS; piorka(3);
+    wirLog.push({ t: gameT, strona: side, s0: s0, s1: s, bx: bx });
+    skutkiLog.push({ typ: 'wir', klasa: 1, t: gameT, s0: s0, s1: s, l0: l0, l1: levelOf(Math.min(1, sHold + boost)), h: h }); if (skutkiLog.length > 200) skutkiLog.shift();
+  }
+  function krokPrzelot(o, dt, speed, live) {
+    var dx, inS;
+    o.zA -= dt * speed; o.zB -= dt * speed; o.pzv -= dt * (speed + (o.zw ? 0.55 : Z11.PLANE_V));
+    o.pz = Math.max(0.05, o.pzv);
+    if (o.zw) { o.z = o.pz; if (o.pzv < 0.35) o.usun = true; return; }
+    o.z = o.zA > G.ZB ? o.zA : Math.min(G.ZB, Math.max(o.zB, 0.12));
+    o.czesci.length = 0;
+    if (live && o.zA <= G.ZB + G.ZWR && o.zB >= G.ZB - 0.02) {
+      dx = bx - o.lane;
+      inS = Math.abs(dx) < Z11.SMUGA_HALF;
+      if (inS && !o.smugaHit && s >= Z11.SMUGA_MIN_S) smugaWlot(o, Math.abs(dx) < G.HIT_IDEAL);
+      if (inS && o.smugaHit && gameT - o.smugaT0 < Z11.SMUGA_T) { smugaInNow = true; if (o.smugaIdealne && chainN > 0) lastHitT = gameT; }   /* prąd długi: rozpęd nie gaśnie, łańcuch trwa (bez nowych ogniw) */
+      if (o.wiry && !o.wirHit && immT <= 0 && Math.abs(Math.abs(dx) - Z11.WIR_DX) < Z11.WIR_HALF + PTAK_POL) { o.wirHit = true; wirHit(o, dx > 0 ? 1 : -1); }   /* jeden wir na przelot (S1, jak jeden sznur na festiwal) */
+    }
+    if (o.wiry && !o.wirHit && o.zB > G.ZB - 0.05 && o.zA < G.ZB + 2.6 * Math.max(0.3, speed)) { o.czesci.push({ x: o.lane - Z11.WIR_DX, half: Z11.WIR_HALF + PTAK_POL, z: Math.max(o.zA, G.ZB) }); o.czesci.push({ x: o.lane + Z11.WIR_DX, half: Z11.WIR_HALF + PTAK_POL, z: Math.max(o.zA, G.ZB) }); }
+    if (o.zB < 0.12 && o.pzv < 0.3) o.usun = true;
+  }
+  function krokUlewa(o, dt, speed, live) {
+    var pz = o.z;
+    o.z -= dt * speed; o.czesci[0].z = o.czesci[1].z = o.z;
+    if (live && !o.hit && pz > G.ZB && o.z <= G.ZB && Math.abs(bx - o.gx) > o.gh - PTAK_POL) enterRain(o);
+    if (o.z < 0.12) o.usun = true;
+  }
+  function krokFestiwal(o, dt, speed) {
+    var k, mx = 0;
+    for (k = 0; k < o.kites.length; k++) { o.kites[k].z -= dt * speed; mx = Math.max(mx, o.kites[k].z); }
+    o.z = mx; if (mx < 0.2) o.usun = true;
+  }
+  var Z11S = { szpile: krokSzpile, latawce: krokLatawce, przelot: krokPrzelot, ulewa: krokUlewa, festiwal: krokFestiwal, tecza: function (o, dt, speed) { o.z -= dt * speed; if (o.z < 0.12) o.usun = true; } };
+
+  /* ---------- Z11: finały, nowe krainy, Rogal, szepty ---------- */
+  function zwAktywny() { var k; for (k = 0; k < obst.length; k++) if (obst[k].zw && obst[k].typ !== 'festiwal' && obst[k].z > G.ZB - 0.3) return true; return false; }
+  function finalStart(id) {
+    var o = null, p;
+    finalSt = { k: id, t: 0, cisza: true, o: null }; finalLog.push({ kraina: id, t: gameT, m: Math.round(drogaM) });
+    if (id === 1) { finalRytm = 1; if (nextSpawn < 1e8) nextSpawn = Math.min(nextSpawn, gameT + 0.6); }
+    else if (id === 2) { o = nowaPrzeszkoda('ulewa', {}); if (o) { p = spawnPrad((o.gx - bx) / PRAD_DX, o.z + 1.15); p.pt = 'tecza'; p.big = 1.75; p.tw = 2; p.final = true; z11Log.tecz++; } }
+    else if (id === 3) o = nowaPrzeszkoda('szpile', { uklad: 'kanion' });
+    else if (id === 4) { o = nowaPrzeszkoda('festiwal', {}); towarzysz = { t: 0, koniec: -1 }; }
+    else if (id === 5) { var sp = (0.32 + 1.9 * sSm) / (G.M0 + G.M1 * sSm); o = nowaPrzeszkoda('przelot', { olbrzym: true, dlugosc: Math.max(1, doBramyM()) * sp }); }
+    finalSt.o = o ? o.id : null; finalSt.rodzaj = ['', 'trzy_w_rytmie', 'ulewa_i_luk', 'kanion_wiez', 'festiwal', 'przelot_olbrzyma'][id] || '';
+    z11N(tekst('finaly', id));
+  }
+  function z11NowaKraina(K, start) {
+    if (finalSt) { finalSt = null; finalRytm = 0; }
+    if (towarzysz && towarzysz.koniec < 0) towarzysz.koniec = gameT;
+    kolejkaZ11 = { t: gameT + Z11.KOLEJKA_PO, ids: [K.id].concat(kNast() && K.id >= 2 ? [kNast().id] : []) };   /* sprite'y krainy i następnej: budowa po 12 s od wejścia (po przelocie bramy), po 1 kroku na klatkę; K1 i K2 nie mają nowych sprite'ów */
+    if (K.id === 2) rogalPlan = gameT + (start ? 24 : Z11.ROGAL_PO);
+    if (!start && K.id >= 2 && K.id <= 5) napiszDodaj(tekst('krainy', K.id, 'tablica'));
+    if (K.id === 3 && pierwszaWizyta(3)) z11N(tekst('szepty', 'swit'));
+    stadoN0 = spawnN.stado | 0;
+  }
+  function z11Krok(dt) {
+    var K, rem, k, o;
+    camShakeT = Math.max(0, camShakeT - dt); wirSensT = Math.max(0, wirSensT - dt);
+    smugaInPrev = smugaInNow; smugaInNow = false;
+    if (rogalSc) { rogalSc.t += dt; if (rogalSc.t > rogalSc.len) rogalSc = null; }
+    if (towarzysz) { towarzysz.t += dt; if (towarzysz.koniec >= 0 && gameT - towarzysz.koniec > 3) towarzysz = null; }
+    if (PASMO) return;
+    K = kTeraz();
+    if (kIdx !== kIdxPrev) { k = kIdxPrev < 0; kIdxPrev = kIdx; z11NowaKraina(K, k); }
+    if (kolejkaZ11 && gameT >= kolejkaZ11.t) { kolejkaZ11.ids.forEach(z11Kolejka); kolejkaZ11 = null; }
+    if (K.id === 2 && !rogalDone && gameT >= rogalPlan && !noObst && !pokaz && state === 'gra') { rogalSc = { t: 0, len: Z11.ROGAL_LEN }; rogalDone = true; z11N(tekst('szepty', 'rogal')); }
+    if (K.id === 5 && !gegawaDone && (spawnN.stado | 0) > stadoN0 && pierwszaWizyta(5)) { gegawaDone = true; z11N(tekst('szepty', 'gegawa')); }
+    for (k = 0; k < obst.length; k++) { o = obst[k]; if ((o.typ === 'deszcz' || o.typ === 'burza') && !o.z11Minal && o.z < G.ZB) { o.z11Minal = true; deszczT = gameT; } }
+    rem = doBramyM();
+    if (!finalSt && !noObst && state === 'gra' && kNast() && isFinite(rem) && rem < Z11.FINAL_M && rem > 25 && !zwAktywny() && !haw) { o = aktywne(); if (o.s0 === 0 && o.s1 <= 1 && o.s2 === 0 && o.duze <= Z.MAX_DUZE - 1) finalStart(K.id); }   /* finał tylko, gdy jest na niego miejsce (budżet uwagi) */
+    if (finalSt) finalSt.t += dt;
+  }
+
+  /* ---------- Z11: rysowanie ---------- */
+  var KITE_C = [[250, 152, 142], [176, 232, 208], [250, 214, 140], [200, 182, 240], [166, 204, 242]];
+  function inkZ(amt) { return mixc(LINE, mixc([44, 36, 64], [196, 204, 248], nightK), amt); }
+  /* barwa przedmiotu na głębokości z: L0 granat (sam kontur), etap szarości jasny szaro-błękitny, potem jego własny pastel (jak chmury) */
+  function kolZ(base, z) { var g = obG(z), c = obAmt(z), l = lumOf(base), jas = mixc([l * 0.92, l * 0.97, Math.min(255, l * 1.06 + 8)], [236, 240, 248], 0.3); return mixc(MONO, mixc(jas, base, cl(c * 1.6)), g); }
+  function drawKite(X, Y, s1, rodzaj, kol, zk, a, rot) {
+    var amt = obAmt(zk), col = kolZ(KITE_C[kol % 5], zk), col2 = kolZ(KITE_C[(kol + 2) % 5], zk), ink = inkZ(amt), k, by;
+    if (a < 0.01) return;
+    ctx.save(); ctx.translate(X, Y); ctx.rotate(rot); ctx.scale(s1, s1); ctx.globalAlpha = a; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    function ksztalt(ox, oy) {
+      ctx.beginPath();
+      if (rodzaj === 0) { ctx.moveTo(ox, -26 + oy); ctx.lineTo(17 + ox, -3 + oy); ctx.lineTo(ox, 30 + oy); ctx.lineTo(-17 + ox, -3 + oy); ctx.closePath(); }
+      else if (rodzaj === 1) { ctx.moveTo(ox, -24 + oy); ctx.quadraticCurveTo(14 + ox, -4 + oy, 27 + ox, 14 + oy); ctx.lineTo(ox, 8 + oy); ctx.lineTo(-27 + ox, 14 + oy); ctx.quadraticCurveTo(-14 + ox, -4 + oy, ox, -24 + oy); ctx.closePath(); }
+      else if (rodzaj === 2) { ctx.moveTo(ox, -22 + oy); ctx.quadraticCurveTo(-16 + ox, oy, ox, 22 + oy); ctx.quadraticCurveTo(16 + ox, oy, ox, -22 + oy); ctx.moveTo(ox, 18 + oy); ctx.lineTo(-11 + ox, 34 + oy); ctx.lineTo(ox, 29 + oy); ctx.lineTo(11 + ox, 34 + oy); ctx.closePath(); }
+      else { ctx.moveTo(ox, -6 + oy); ctx.quadraticCurveTo(-14 + ox, -22 + oy, -32 + ox, -12 + oy); ctx.quadraticCurveTo(-16 + ox, -4 + oy, -4 + ox, 4 + oy); ctx.lineTo(ox, 22 + oy); ctx.lineTo(4 + ox, 4 + oy); ctx.quadraticCurveTo(16 + ox, -4 + oy, 32 + ox, -12 + oy); ctx.quadraticCurveTo(14 + ox, -22 + oy, ox, -6 + oy); ctx.closePath(); }
+    }
+    ksztalt(1.6, 1.2); ctx.fillStyle = rgba(col, 0.9); ctx.fill();   /* plama koloru przesunięta względem kreski (akwarela) */
+    if (amt > 0.05) { ctx.save(); ksztalt(1.6, 1.2); ctx.clip(); ctx.fillStyle = rgba(col2, 0.55 * amt); ctx.fillRect(0, -40, 40, 80); ctx.fillStyle = rgba([255, 250, 240], 0.25 * amt); ctx.fillRect(-40, -40, 40, 30); ctx.restore(); }
+    ksztalt(0, 0); ctx.lineWidth = 1.7 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+    ctx.lineWidth = 1 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.5); ctx.beginPath();
+    if (rodzaj < 2) { ctx.moveTo(0, -24); ctx.lineTo(0, rodzaj ? 8 : 30); if (!rodzaj) { ctx.moveTo(-17, -3); ctx.lineTo(17, -3); } } else if (rodzaj === 2) { ctx.moveTo(-5, -10); ctx.arc(-5, -10, 1.6, 0, TAU); }
+    ctx.stroke();
+    by = rodzaj === 0 ? 30 : (rodzaj === 1 ? 8 : (rodzaj === 2 ? 30 : 22));   /* ogon z kokardkami */
+    ctx.beginPath(); ctx.moveTo(0, by); ctx.quadraticCurveTo(9, by + 16, -3, by + 30); ctx.quadraticCurveTo(-11, by + 44, 4, by + 58); ctx.lineWidth = 1.2 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.8); ctx.stroke();
+    for (k = 1; k <= 3; k++) { var tx = (k === 2 ? -4 : 3), ty = by + k * 15; ctx.beginPath(); ctx.moveTo(tx - 5, ty - 3); ctx.lineTo(tx + 5, ty + 3); ctx.lineTo(tx + 5, ty - 3); ctx.lineTo(tx - 5, ty + 3); ctx.closePath(); ctx.fillStyle = rgba(k % 2 ? col2 : col, 1); ctx.fill(); ctx.lineWidth = 0.8 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.8); ctx.stroke(); }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  /* sznur z chorągiewkami co 40 px (ekranu), nigdy cieńszy niż 3 px przy 390 */
+  function drawSznur(x0, y0, x1, y1, frac, zk, a, kol) {
+    var amt = obAmt(zk);
+    var L = Math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) * frac, ux = (x1 - x0) / (L / frac || 1), uy = (y1 - y0) / (L / frac || 1), xe = x0 + ux * L, ye = y0 + uy * L, d, px, py, ink = inkZ(amt), k = 0;
+    if (a < 0.01 || L < 1) return;
+    ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(13,18,36,0.45)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xe, ye); ctx.stroke();
+    ctx.strokeStyle = rgba(ink, 0.95); ctx.lineWidth = 3; ctx.stroke();
+    for (d = 26; d < L; d += 40) {
+      px = x0 + ux * d; py = y0 + uy * d; k++;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + 9 * (k % 2 ? 1 : -1) + uy * 2, py + 4); ctx.lineTo(px + ux * 8, py + uy * 8); ctx.closePath();
+      ctx.fillStyle = rgba(kolZ(KITE_C[(kol + k) % 5], zk), 1); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, 0.85); ctx.stroke();
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  function drawLatawce(o, front) {
+    var z = o.z, sc = 1 / z, amt = obAmt(z), fade = sm((o.age + Z.SZKIC_T) / 0.5) * sm((z - 0.12) / 0.35) * sm((FAR + 0.6 - z) / 1.2) * (front ? 0.5 : 1), k, sn, kx, ky, ax, ay, frac, X0, Y0, X1, Y1, ks = Math.max(0.35, Math.min(1.9, 1.15 * sc));
+    if (fade < 0.02) return;
+    frac = cl((o.age + Z.SZKIC_T) / 1.5);   /* sznur rysuje się w dół przez 1,5 s */
+    for (k = 0; k < o.sznury.length; k++) {
+      sn = o.sznury[k]; ky = sn.ky + (reduce ? 0 : Math.sin(t * 1.3 + sn.ph) * 10); kx = sznurX(sn, ky); ay = 720; ax = sznurX(sn, ay);
+      X0 = zX(kx, z); Y0 = zY(ky + 30, z); X1 = zX(ax, z); Y1 = zY(ay, z);
+      if (Math.max(X0, X1) < -40 || Math.min(X0, X1) > W + 40) continue;
+      drawSznur(X0, Y0, X1, Y1, frac, z, fade, sn.kol);
+      drawKite(X0, zY(ky, z), ks, sn.rodzaj, sn.kol, z, fade, (reduce ? 0 : Math.sin(t * 1.7 + sn.ph) * 0.12) + sn.sl * 0.4);
+    }
+  }
+  function drawRogal(cx, cy, r, a, cS, amt, blink) {
+    var k = r / 17, gc = stageCol(LINE, MOON, PAL.warm), mc = mixc(gc, [255, 252, 240], 0.5), gr, an, pm, ink = mixc(LINE, inkCol(), sm((cS - 0.3) / 0.4) * 0.6), q, rr = R32(55);
+    if (a < 0.01) return;
+    ctx.save(); wobRing(cx, cy, r, 2.1, 0.015); ctx.clip();
+    gr = ctx.createRadialGradient(cx - 6 * k, cy - 6 * k, 1, cx, cy, 19 * k); gr.addColorStop(0, rgba(mixc(mc, [255, 255, 250], 0.6), 1)); gr.addColorStop(1, rgba(mixc(mc, [180, 190, 240], 0.35), 1));
+    ctx.fillStyle = gr; ctx.globalAlpha = (0.34 + 0.6 * cS) * a; ctx.beginPath(); ctx.rect(cx - 21 * k, cy - 21 * k, 42 * k, 42 * k); ctx.arc(cx + 8 * k, cy - 3 * k, 15 * k, 0, TAU); ctx.fill('evenodd');
+    ctx.fillStyle = rgba(mixc(mc, [150, 156, 214], 0.6), 0.35 * cS * a); ctx.beginPath(); ctx.arc(cx - 12.5 * k, cy + 6 * k, 1.8 * k, 0, TAU); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = rgba(ink, Math.min(1, (0.75 - 0.3 * cS) * a)); ctx.lineWidth = 1.3 * Math.max(1, k * 0.7); ctx.lineCap = 'round';
+    ctx.beginPath(); for (q = 0; q <= 24; q++) { an = 0.9 + q / 24 * 4.4; pm = 17 * k * (1 + 0.015 * Math.sin(an * 3 + 2.1)); if (q) ctx.lineTo(cx + Math.cos(an) * pm, cy + Math.sin(an) * pm); else ctx.moveTo(cx + Math.cos(an) * pm, cy + Math.sin(an) * pm); } ctx.stroke();
+    ctx.beginPath(); for (q = 0; q <= 18; q++) { an = 1.75 + q / 18 * 2.8; ctx.lineTo(cx + 8 * k + Math.cos(an) * 15 * k, cy - 3 * k + Math.sin(an) * 15 * k); } ctx.globalAlpha = 0.6; ctx.stroke(); ctx.globalAlpha = 1;
+    /* twarz z profilu: jedno oko (mruga od L3), uśmiech, rumieniec (od L2) */
+    ctx.strokeStyle = rgba(ink, 0.9 * a); ctx.fillStyle = rgba(ink, 0.9 * a); ctx.lineWidth = Math.max(1, 1.1 * k);
+    if (blink) { ctx.beginPath(); ctx.moveTo(cx - 11.6 * k, cy - 3.6 * k); ctx.quadraticCurveTo(cx - 10 * k, cy - 2.4 * k, cx - 8.4 * k, cy - 3.6 * k); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.ellipse(cx - 10 * k, cy - 3.8 * k, 1.25 * k, 1.6 * k, 0.2, 0, TAU); ctx.fill(); }
+    ctx.beginPath(); ctx.moveTo(cx - 12 * k, cy + 3 * k); ctx.quadraticCurveTo(cx - 9.6 * k, cy + 5.2 * k, cx - 8.2 * k, cy + 3.2 * k); ctx.stroke();
+    if (amt > 0.03) { ctx.fillStyle = rgba(mixc(gc, [246, 178, 196], amt), 0.45 * amt * a); ctx.beginPath(); ctx.ellipse(cx - 13 * k, cy + 0.6 * k, 2.4 * k, 1.6 * k, 0, 0, TAU); ctx.fill(); }
+    /* szlafmyca z chmurki na górnym rogu, z pomponem */
+    ctx.fillStyle = rgba(mixc(MONO, [238, 236, 252], sm(cS / 0.35)), a); ctx.strokeStyle = rgba(ink, 0.85 * a); ctx.lineWidth = Math.max(1, 0.95 * k);
+    ctx.beginPath(); blobPath2(ctx, cx + 1 * k, cy - 15.5 * k, 4.6 * k, rr, 0.8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); blobPath2(ctx, cx + 6 * k, cy - 17.5 * k, 3.4 * k, rr, 0.85); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 8.5 * k, cy - 19 * k); ctx.quadraticCurveTo(cx + 14 * k, cy - 22 * k, cx + 17 * k, cy - 16 * k); ctx.stroke();
+    ctx.beginPath(); blobPath2(ctx, cx + 17.6 * k, cy - 14.6 * k, 1.9 * k, rr, 1); ctx.fill(); ctx.stroke();
+  }
+  /* poświata księżyca jak rozlane mleko: kilka nierównych plam */
+  function drawMleko(cx, cy, r, a, cS) {
+    var c = tintTex('mleko', TEX.dot, mixc(stageCol(LINE, MOON, PAL.warm), [255, 252, 244], 0.6)), k, o = [[-1.6, 0.6, 2.4], [1.4, 1.1, 2.0], [0.3, -1.5, 1.7], [-0.4, 2.0, 2.6]];
+    if (a < 0.01) return;
+    ctx.save(); ctx.globalCompositeOperation = 'screen';
+    for (k = 0; k < o.length; k++) { ctx.globalAlpha = a * (0.07 + 0.08 * cS); ctx.drawImage(c, cx + o[k][0] * r - o[k][2] * r, cy + o[k][1] * r - o[k][2] * r * 0.7, o[k][2] * r * 2, o[k][2] * r * 1.4); }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  function drawRogalScena(cS) {
+    var u, y, x, a, bl;
+    if (!rogalSc) return;
+    u = rogalSc.t / rogalSc.len; a = sm(u / 0.15) * sm((1 - u) / 0.2);
+    x = W * 0.74 - camX * 0.03; y = lerp(HORIZON + 30, HORIZON - 175, sm(u / 0.45)) + (reduce ? 0 : Math.sin(t * 0.9) * 3);
+    bl = (lvl >= 3 && (t % 2.6) < 0.18) || (u > 0.5 && u < 0.53);
+    drawMleko(x, y, 40, a, cS);
+    drawRogal(x, y, 42, a, cS, obAmt(FAR - 1), bl);
+  }
+  /* tęcza księżycowa: blady łuk (5 pasm) nad prądem; w L0-L1 alfa <= 0,35 (tylko kreska), od L2 kolor łuku (świat bez zmian) */
+  var LUK_C = [[200, 182, 240], [166, 204, 242], [176, 232, 208], [250, 214, 140], [255, 214, 192]];
+  function teczaAlfa() { return lvl >= 2 ? 0.88 : 0.33; }
+  function drawLuk(X, Yb, R, a, amt, tw, wiek) {
+    var k, q, an, bw = R * 0.07, rr, n = 30, ph = tw * 1.3, grow = cl(wiek === undefined ? 1 : wiek / 0.6);
+    if (a < 0.01 || R < 3) return;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (k = 0; k < 5; k++) {
+      rr = R - k * bw * 1.05;
+      ctx.beginPath();
+      for (q = 0; q <= n; q++) { an = Math.PI + q / n * Math.PI * grow; var w2 = 1 + 0.012 * Math.sin(an * 5 + ph + k); if (q) ctx.lineTo(X + Math.cos(an) * rr * w2, Yb + Math.sin(an) * rr * w2); else ctx.moveTo(X + Math.cos(an) * rr * w2, Yb + Math.sin(an) * rr * w2); }
+      if (amt > 0.02) { ctx.strokeStyle = rgba(mixc(LINE, LUK_C[k], amt), a * (0.55 + 0.25 * (k % 2))); ctx.lineWidth = bw * 1.25; ctx.stroke(); ctx.strokeStyle = rgba(mixc(LINE, LUK_C[k], amt), a * 0.25); ctx.lineWidth = bw * 2.2; ctx.stroke(); }
+    }
+    ctx.strokeStyle = rgba(LINE, Math.min(0.35, a) * (amt > 0.02 ? 0.6 : 1)); ctx.lineWidth = Math.max(1, bw * 0.18);
+    for (k = 0; k <= 5; k += 5) { rr = R - k * bw * 1.05 + bw * 0.6 * (k ? -1 : 1) * 0; ctx.beginPath(); for (q = 0; q <= n; q++) { an = Math.PI + q / n * Math.PI * grow; if (q) ctx.lineTo(X + Math.cos(an) * rr, Yb + Math.sin(an) * rr); else ctx.moveTo(X + Math.cos(an) * rr, Yb + Math.sin(an) * rr); } ctx.stroke(); }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  function drawPradZ11(p, X0, Y0, sc, fade, amt, eta) {
+    var k, kd, kx, ky, jerk, R, a;
+    if (p.pt === 'tecza') {
+      R = 150 * (p.big || 1) * sc; a = teczaAlfa() * fade * (p.hit ? Math.max(0.25, 1 - p.flash * 0.3) : 1) * (0.3 + 0.7 * sm((p.z - 0.75) / 1.1));   /* tuż przy ptaszku łuk blednie (nie zasłania sceny) */
+      drawLuk(X0, zY(YP + 70, p.z), R, a, amt, p.tw || 0);
+    } else if (p.pt === 'poryw' && p.kites) {
+      jerk = p.hit ? 1 : sm((Z11.PORYW_T + 0.4 - eta) / 0.4);   /* latawce szarpią w górę ok. 1 s przed prądem */
+      for (k = 0; k < p.kites.length; k++) {
+        kd = p.kites[k]; kx = p.x + kd.dx; ky = -255 + kd.dy - jerk * 90 + (reduce ? 0 : Math.sin(t * 1.6 + kd.ph) * 6 * (1 - jerk));
+        a = fade * (p.hit ? 1 - sm(p.flash) * 0 : 1);
+        ctx.save(); ctx.globalAlpha = 0.6 * a; ctx.strokeStyle = rgba(inkZ(amt), 1); ctx.lineWidth = Math.max(1, 1.4 * Math.min(sc, 1.6)); ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(zX(kx, p.z), zY(ky + 30, p.z)); ctx.quadraticCurveTo(zX(kx + kd.dx * 0.6, p.z), zY(ky + 140, p.z), zX(kx + kd.dx * 1.2, p.z), zY(ky + 230 + jerk * 30, p.z)); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+        drawKite(zX(kx, p.z), zY(ky, p.z), Math.max(0.3, Math.min(1.6, 0.95 * sc)), kd.rodzaj, kd.kol, p.z, a, (reduce ? 0 : Math.sin(t * 2 + kd.ph) * 0.1) - jerk * 0.25 * (kd.dx > 0 ? -1 : 1));
+      }
+    }
+    if (p.rytm && !p.hit) {   /* finał K1: trzy prądy w rytmie: nad każdym trzy kropki-nutki */
+      ctx.save(); ctx.fillStyle = rgba(mixc(LINE, PAL.acc, amt), 0.75 * fade);
+      for (k = 0; k < 3; k++) { ctx.beginPath(); ctx.ellipse(X0 + (k - 1) * 14 * Math.min(sc, 1.6), Y0 - (G.PRAD_HY + 30) * sc - (reduce ? 0 : Math.abs(Math.sin(t * 3 + k)) * 6), 2.6, 2, -0.4, 0, TAU); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+  /* wieża: tusz (L0) i akwarela (kolor), okna nocą (białe w L0, miodowe od L2), światło anteny, komin ciepła, kołnierz chmury u podstawy */
+  function drawWieza(it, front) {
+    var o = it.o, w = it.w, d = WD[w.k], z = w.z, sc = 1 / z, X = zX(w.x, z), Ytop = YP + (h - w.top) * Z11.HK, Y = zY(Ytop, z), tt = cl((z - NEAR) / (FAR - NEAR)), se = sk + offAt(tt), gA = sg(se), amt = cAll(se), M, fade, far, la, ka, yr, Yc, p, k, j, px, py, b;
+    fade = sm((o.age + 0.4) / 0.8) * sm((z - 0.12) / 0.35) * sm((FAR + 0.6 - z) / 1.2) * (1 - tt * 0.4) * (front ? 0.45 : 1) * (o.zw ? 0.9 : 1);
+    if (fade < 0.02 || X + (d.w / 2 + 80) * sc < -30 || X - (d.w / 2 + 80) * sc > W + 30 || Y > H + 30) return;
+    M = wiezaS(w.k);
+    drawSpr(z < 1.8 ? M.mono : M.monoF, X, Y, sc, fade * (1 - gA * 0.82));
+    if (gA > 0.01) { far = tt > 0.4 ? sm((tt - 0.4) / 0.22) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, fade * gA); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, fade * gA * far); }
+    b = gA * lerp(1, 0.5, sm((se - 0.35) / 0.5)); if (b > 0.01) drawSpr(M.ln, X, Y, sc, fade * b * (1 - tt * 0.3));   /* kontur tuszem także w kolorze */
+    la = fade * (0.12 + 0.88 * PAL.nightW) * (1 - 0.6 * PAL.dayW);   /* okna nocą: konstelacje */
+    if (la > 0.02) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; if (gA < 0.99) drawSpr(M.oknaB, X, Y, sc, la * 0.55 * (1 - gA)); if (gA > 0.01) drawSpr(M.okna, X, Y, sc, la * 0.8 * gA); ctx.restore(); }
+    if (d.antena) {   /* światło anteny: białe w L0, miodowe w kolorze; pulsuje */
+      ka = fade * (0.35 + 0.65 * PAL.nightW) * (reduce ? 0.8 : 0.55 + 0.45 * Math.sin(t * 2.6 + w.x * 0.01));
+      px = X + (320 - d.antena[1]) * Math.sin(d.tilt) * sc; py = Y + (d.antena[1] - 3) * sc;   /* czubek po pochyleniu wieży (obrót wokół y = 320) */
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ka * 0.7; b = Math.max(5, 16 * Math.min(sc, 1.5)); ctx.drawImage(tintTex('antena', TEX.dot, mixc(LINE, [255, 214, 140], amt)), px - b, py - b, b * 2, b * 2); ctx.restore(); ctx.globalAlpha = 1;
+    }
+    if (w.komin && w.kominGas > 0.01) {   /* komin ciepła: drgające powietrze nad dachem */
+      yr = Y + d.dachY * sc; X += (320 - d.dachY) * Math.sin(d.tilt) * sc; ka = fade * w.kominGas * (w.kominUzyty ? 1 : 0.85);
+      ctx.save(); ctx.lineCap = 'round';
+      ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ka * (0.3 + 0.25 * amt); b = d.w * 0.8 * sc; ctx.drawImage(tintTex('komin', TEX.dot, mixc(LINE, [255, 206, 170], amt)), X - b, yr - b * 1.2, b * 2, b * 1.6); ctx.globalCompositeOperation = 'source-over';
+      for (k = 0; k < 5; k++) {
+        ctx.beginPath();
+        for (j = 0; j <= 12; j++) { py = yr - j * 13 * sc; px = X + ((k - 2) * 0.17 * d.w + Math.sin(j * 0.9 + (reduce ? 0 : t * 5) + k * 1.3) * 7 * (0.4 + j / 12)) * sc; if (j) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+        ctx.strokeStyle = rgba(mixc(LINE, [255, 206, 170], amt), ka * (0.8 - 0.1 * Math.abs(k - 2))); ctx.lineWidth = Math.max(1.3, 2.2 * Math.min(sc, 1.6)); ctx.stroke();
+      }
+      ctx.restore(); ctx.globalAlpha = 1; X = zX(w.x, z);
+    }
+    /* kołnierz chmury: dolna część trzonu chowa się w chmurze (sprite z puli Z1/Z4) */
+    p = POOL[w.ci]; Yc = zY(SEA_YS + 36, z); b = bucketOf(z); k = sc * 0.62 * Math.max(0.8, d.w / 110);
+    if (Yc - 40 * sc < H + 20) {
+      drawSpr(p.mono[b], X, Yc, k, fade * (1 - gA * 0.8));
+      if (gA > 0.01) drawTintS(p.tint, X, Yc, k, fade * gA);
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* przelot: ślad (smuga w środku, wiry po bokach) od samolotu w głąb; wysokość śladu opada od samolotu do wysokości ptaszka */
+  function sladY(o, z) { return lerp(Z11.PLANE_Y * o.wys + 60, YP - 12, sm((z - o.pzv) / 2.0)); }
+  var SMUGA_C = [244, 204, 214], WIR_C = [188, 182, 230];
+  function drawSlad(o, z0, z1, front) {
+    var k, z, X, Y, amt, gz, tt, a, side, ax, R, g0, g1, wobA = sm(o.age / 0.5), z0w = Math.max(z0, o.pzv + 0.05), col, ink, rr, zz, th2, str, m, q, ph, wc, aRing, jas;
+    if (z1 <= z0w) return;
+    zz = (z0w + z1) / 2; amt = obAmt(zz); gz = obG(zz); tt = cl((zz - NEAR) / (FAR - NEAR));
+    a = sm((FAR + 1.4 - z1) / 1.6) * (front ? 0.55 : 1) * (1 - tt * 0.25) * wobA;
+    if (a < 0.02) return;
+    col = mixc(LINE, mixc(SMUGA_C, LIGHTC, 0.3), amt); ink = inkZ(amt); jas = mixc(LINE, [255, 250, 244], amt);
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    /* przed aktywnym odcinkiem: dwa cienkie ślady silników (szyny prowadzące do smugi) */
+    g0 = z0w; g1 = Math.min(z1, o.zA);
+    if (g1 > g0 + 0.01) for (q = -1; q <= 1; q += 2) {   /* ślady silników: rysowane tylko tam, gdzie już opadły do wysokości lotu */
+      m = 6;
+      for (k = 0; k < m; k++) { z = g0 + (g1 - g0) * k / m; zz = g0 + (g1 - g0) * (k + 1) / m; rr = sm((sladY(o, (z + zz) / 2) + 250) / 180); if (rr < 0.02) continue;
+        ctx.beginPath(); ctx.moveTo(zX(o.lane + q * 30, z), zY(sladY(o, z), z)); ctx.lineTo(zX(o.lane + q * 30, zz), zY(sladY(o, zz), zz)); ctx.strokeStyle = rgba(col, a * 0.6 * rr); ctx.lineWidth = Math.max(1, Math.min(5, 3.2 / z)); ctx.stroke(); }
+    }
+    g0 = Math.max(z0w, o.zA); g1 = Math.min(z1, o.zB);
+    if (g1 > g0 + 0.01) {
+      /* smuga = tunel światła: pierścienie zakotwiczone w świecie (co 0,32 z od zA), miękki laserunek i jasny, płynący rdzeń */
+      aRing = o.smugaHit ? 0.75 : 1;
+      ph = md(o.zA, 0.32);
+      for (zz = g0 + md(ph - g0, 0.32); zz <= g1; zz += 0.32) {
+        if (zz < 0.3) continue;
+        X = zX(o.lane, zz); Y = zY(sladY(o, zz) - 10, zz); rr = Z11.SMUGA_HALF / zz;
+        k = sm((zz - 0.3) / 0.5) * aRing * a;
+        ctx.beginPath(); ctx.ellipse(X, Y, rr, rr * 0.78, 0, 0, TAU);
+        ctx.fillStyle = rgba(col, 0.05 * k); ctx.fill();
+        ctx.strokeStyle = rgba(col, (0.22 + 0.25 * gz) * k); ctx.lineWidth = Math.max(1, Math.min(7, 2.4 / zz)); ctx.stroke();
+      }
+      ctx.beginPath(); m = 8;
+      for (k = 0; k <= m; k++) { z = Math.max(0.3, g0 + (g1 - g0) * k / m); X = zX(o.lane, z); Y = zY(sladY(o, z) - 10, z); if (k) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }
+      ctx.strokeStyle = rgba(jas, a * 0.85); ctx.lineWidth = Math.max(1.4, Math.min(8, 5 / Math.max(0.3, g0))); ctx.setLineDash([Math.max(8, 26 / Math.max(0.3, g0)), Math.max(5, 16 / Math.max(0.3, g0))]); ctx.lineDashOffset = reduce ? 0 : -t * 140; ctx.stroke(); ctx.setLineDash([]);
+      /* wiry: dwie spirale wstęg po bokach (S1) */
+      if (o.wiry) for (side = -1; side <= 1; side += 2) {
+        ax = o.lane + side * Z11.WIR_DX; R = Z11.WIR_R; wc = mixc(LINE, mixc(WIR_C, PAL.sh, 0.2), amt); m = Math.max(16, Math.round((g1 - g0) * 26));
+        for (str = 0; str < 2; str++) {
+          ctx.beginPath();
+          for (q = 0; q <= m; q++) { z = Math.max(0.3, g0 + (g1 - g0) * q / m); th2 = z * 8.5 + (reduce ? 0 : t * 6 * side) + str * Math.PI; X = zX(ax + Math.cos(th2) * R, z); Y = zY(sladY(o, z) - 14 + Math.sin(th2) * R * 0.85, z); if (q) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }
+          ctx.strokeStyle = rgba(str ? wc : ink, a * (str ? 0.75 : 0.9)); ctx.lineWidth = Math.max(1.4, Math.min(6, 3 / Math.max(0.3, g0))); ctx.stroke();
+          if (!str && gz > 0.05) { ctx.strokeStyle = rgba(wc, a * 0.16 * gz); ctx.lineWidth = Math.max(3, Math.min(60, 2 * R / Math.max(0.3, g0))); ctx.stroke(); }
+        }
+      }
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  function drawSamolot(o, front) {
+    var z = o.pz, v = o.wariant === 1 ? 1 : 0, d, M, sc, X, Y, tt, se, gA, amt, a, far, S, k, e, lx2, ly2, bl, R, kx, ky, ps, noc = o.wariant === 2;
+    if (z < 0.15) return;
+    if (!PL.length) { PL.push(samolotDef(0)); PL.push(samolotDef(1)); }
+    d = PL[v]; sc = o.skala / z; X = zX(o.lane + (o.zw ? 0 : Math.sin(t * 0.4) * 10), z); Y = zY(Z11.PLANE_Y * o.wys, z);
+    tt = cl((z - NEAR) / (FAR - NEAR)); se = sk + offAt(tt); gA = sg(se); amt = cAll(se);
+    a = sm(o.age / 0.6) * sm((FAR + 0.9 - z) / 1.0) * (1 - tt * 0.18);
+    if (a < 0.02 || X + d.maxx * sc < -40 || X + d.minx * sc > W + 40 || Y + d.bot * sc < -40) return;
+    M = samolotS(v);
+    ctx.save(); ctx.translate(X, Y); ctx.rotate(reduce ? 0 : Math.sin(t * 0.7 + o.id) * 0.03); ctx.translate(-X, -Y);
+    drawSpr(z < 2.2 ? M.mono : M.monoF, X, Y, sc, a * (1 - gA * 0.82));
+    if (gA > 0.01) { far = tt > 0.45 ? sm((tt - 0.45) / 0.2) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, a * gA); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, a * gA * far); e = gA * lerp(1, 0.55, sm((se - 0.35) / 0.5)); if (e > 0.01) drawSpr(M.ln, X, Y, sc, a * e); }
+    R = d.R * sc;
+    if (R > 9) {   /* pilot w kokpicie robi „o” i macha */
+      kx = X + d.R * 0.17 * sc; ky = Y - d.R * 0.43 * sc; ps = d.R * sc;
+      ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.fillStyle = rgba(kolZ([250, 226, 206], z), 1); ctx.strokeStyle = rgba(inkZ(amt), 0.95); ctx.lineWidth = Math.max(0.8, ps * 0.018);
+      ctx.beginPath(); ctx.ellipse(kx, ky + ps * 0.02, ps * 0.07, ps * 0.075, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(kx, ky - ps * 0.05, ps * 0.075, ps * 0.03, 0, Math.PI, TAU); ctx.fillStyle = rgba(kolZ([120, 140, 200], z), 1); ctx.fill(); ctx.stroke();   /* czapka */
+      ctx.beginPath(); ctx.ellipse(kx, ky + ps * 0.045, ps * 0.016, ps * 0.02, 0, 0, TAU); ctx.stroke();   /* „o” */
+      ctx.fillStyle = rgba(inkZ(amt), 0.95); ctx.beginPath(); ctx.arc(kx - ps * 0.025, ky, Math.max(0.6, ps * 0.009), 0, TAU); ctx.arc(kx + ps * 0.025, ky, Math.max(0.6, ps * 0.009), 0, TAU); ctx.fill();
+      e = reduce ? 0 : Math.sin(t * 9) * 0.5;   /* ręka macha */
+      ctx.beginPath(); ctx.moveTo(kx + ps * 0.07, ky + ps * 0.07); ctx.lineTo(kx + ps * (0.12 + 0.03 * e), ky - ps * 0.03); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(kx + ps * (0.125 + 0.03 * e), ky - ps * 0.05, ps * 0.022, ps * 0.026, e, 0, TAU); ctx.fillStyle = rgba(kolZ([250, 226, 206], z), 1); ctx.fill(); ctx.stroke();
+      ctx.restore(); ctx.globalAlpha = 1;
+    }
+    /* światła: białe i miodowe (nigdy czerwone ani zielone); nocą mocniej */
+    bl = reduce ? 0.7 : 0.5 + 0.5 * Math.sin(t * 4 + o.id);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (k = -1; k <= 1; k += 2) { lx2 = X + k * (d.span + 2) * sc; ly2 = Y - d.R * 0.02 * sc; e = Math.max(4, 12 * Math.min(sc * 1.4, 1.8)); ctx.globalAlpha = a * (noc ? 0.95 : 0.5) * (k < 0 ? bl : 1 - bl * 0.6); ctx.drawImage(tintTex(k < 0 ? 'swB' : 'swM', TEX.dot, k < 0 ? LINE : mixc(LINE, [255, 214, 140], amt)), lx2 - e, ly2 - e, e * 2, e * 2); }
+    e = Math.max(4, 10 * Math.min(sc * 1.4, 1.8)); ctx.globalAlpha = a * (noc ? 0.9 : 0.35) * bl; ctx.drawImage(tintTex('swB', TEX.dot, LINE), X + d.R * 0.08 * sc - e, Y - d.R * 2.12 * sc - e, e * 2, e * 2);
+    if (noc) { for (k = 0; k < d.koraliki.length; k++) { var kk = d.koraliki[k]; e = Math.max(2, 5 * sc); ctx.globalAlpha = a * 0.7; ctx.drawImage(tintTex('swM', TEX.dot, mixc(LINE, [255, 214, 140], amt)), X + kk[0] * sc - e, Y + kk[1] * sc - e, e * 2, e * 2); } }
+    ctx.restore();
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  function drawSamolotCien(o) {   /* cień samolotu na morzu chmur (na jego głębokości, zasłaniany przez bliższe rzędy morza) */
+    var z = o.pz, d, sc, X, a;
+    if (z < 0.3 || o.zw) return;
+    if (!PL.length) { PL.push(samolotDef(0)); PL.push(samolotDef(1)); }
+    d = PL[o.wariant === 1 ? 1 : 0]; sc = o.skala / z; X = zX(o.lane, z); a = sm(o.age / 0.6) * sm((FAR + 0.9 - z) / 1.0);
+    ctx.globalAlpha = a * (0.22 + 0.25 * sm((2.5 - z) / 1.5)) * (o.olbrzym ? 1.3 : 1); drawShadowBlob(X, zY(SEA_YS + 30, z), d.span * sc * 1.05, d.span * sc * 0.16, stageCol(NAVY, mixc(PAL.sh, PAL.sea[2], 0.5), PAL.warm)); ctx.globalAlpha = 1;
+  }
+  function drawUlewa(o, front) {   /* kulisa ulewy z jedną szczeliną (chmury burzowe z puli STORM i kreski deszczu) */
+    var k, sd, q = { typ: 'deszcz', z: o.z, age: o.age + 0.9, gi: 0, ph: o.ph, x: 0 };
+    for (sd = -1; sd <= 1; sd += 2) for (k = 0; k < 3; k++) { q.x = o.gx + sd * (o.gh + 150 + k * 285); q.gi = (k + (sd > 0 ? 1 : 0)) % 2; q.ph = o.ph + k * 1.7 + sd; drawDeszcz(q, front); }
+  }
+  function drawTeczaZw(o, front) {   /* zwiastun K2: sam łuk, bez prądu */
+    var z = o.z, sc = 1 / z, fade = sm(o.age / 0.8) * sm((z - 0.12) / 0.35) * sm((FAR + 0.5 - z) / 1.2) * (front ? 0.4 : 1);
+    drawLuk(zX(o.x, z), zY(YP + 70, z), 170 * sc, teczaAlfa() * fade * 0.8, obAmt(z), o.tw, o.age);
+  }
+  function drawFestiwalKite(it) {
+    var kt = it.k, z = kt.z, sc = 1 / z, amt = obAmt(z), X = zX(kt.x, z), Yk = zY(kt.y + (reduce ? 0 : Math.sin(t * 1.2 + kt.ph) * 12), z), fade = sm((it.o.age) / 0.8) * sm((z - 0.3) / 0.5) * sm((FAR + 0.5 - z) / 1.2) * (1 - cl((z - NEAR) / (FAR - NEAR)) * 0.4);
+    if (fade < 0.02 || X < -60 || X > W + 60) return;
+    ctx.save(); ctx.globalAlpha = 0.7 * fade; ctx.strokeStyle = rgba(inkZ(amt), 1); ctx.lineWidth = Math.max(1, 1.3 * Math.min(sc, 1.5));
+    ctx.beginPath(); ctx.moveTo(X, Yk + 26 * sc); ctx.quadraticCurveTo(X + kt.sl * 120 * sc, Yk + 200 * sc, X + kt.sl * 300 * sc, zY(SEA_YS + 40, z)); ctx.stroke(); ctx.restore();
+    drawKite(X, Yk, Math.max(0.3, Math.min(1.7, 1.3 * sc)), kt.rodzaj, kt.kol, z, fade, (reduce ? 0 : Math.sin(t * 1.5 + kt.ph) * 0.15));
+  }
+  function drawTowarzysz() {   /* finał K4: zerwany żółty latawiec leci obok Okruszka do bramy */
+    var u, a, X, Y, bxs = W / 2 + (bx - camX) / G.ZB, amt = cAll(sk);
+    if (!towarzysz) return;
+    u = towarzysz.t; a = sm(u / 1.0) * (towarzysz.koniec >= 0 ? 1 - sm((gameT - towarzysz.koniec) / 2.5) : 1);
+    if (a < 0.02) return;
+    X = bxs + 92 + (reduce ? 0 : Math.sin(t * 1.3) * 10); Y = BIRDY - 120 + (reduce ? 0 : Math.sin(t * 2.1) * 8) - (towarzysz.koniec >= 0 ? (gameT - towarzysz.koniec) * 60 : 0);
+    ctx.save(); ctx.globalAlpha = 0.75 * a; ctx.strokeStyle = rgba(inkZ(amt), 1); ctx.lineWidth = 1.2; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(X, Y + 26); ctx.quadraticCurveTo(X - 10, Y + 70, X + 6 + (reduce ? 0 : Math.sin(t * 3) * 6), Y + 110); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    drawKite(X, Y, 0.95, 0, 2, G.ZB, a, (reduce ? 0 : Math.sin(t * 2.4) * 0.18) + 0.15);
+  }
+  /* świt: słońce za plecami gracza: poświata od dołu ekranu (od kamery) */
+  function drawSwitZ11(cSky) {
+    var b = SUNP.b || 0, gr, c;
+    if (b < 0.02) return;
+    c = stageCol(LINE, PAL.glow, PAL.warm);
+    ctx.save(); ctx.globalCompositeOperation = 'screen';
+    gr = ctx.createRadialGradient(W / 2, H + 140, 40, W / 2, H + 140, H * 0.95); gr.addColorStop(0, rgba(c, b * (0.10 + 0.24 * cSky))); gr.addColorStop(0.55, rgba(c, b * (0.04 + 0.1 * cSky))); gr.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+  function drawPlecyZ11(x, y, sp) {   /* jasny brzeg na plecach Okruszka, gdy światło idzie od kamery (świt) */
+    var b = SUNP.b || 0, e = sm((sk - 0.13) / 0.55), c = mixc(LINE, mixc(LIGHTC, [255, 246, 236], 0.4), e);
+    if (b < 0.03) return;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(steer * 0.3 + (sp || 0)); ctx.scale(0.88, 0.88); ctx.lineCap = 'round';
+    ctx.strokeStyle = rgba(c, (0.25 + 0.45 * e) * b); ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(steer * 4.5, -21.5 + diveV * 2.5, 13.6, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 3, 19.4, Math.PI * 1.12, Math.PI * 1.3); ctx.moveTo(19.4 * Math.cos(Math.PI * 1.7), 3 + 19.4 * Math.sin(Math.PI * 1.7)); ctx.arc(0, 3, 19.4, Math.PI * 1.7, Math.PI * 1.88); ctx.stroke();
+    ctx.restore();
+  }
+  /* zapowiedzi (szkice) nowych zagrożeń: kreskowane trzony wież, sznury latawców, tory śladu samolotu */
+  function szkicSzpile(o) {
+    var a = szkicA(o), k, w, sc, X, Yt, Yb;
+    if (a < 0.02 || o.zw) return;
+    ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
+    for (k = 0; k < o.wieze.length; k++) { w = o.wieze[k]; if (w.z < G.ZB) continue; sc = 1 / w.z; X = zX(w.x, w.z); Yt = zY(YP + (h - w.top) * Z11.HK, w.z); Yb = zY(SEA_YS + 20, w.z); ctx.beginPath(); ctx.moveTo(X - w.trunk * sc, Yb); ctx.lineTo(X - w.trunk * sc, Yt); ctx.lineTo(X + w.trunk * sc, Yt); ctx.lineTo(X + w.trunk * sc, Yb); ctx.stroke(); }
+  }
+  function szkicLatawce(o) {
+    var a = szkicA(o), k, sn, z = o.z;
+    if (a < 0.02 || o.zw) return;
+    ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
+    for (k = 0; k < o.sznury.length; k++) { sn = o.sznury[k]; ctx.beginPath(); ctx.moveTo(zX(sznurX(sn, sn.ky), z), zY(sn.ky, z)); ctx.lineTo(zX(sznurX(sn, 600), z), zY(600, z)); ctx.stroke(); }
+  }
+  function szkicPrzelot(o) {
+    var a = (o.pzv > 0.8 ? 0.85 : 0.85 * (1 - sm((0.8 - o.pzv) / 1.6))), sd, q, zz, m = 10, z0 = Math.max(o.zA, G.ZB), z1 = Math.min(o.zB, FAR + 1);
+    if (a < 0.02 || o.zw || z1 <= z0) return;
+    ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
+    for (sd = -1; sd <= 1; sd++) {
+      if (sd && !o.wiry) continue;
+      ctx.beginPath(); for (q = 0; q <= m; q++) { zz = z0 + (z1 - z0) * q / m; if (q) ctx.lineTo(zX(o.lane + sd * Z11.WIR_DX, zz), zY(YP - 12, zz)); else ctx.moveTo(zX(o.lane + sd * Z11.WIR_DX, zz), zY(YP - 12, zz)); } ctx.stroke();
+    }
+    if (o.pzv > 3) { ctx.beginPath(); ctx.ellipse(zX(o.lane, o.pz), zY(Z11.PLANE_Y, o.pz), Math.max(8, 420 * o.skala / o.pz), Math.max(5, 120 * o.skala / o.pz), 0, 0, TAU); ctx.stroke(); }
+  }
+  function szkicUlewa(o) {
+    var a = szkicA(o), sc = 1 / o.z, Y = obY(o.z, 34) - 60 * sc;
+    if (a < 0.02) return;
+    ctx.strokeStyle = rgba(LINE, a); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(zX(o.gx - o.gh, o.z), Y); ctx.lineTo(zX(o.gx - o.gh - 900, o.z), Y); ctx.moveTo(zX(o.gx + o.gh, o.z), Y); ctx.lineTo(zX(o.gx + o.gh + 900, o.z), Y); ctx.stroke();
+  }
+  var Z11SZK = { szpile: szkicSzpile, latawce: szkicLatawce, przelot: szkicPrzelot, ulewa: szkicUlewa, festiwal: function () { }, tecza: function () { } };
+  /* elementy do wspólnej kolejki rysowania (sortowanie po z razem z kulisami i morzem) */
+  function z11Items(items) {
+    var k, o, j, w, n, z0, z1, a0, a1;
+    for (k = 0; k < obst.length; k++) {
+      o = obst[k];
+      if (o.typ === 'szpile') { for (j = 0; j < o.wieze.length; j++) { w = o.wieze[j]; if (w.z >= G.ZB && w.z < FAR + 0.6) items.push({ typ: 'wieza', o: o, w: w, z: w.z }); } }
+      else if (o.typ === 'przelot') {
+        if (o.pz >= G.ZB && o.pzv > 0.15) { items.push({ typ: 'samolotCien', o: o, z: o.pz }); items.push({ typ: 'samolot', o: o, z: Math.min(o.pz, 1.05) }); }   /* samolot leci nad kulisami (widowisko), cień na swojej głębokości */
+        if (!o.zw) { a0 = Math.max(G.ZB, o.pzv + 0.05, 0.15); a1 = Math.min(o.zB, FAR + 1.4); n = 8; for (j = 0; j < n; j++) { z0 = a0 + (a1 - a0) * j / n; z1 = a0 + (a1 - a0) * (j + 1) / n; if (z1 > z0) items.push({ typ: 'slad', o: o, z0: z0, z1: z1, z: (z0 + z1) / 2 }); } }
+      } else if (o.typ === 'festiwal') { for (j = 0; j < o.kites.length; j++) if (o.kites[j].z >= G.ZB) items.push({ typ: 'kiteF', o: o, k: o.kites[j], z: o.kites[j].z }); }
+    }
+  }
+  function z11Front() {   /* to, co minęło płaszczyznę ptaszka: przed kamerą, przygaszone */
+    var k, o, j, w;
+    for (k = 0; k < obst.length; k++) {
+      o = obst[k];
+      if (o.typ === 'szpile') { for (j = 0; j < o.wieze.length; j++) { w = o.wieze[j]; if (w.z < G.ZB && w.z > 0.12) drawWieza({ o: o, w: w, z: w.z }, true); } }
+      else if (o.typ === 'przelot') { if (!o.zw && o.zB > 0.15) drawSlad(o, Math.max(0.15, o.zA), Math.min(G.ZB, o.zB), true); if (o.pz < G.ZB && o.pzv > 0.15) drawSamolot(o, true); }
+    }
+    drawTowarzysz();
+  }
+  function z11DrawItem(it, front) {
+    switch (it.typ) {
+      case 'wieza': drawWieza(it, front); return true;
+      case 'samolot': drawSamolot(it.o, front); return true;
+      case 'samolotCien': drawSamolotCien(it.o); return true;
+      case 'slad': drawSlad(it.o, it.z0, it.z1, front); return true;
+      case 'kiteF': drawFestiwalKite(it); return true;
+      case 'latawce': drawLatawce(it, front); return true;
+      case 'ulewa': drawUlewa(it, front); return true;
+      case 'tecza': drawTeczaZw(it, front); return true;
+    }
+    return false;
+  }
+  /* cień olbrzyma przykrywa ekran; samolot nad głową: Okruszek ogląda się w jego stronę */
+  function z11Nakladki() {
+    var k, o, c = 0, bxs = W / 2 + (bx - camX) / G.ZB, pX, best = null;
+    patrzZ11 = null;
+    for (k = 0; k < obst.length; k++) {
+      o = obst[k]; if (o.typ !== 'przelot' || o.zw) continue;
+      c = Math.max(c, sm((1.7 - o.pzv) / 0.9) * sm((o.pzv + 0.7) / 0.6) * (o.olbrzym ? 0.5 : 0.22));
+      if (o.pzv > 0.3 && (!best || o.pzv < best.pzv)) best = o;
+    }
+    if (best) { pX = zX(best.lane, Math.max(0.3, best.pz)); patrzZ11 = { v: Math.max(-1, Math.min(1, (pX - bxs) / 110)), k: sm((FAR + 0.5 - best.pzv) / 2) }; }
+    cienZ11 = c;
+    if (c > 0.01) { ctx.fillStyle = 'rgba(13,18,36,' + c.toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+  }
 
   /* ---------- hak testowy (?test) ---------- */
   function fpsStat() {
@@ -3800,6 +4720,72 @@ Słońce obiecało wrócić rano.</p>
         }
       };
       for (var k in extra) O[k] = extra[k];
+    })();
+  }
+
+  /* ---------- Z11: hak testowy krain K2-K5 (?test) ----------
+     zdarzenie('szpile' (opt.uklad: rzad | aleja | strzala | skos | kanion | komin | niska | wysoka) | 'komin' | 'latawce' | 'poryw' | 'przelot' (opt.wiry, opt.olbrzym) | 'smuga'
+       | 'tecza_ks' = 'teczka' = 'tecza' (prąd z łukiem) | 'ulewa' | 'festiwal' | 'rogal' | 'final' (opt.kraina) | 'zwiastun' (opt.kraina)); dotychczasowe nazwy bez zmian.
+     gdzie(): także szpile (z wieżami i szczeliną), komin, latawce (sznury), przelot, smuga, wir, ulewa, festiwal, tecza / poryw (prądy), rogal, final, towarzysz.
+     z11(): dzienniki smugi, kominów, wirów, tęczy, finałów; z11Zbuduj(): wszystkie sprite'y od razu (pomiar pamięci); ptakEkran(): położenie ptaszka na ekranie (test czerwieni). */
+  if (TEST) {
+    (function () {
+      var O = window.__okruszek, zd1 = O.zdarzenie, gd0 = O.gdzie, sw0 = O.swiatlo, TYPY = { szpile: 1, latawce: 1, przelot: 1, ulewa: 1, festiwal: 1, tecza: 1 };
+      function minGap(o) {
+        var g = Infinity, a, b, k, j;
+        for (k = 0; k < o.wieze.length; k++) for (j = 0; j < o.wieze.length; j++) { a = o.wieze[k]; b = o.wieze[j]; if (k !== j && a.x < b.x && Math.abs(a.z - b.z) < 0.2) g = Math.min(g, (b.x - b.trunk) - (a.x + a.trunk)); }
+        return isFinite(g) ? g : null;
+      }
+      O.zdarzenie = function (nazwa, opt) {
+        var p, o, n;
+        opt = opt || {};
+        if (PASMO) return zd1(nazwa, opt);
+        if (TYPY[nazwa] || nazwa === 'komin' || nazwa === 'smuga') opt = Object.assign({ bezDebiutu: true }, opt);   /* wymuszenie hakiem: bez debiutu (zapowiedź jak w zwykłym biegu) */
+        if (nazwa === 'tecza_ks' || nazwa === 'teczka' || nazwa === 'tecza') { p = spawnPrad(opt.dx || 0, opt.z || 2.2); p.pt = 'tecza'; p.tw = opt.wariant || 0; if (opt.big) p.big = opt.big; z11Log.tecz++; return true; }
+        if (nazwa === 'poryw') { p = spawnPrad(opt.dx || 0, opt.z || 2.6); p.pt = 'poryw'; p.kites = porywKites(); z11Log.poryw++; return true; }
+        if (nazwa === 'komin') return !!nowaPrzeszkoda('szpile', Object.assign({ uklad: 'komin' }, opt));
+        if (nazwa === 'smuga') return !!nowaPrzeszkoda('przelot', Object.assign({ wiry: false }, opt));
+        if (nazwa === 'rogal') { rogalSc = { t: opt.t || 0, len: Z11.ROGAL_LEN }; rogalDone = true; return true; }
+        if (nazwa === 'final') { finalStart(opt.kraina || kTeraz().id); return !!finalSt; }
+        if (nazwa === 'zwiastun') { n = opt.kraina || (kNast() ? kNast().id : 2); o = nowaPrzeszkoda(KRAINY[n - 1].zwiastun, { zw: true, dx: opt.dx !== undefined ? opt.dx : 1.2, z: opt.z || Math.min(FAR - 0.3, G.ZB + 3.2 * (0.32 + 1.9 * s) + 1) }); return !!o; }
+        return zd1(nazwa, opt);
+      };
+      O.gdzie = function () {
+        var out = gd0().filter(function (e) { return !TYPY[e.typ]; }), k, j, o, w, p, zz;
+        out.forEach(function (e) { if (e.id !== undefined) for (var q = 0; q < obst.length; q++) if (obst[q].id === e.id) { e.zw = !!obst[q].zw; break; } });
+        for (k = 0; k < obst.length; k++) {
+          o = obst[k];
+          if (o.typ === 'szpile') {
+            out.push({ typ: 'szpile', id: o.id, uklad: o.uklad, zw: !!o.zw, x: o.x, z: o.z, ex: zX(o.x, o.z), ey: zY(YP, o.z), faza: faza(o), hit: o.hit, gmin: o.gmin, szczelina: minGap(o),
+              wieze: o.wieze.map(function (q) { return { x: q.x, z: q.z, ex: zX(q.x, q.z), ey: zY(YP + (h - q.top) * Z11.HK, q.z), top: q.top, sylwetka: q.k, trzon: q.trunk, pol: q.half, komin: q.komin, hit: q.hit }; }) });
+            for (j = 0; j < o.wieze.length; j++) { w = o.wieze[j]; if (w.komin) out.push({ typ: 'komin', id: o.id * 100 + j, x: w.x, z: w.z, ex: zX(w.x, w.z), ey: zY(YP + (h - w.top) * Z11.HK + WD[w.k].dachY, w.z), top: w.top, uzyty: w.kominUzyty, gas: w.kominGas }); }
+          } else if (o.typ === 'latawce') {
+            zz = o.sznury.map(function (q) { return q.xb; }).sort(function (a, b) { return a - b; });
+            out.push({ typ: 'latawce', id: o.id, zw: !!o.zw, x: o.x, z: o.z, ex: zX(o.x, o.z), ey: zY(o.sznury[0].ky, o.z), n: o.sznury.length, faza: faza(o), hit: o.hit, gmin: o.gmin,
+              szczelina: zz.length > 1 ? Math.min.apply(null, zz.slice(1).map(function (v, i) { return v - zz[i]; })) : null, sznurPx: 3, sznury: o.sznury.map(function (q) { return { x: q.xb, ex: zX(q.xb, o.z), kx: zX(sznurX(q, q.ky), o.z), ky: zY(q.ky, o.z) }; }) });
+          } else if (o.typ === 'przelot') {
+            zz = Math.max(0.3, o.pz);
+            out.push({ typ: 'przelot', id: o.id, zw: !!o.zw, x: o.lane, lane: o.lane, z: o.z, zA: o.zA, zB: o.zB, samolotZ: o.pzv, ex: zX(o.lane, zz), ey: zY(Z11.PLANE_Y * o.wys, zz), wariant: o.wariant, olbrzym: !!o.olbrzym, wiry: !!o.wiry, pokaz: !!o.pokaz, faza: o.zA > G.ZB + G.ZWR ? 'zapowiedz' : (o.zB > G.ZB ? 'aktywna' : 'minela') });
+            if (!o.zw) {
+              zz = Math.max(0.3, o.zA);
+              out.push({ typ: 'smuga', id: o.id, x: o.lane, zA: o.zA, zB: o.zB, ex: zX(o.lane, zz), ey: zY(YP - 12, zz), uzyta: !!o.smugaHit, polSzer: Z11.SMUGA_HALF });
+              if (o.wiry) for (j = -1; j <= 1; j += 2) out.push({ typ: 'wir', id: o.id, strona: j, x: o.lane + j * Z11.WIR_DX, zA: o.zA, zB: o.zB, ex: zX(o.lane + j * Z11.WIR_DX, zz), ey: zY(YP - 18, zz) });
+            }
+          } else if (o.typ === 'ulewa') out.push({ typ: 'ulewa', id: o.id, x: o.gx, z: o.z, ex: zX(o.gx, o.z), ey: obY(o.z, 34), szczelina: 2 * o.gh, faza: faza(o), hit: o.hit });
+          else if (o.typ === 'festiwal') out.push({ typ: 'festiwal', id: o.id, zw: true, n: o.kites.length, z: o.z, ex: W / 2, ey: H * 0.3 });
+          else if (o.typ === 'tecza') out.push({ typ: 'tecza', id: o.id, zw: true, x: o.x, z: o.z, ex: zX(o.x, o.z), ey: zY(YP + 70 - 170, o.z), alfa: teczaAlfa() });
+        }
+        for (k = 0; k < prady.length; k++) { p = prady[k]; if (p.pt === 'tecza' || p.pt === 'poryw') out.push({ typ: p.pt, prad: true, id: p.id, x: p.x, z: p.z, ex: zX(p.x, p.z), ey: zY(p.pt === 'tecza' ? YP + 70 - 150 * (p.big || 1) : -300, p.z), hit: p.hit, alfa: p.pt === 'tecza' ? teczaAlfa() : 1, big: p.big || 1, rytm: !!p.rytm }); }
+        if (rogalSc) out.push({ typ: 'rogal', t: rogalSc.t, ex: W * 0.74, ey: HORIZON - 175 * sm(rogalSc.t / rogalSc.len / 0.45), mruga: lvl >= 3 });
+        if (finalSt) out.push({ typ: 'final', kraina: finalSt.k, rodzaj: finalSt.rodzaj, t: finalSt.t, obiekt: finalSt.o, ex: W / 2, ey: 96 });
+        if (towarzysz) out.push({ typ: 'towarzysz', ex: W / 2 + (bx - camX) / G.ZB + 92, ey: BIRDY - 120 });
+        return out;
+      };
+      O.swiatlo = function () { updLight(); var r = sw0(); r.zaPlecami = SUNP.b || 0; r.sx = SUNP.x; r.sy = SUNP.y; r.horyzont = HORIZON; r.H = H; r.W = W; return r; };
+      O.z11 = function () { return JSON.parse(JSON.stringify({ smuga: smugaLog, komin: kominLog, wiry: wirLog, tecza: teczaLog, finaly: finalLog, final: finalSt, log: z11Log, rogal: rogalSc, towarzysz: towarzysz, wirSens: wirSensT, drzenie: camShakeT, smugaW: smugaInPrev, BIRD_W: BIRD_W, PTAK_POL: PTAK_POL, stale: Z11, cien: cienZ11, patrz: patrzZ11 })); };
+      O.z11Zbuduj = z11Zbuduj;
+      O.budzetLog = function () { return JSON.parse(JSON.stringify(budzetLog)); };
+      O.ptakEkran = function () { return { x: W / 2 + (bx - camX) / G.ZB, y: BIRDY, W: W, H: H, k: CSSW / W }; };
     })();
   }
 
