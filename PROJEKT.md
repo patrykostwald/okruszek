@@ -142,3 +142,9 @@ Wymagania (Z4, Opus; wspierane przez Z3b w progach koloru):
 - Paleta baśniowa, pastelowa, ciepła (własna, nie z referencji): róż pudrowy, brzoskwinia, morela, złoto-miodowe, lawenda, błękit pastelowy, mięta, koral, kremowa biel; dużo więcej odcieni niż dotąd (min. 14 odcieni w wypełnieniach chmur i nieba), płynnie mieszanych; ciepłe światło dominuje, chłodne tylko w cieniach i w nocy.
 - Dłuższa droga do kolorów: poziomy koloru rozciągnięte (nowe odcienie dochodzą jeden po drugim w całym zakresie L1-L4); pełna paleta i pełna akwarela dopiero w L4-L5; w L0 nadal sam kontur.
 - Wszystko pozostaje tanie: sprite'y pre-renderowane, jeden opcjonalny pass WebGL, tryb lekki przy <50 kl/s; zasada jednego wyróżnika na ekran.
+
+## 13. Decyzje właściciela z 25.10 (przedpołudnie): „1 tak, 2 tak, 3 tak, 4 tak, 5 tak, 6 tak”
+1. Długa gra = Droga Słońca z bramami (kolejne loty startują od ostatniej bramy). 2. Brama otwiera się też po kilku próbach (wytrwałość), nikt nie utknie.
+3. Szkielet długiej gry (Z10) od razu po trybach sterowania, przed dopracowaniem ekranów. 4. Postaci v1.5: Fiuk (wiaterek), Pierzynka (chmurka do spania), Rogal (księżyc).
+5. Kolejność krain: Góra, Morze Pierzyn, Kamienny Las (wieże), Wietrzne Schody (latawce), Szlak Gęsi (samoloty). 6. Doba nie przewija się przy bramie; lot z bramy zaczyna się o porze tej krainy.
+Wszystko zgodne z ZLECENIA-Z10-Z13.md; brak otwartych decyzji blokujących Z10-Z13.
