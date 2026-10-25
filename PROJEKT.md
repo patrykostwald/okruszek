@@ -148,3 +148,13 @@ Wymagania (Z4, Opus; wspierane przez Z3b w progach koloru):
 3. Szkielet długiej gry (Z10) od razu po trybach sterowania, przed dopracowaniem ekranów. 4. Postaci v1.5: Fiuk (wiaterek), Pierzynka (chmurka do spania), Rogal (księżyc).
 5. Kolejność krain: Góra, Morze Pierzyn, Kamienny Las (wieże), Wietrzne Schody (latawce), Szlak Gęsi (samoloty). 6. Doba nie przewija się przy bramie; lot z bramy zaczyna się o porze tej krainy.
 Wszystko zgodne z ZLECENIA-Z10-Z13.md; brak otwartych decyzji blokujących Z10-Z13.
+
+## 14. Pełny kolor tylko po trzech przyspieszeniach z rzędu (właściciel 25.10, popołudnie)
+Cytat: „pełny, pełny kolor gry powinien być tylko po takim maksymalnym przyspieszeniu, jak się 3 po kolei przyspieszenia znajdzie; sam to dopracuj, żeby człowiek chciał osiągnąć ten stan najwięcej kolorów, ale żeby to nie było takie super łatwe jak teraz.”
+Zasada (zlecenie Z3c, Sonnet high, po scaleniu Z10 i Z4):
+- Wprowadź „energię koloru” E 0..1 jako to, co steruje ilością koloru (zamiast samej prędkości s). E rośnie TYLKO z łańcucha prądów: 1 prąd w oknie = E do ok. 0,30 (pierwsze odcienie), 2 z rzędu = E do ok. 0,62, 3 z rzędu = E 1,0 (pełna paleta i pełna akwarela, poziom Turbo). Nurkowanie samo daje najwyżej E 0,40. Pełny kolor ma być widocznie nagrodą: krótka, wyraźna faza „rozkwitu” (kolor wypełnia świat falą od tyłu do przodu w ok. 1,2 s, lekki bloom, dźwięk w Z6/Z13).
+- Łańcuch liczy się tylko przy „idealnym wejściu” (środek prądu; brzeg daje mały skok, ale nie przedłuża łańcucha), okno między prądami zawężone (CHAIN_W 3,0 → ok. 2,2 s do strojenia), prądy w serii rozstawione w x tak, żeby trzeba było skręcać między nimi (nie leżą na jednej prostej). To ma sprawić, że trzy z rzędu wymagają umiejętności.
+- Po zerwaniu łańcucha kolor opada szybko (po 1,5 s łaski, ok. 0,35 E na sekundę), więc pełny kolor jest stanem przejściowym, o który się walczy; w L5 (hiper) nadal pięć prądów w 12 s plus nurkowanie, i jest to wyższy, rzadszy szczyt niż pełny kolor.
+- Zachowaj regułę „prędkość = kolor”: łańcuch daje też skok prędkości, więc w odczuciu gracza to jedno; GATE4 = 3 (zamiast 4), CAP4 bez 3 trafień w oknie zostaje, testy 12.1 dostosować uczciwie: bot idealny osiąga pełny kolor co najmniej raz w 60 s; bot „50% prądów” osiąga trójkę z rzędu rzadko (≤ 15% serii) i nie utrzymuje pełnego koloru dłużej niż 2 s; bot losowy nigdy; kolejność koloru od tyłu do przodu nadal zachowana; w L0 nadal sam kontur.
+- Pokaż w HUD, że łańcuch „buduje” kolor (np. trzy kropki-iskierki przy poziomie, wypełniane po kolei, bez liczb), żeby gracz rozumiał, czego szuka.
+- Strojenie po teście właściciela: E_POJEDYNCZY, E_DWA, E_TRZY, CHAIN_W, szerokość „idealnego wejścia”, FALL_E; stałe w obiekcie G.
