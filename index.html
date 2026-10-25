@@ -10,15 +10,43 @@
   html, body { margin:0; height:100%; background:#0d1224; overflow:hidden; overscroll-behavior:none; }
   body { display:flex; align-items:center; justify-content:center; }
   canvas { display:block; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  #scena { position:relative; }
+  #wynik { position:absolute; inset:0; display:flex; justify-content:center; padding-top:26%; box-sizing:border-box; background:rgba(13,18,36,.80);
+           color:#ecf0f8; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; text-align:center; opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
+  #wynik.pokaz { opacity:1; visibility:visible; transition:opacity .6s ease; }
+  #wynik .karta { width:min(80%,300px); }
+  #wynik .et { font-size:12px; letter-spacing:.14em; text-transform:uppercase; opacity:.7; height:16px; line-height:16px; }
+  #wynik .metry { font-family:Georgia,"Times New Roman",serif; font-size:64px; line-height:72px; height:72px; margin-top:10px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  #wynik .metry small { font-size:22px; opacity:.8; margin-left:4px; }
+  #wynik .linia { margin:10px 0 0; font-size:16px; line-height:22px; height:22px; opacity:.9; }
+  #wynik .rekord { margin:6px 0 0; font-size:13px; line-height:18px; height:18px; opacity:.6; }
+  #wynik button { margin-top:34px; min-width:200px; height:52px; padding:0 28px; font:600 17px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#ecf0f8; background:transparent;
+                  border:1.5px solid #ecf0f8; border-radius:26px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  @media (hover:hover) { #wynik button:hover { background:#ecf0f8; color:#0d1224; } }
+  #wynik button:focus-visible { outline:2px solid #ecf0f8; outline-offset:4px; }
+  #wynik button:active { background:#ecf0f8; color:#0d1224; }
 </style>
 </head>
 <body>
-<canvas id="g" aria-label="Okruszek: malutki ptaszek leci w głąb ekranu przez warstwy chmur. Przytrzymaj, żeby przyspieszyć, przesuń palec w bok, żeby skręcić."></canvas>
+<div id="scena">
+<canvas id="g" aria-label="Okruszek: malutki ptaszek leci w głąb ekranu przez warstwy chmur. Przytrzymaj, żeby nurkować i przyspieszyć, przesuń palec w bok, żeby skręcić. Wlatuj w prądy powietrzne, bo inaczej wysokość się skończy."></canvas>
+<div id="wynik" role="dialog" aria-modal="true" aria-labelledby="w-et" aria-hidden="true">
+  <div class="karta">
+    <div class="et" id="w-et">Miękkie lądowanie</div>
+    <div class="metry"><span id="w-m">0</span><small>m</small></div>
+    <p class="linia">Okruszek odpoczywa na chmurce.</p>
+    <p class="rekord" id="w-rek"></p>
+    <button id="jeszcze" type="button" tabindex="-1">Jeszcze raz</button>
+  </div>
+</div>
+</div>
 <script>
 /* Okruszek, Z1: silnik widoku (kulisy chmur zza pleców). Canvas 2D, jeden plik.
    Z1 obejmuje: projekcję 9 warstw-kulis, pulę 14 chmur pre-renderowanych do sprite'ów (kontur / kolor / mgła),
    niebo, słońce, gwiazdy, morze chmur, krzywą koloru z progami warstw, roboczego ptaszka, pomiar klatek i hak ?test.
-   Sterowanie i fizyka lotu (wysokość, prądy, lądowanie) to Z2; przeszkody to Z3; finalny ptaszek to Z4. */
+   Z2 dokłada: sterowanie (skręt palcem / myszą / klawiszami, przytrzymanie = nurkowanie), wysokość jako zasób,
+   prądy powietrzne z harmonogramu, miękkie lądowanie w morzu chmur i prosty ekran wyniku w metrach.
+   Przeszkody i jastrząb to Z3; finalny ptaszek to Z4; intro, pauza z historią, PWA to Z5; dźwięk to Z6. */
 (function () {
   'use strict';
   var Q = new URLSearchParams(location.search), TEST = Q.has('test');
@@ -49,13 +77,24 @@
   function ilosc(s, prog) { return Math.pow(cl((s - prog) / (1 - prog)), K_KOLOR); }
 
   /* ---------- ekran ---------- */
-  var cv = document.getElementById('g'), ctx = cv.getContext('2d', { alpha: false });
+  var cv = document.getElementById('g'), ctx = cv.getContext('2d', { alpha: false }), scena = document.getElementById('scena');
   var W = 390, H = 640, HORIZON = H * 0.6, BIRDY = H * 0.76, SC = 1, quality = 1, CSSW = 390, CSSH = 640;
   var NEAR = 0.55, FAR = 8.5, NFLAT = 9;
+
+  /* ---------- stałe gry (Z2) ----------
+     Wysokość h 0..1. Samo machanie (bez prądów) zjada SINK na sekundę: 0,8 / 0,04 = 20 s do lądowania.
+     Nurkowanie kosztuje DIVE na sekundę; po puszczeniu zostaje chwilowy zysk ZOOM * (prędkość z nurkowania).
+     Wlot w prąd daje PRAD_H wysokości i PRAD_S prędkości (zanika w ok. 2 s). Harmonogram prądów: PLAN. */
+  var G = { H0: 0.8, SINK: 0.04, DIVE: 0.2, ZOOM: 0.12, PRAD_H: 0.26, PRAD_S: 0.6, BOOST_TAU: 2.2,
+            VX: 250, ZB: 0.7, HIT: 72, HW: 60, PRAD_Y: 40, PRAD_HY: 260, M0: 10, M1: 22 };
+  /* prąd co 4-7 s (lista, nie losowanie); przez pierwsze 20 s co 3 s (nauka); dx = przesunięcie w bok od ptaszka * 300 */
+  var PLAN = [[0.5, 5.2], [-0.7, 4.4], [0.25, 6.3], [-0.45, 4.8], [0.8, 5.9], [-0.2, 4.1], [0.6, 6.7], [-0.9, 5.0], [0.35, 4.6], [-0.55, 6.1]];
+  var UCZ_DO = 20, UCZ_GAP = 3.0, PRAD_DX = 300;
   function resize() {
     var iw = window.innerWidth, ih = window.innerHeight;
     CSSH = ih; CSSW = Math.min(iw, Math.round(ih * 0.66));   /* na komputerze kartka stoi na środku */
     cv.style.width = CSSW + 'px'; cv.style.height = CSSH + 'px';
+    scena.style.width = CSSW + 'px'; scena.style.height = CSSH + 'px';
     W = 390; H = W * CSSH / CSSW; HORIZON = H * 0.6; BIRDY = H * 0.76;
     SC = Math.max(0.9, Math.min(window.devicePixelRatio || 1, 1.5) * quality);
     cv.width = Math.round(W * SC); cv.height = Math.round(H * SC);
@@ -153,44 +192,176 @@
   }
 
   /* ---------- świat ---------- */
-  var flats = [], stars = [], seas = [], i;
-  function makeFlat(z) {
+  var flats = [], stars = [], seas = [], nearSea = [], prady = [], i;
+  /* ox = środek świata przy tworzeniu warstwy (ptaszek skręca, więc kulisy powstają tam, gdzie leci) */
+  function makeFlat(z, ox) {
     var cs = [], k, n = 3 + Math.floor(rnd() * 3), side;
-    for (k = 0; k < n; k++) { side = k % 2 ? 1 : -1; cs.push({ p: Math.floor(rnd() * POOLN), x: side * (190 + rnd() * 420), y: -300 + rnd() * 520, ph: rnd() * 6 }); }
-    if (rnd() < 0.5) cs.push({ p: Math.floor(rnd() * POOLN), x: (rnd() - 0.5) * 260, y: -400 + rnd() * 420, ph: rnd() * 6 });
+    for (k = 0; k < n; k++) { side = k % 2 ? 1 : -1; cs.push({ p: Math.floor(rnd() * POOLN), x: ox + side * (190 + rnd() * 420), y: -300 + rnd() * 520, ph: rnd() * 6 }); }
+    if (rnd() < 0.5) cs.push({ p: Math.floor(rnd() * POOLN), x: ox + (rnd() - 0.5) * 260, y: -400 + rnd() * 420, ph: rnd() * 6 });
+    for (k = 0; k < 2; k++) { side = k ? 1 : -1; cs.push({ p: Math.floor(rnd() * POOLN), x: ox + side * (650 + rnd() * 600), y: -300 + rnd() * 520, ph: rnd() * 6 }); }
     return { z: z, clouds: cs };
   }
   function buildWorld() {
-    for (i = 0; i < NFLAT; i++) flats.push(makeFlat(NEAR + (FAR - NEAR) * (i + 0.5) / NFLAT));
     for (i = 0; i < 70; i++) stars.push({ x: rnd() * 390, y: rnd(), r: 0.5 + rnd() * 1.2, tw: rnd() * 6 });
     for (i = 0; i < 3; i++) { var pts = [], x; for (x = -120; x <= 510; x += 14) pts.push([x, 4 + i * 24 + Math.sin(x * 0.02 + i * 2) * (9 + i * 3) + Math.sin(x * 0.051 + i) * 5 + Math.sin(x * 0.13) * 2]); seas.push(pts); }
+    for (i = 0; i < 2; i++) { var pn = [], xx; for (xx = -120; xx <= 510; xx += 14) pn.push([xx, Math.sin(xx * 0.025 + i * 2.1) * (6 + i * 3) + Math.sin(xx * 0.07 + i) * 3]); nearSea.push(pn); }
   }
 
-  /* ---------- wejście ---------- */
-  var ptr = {}, nptr = 0, pointerX = null, keyX = 0, keyHold = false, lockS = null;
-  function cx(e) { var r = cv.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; }
-  function releaseAll() { ptr = {}; nptr = 0; pointerX = null; }
-  cv.addEventListener('pointerdown', function (e) { if (!ptr[e.pointerId]) nptr++; ptr[e.pointerId] = 1; pointerX = cx(e); try { cv.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
-  cv.addEventListener('pointermove', function (e) { if (ptr[e.pointerId]) pointerX = cx(e); });
-  function up(e) { if (ptr[e.pointerId]) { delete ptr[e.pointerId]; nptr = Math.max(0, nptr - 1); } if (!nptr) pointerX = null; }
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (n) { cv.addEventListener(n, up); });
-  window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-  window.addEventListener('blur', releaseAll);
-  document.addEventListener('visibilitychange', function () { releaseAll(); keyHold = false; keyX = 0; last = performance.now(); });
-  window.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyX = -1;
-    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyX = 1;
-    else if (e.key === ' ') { keyHold = true; e.preventDefault(); }
-  });
-  window.addEventListener('keyup', function (e) {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'A' || e.key === 'd' || e.key === 'D') keyX = 0;
-    else if (e.key === ' ') keyHold = false;
-  });
-
-  /* ---------- stan ---------- */
-  var s = 0, t = 0, camX = 0, steer = 0, last = performance.now(), frames = 0;
+  /* ---------- stan gry ---------- */
+  var state = 'gra';          /* 'gra' | 'ladowanie' | 'koniec' */
+  var paused = false, h = G.H0, dist = 0, bx = 0, vx = 0, camX = 0, steer = 0, gameT = 0;
+  var sHold = 0, boost = 0, s = 0, t = 0, ladT = 0, planI = 0, nextSpawn = 0.4, wlotow = 0, tint = 0, diveV = 0;
+  var best = 0, runs = 0, last = performance.now(), frames = 0;
+  var lockS = null, noPrady = false, tempo = 1, testHold = false, minH = 1;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var dts = [], DTN = 240, lowTimer = 0;
+  var elWynik = document.getElementById('wynik'), elM = document.getElementById('w-m'), elRek = document.getElementById('w-rek'), elJeszcze = document.getElementById('jeszcze');
+  var FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  function fmtM(n) { return String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+
+  function reset() {
+    var k;
+    releaseAll(); testHold = false; lockS = null;
+    state = 'gra'; paused = false; h = G.H0; dist = 0; bx = 0; vx = 0; camX = 0; steer = 0; gameT = 0; sHold = 0; boost = 0; s = 0; ladT = 0;
+    planI = 0; nextSpawn = 0.4; wlotow = 0; tint = 0; diveV = 0; minH = 1; prady.length = 0;
+    flats.length = 0; for (k = 0; k < NFLAT; k++) flats.push(makeFlat(NEAR + (FAR - NEAR) * (k + 0.5) / NFLAT, 0));
+    elWynik.classList.remove('pokaz'); elWynik.setAttribute('aria-hidden', 'true'); elJeszcze.tabIndex = -1;
+    if (document.activeElement === elJeszcze) elJeszcze.blur();
+    last = performance.now();
+  }
+
+  /* ---------- wejście ----------
+     Dotyk: skręt = przesunięcie palca względem miejsca dotknięcia (dowolne miejsce ekranu), przytrzymanie = nurkowanie.
+     Wiele palców: steruje najstarszy, nurkuje każdy; puszczenie jednego nie zostawia ducha. Mysz: położenie = skręt, LPM = nurkowanie. */
+  var ptr = {}, nptr = 0, seqn = 0, mouseX = null, mouseDown = false, keyL = false, keyR = false, keyHold = false;
+  function lx(e) { var r = cv.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; }
+  function countPtr() { var n = 0, k; for (k in ptr) n++; nptr = n; }
+  function releaseAll() { ptr = {}; nptr = 0; mouseDown = false; keyL = keyR = keyHold = false; }
+  function isHold() { return nptr > 0 || mouseDown || keyHold || testHold; }
+  function steerInput() {
+    var u = 0, k, b = null, p;
+    for (k in ptr) { p = ptr[k]; if (b === null || p.n < b.n) b = p; }
+    if (b) { u = (b.x - b.x0) / 80; if (Math.abs(u) < 0.08) u = 0; }
+    else if (keyL || keyR) u = (keyR ? 1 : 0) - (keyL ? 1 : 0);
+    else if (mouseX !== null) { u = (mouseX - W / 2) / (W / 2) * 1.25; if (Math.abs(u) < 0.06) u = 0; }
+    return u > 1 ? 1 : (u < -1 ? -1 : u);
+  }
+  function setPause(v) { paused = v; releaseAll(); last = performance.now(); }
+  function togglePause() { if (state === 'gra') setPause(!paused); }
+  function onDown(e) {
+    if (e.cancelable) e.preventDefault();
+    if (paused) { setPause(false); return; }
+    if (state !== 'gra') return;
+    if (e.pointerType === 'mouse') { if (e.button === 0) { mouseDown = true; mouseX = lx(e); } }
+    else {
+      if (e.isPrimary) { ptr = {}; nptr = 0; }   /* nowy gest zaczyna się od palca głównego: poprzednie palce na pewno zniknęły */
+      ptr[e.pointerId] = { x0: lx(e), x: lx(e), n: ++seqn }; countPtr();
+    }
+    try { cv.setPointerCapture(e.pointerId); } catch (_) { }
+  }
+  function onMove(e) {
+    if (e.pointerType === 'mouse') { mouseX = lx(e); if (mouseDown && e.buttons === 0) mouseDown = false; }
+    else if (ptr[e.pointerId]) ptr[e.pointerId].x = lx(e);
+  }
+  function onUp(e) {
+    if (e.pointerType === 'mouse') { mouseDown = false; return; }
+    if (ptr[e.pointerId]) { delete ptr[e.pointerId]; countPtr(); }
+  }
+  cv.addEventListener('pointerdown', onDown);
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  window.addEventListener('pointermove', onMove);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (n) { cv.addEventListener(n, onUp); window.addEventListener(n, onUp); });
+  ['touchend', 'touchcancel'].forEach(function (n) { window.addEventListener(n, function (e) { if (!e.touches.length) { ptr = {}; nptr = 0; } }, { passive: true }); });
+  document.documentElement.addEventListener('mouseleave', function () { mouseX = null; mouseDown = false; });
+  window.addEventListener('blur', releaseAll);
+  document.addEventListener('visibilitychange', function () {
+    releaseAll(); last = performance.now();
+    if (document.hidden && state === 'gra') paused = true;
+  });
+  window.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === 'p' || k === 'P' || k === 'Escape') { if (!e.repeat) togglePause(); return; }
+    if (state !== 'gra') return;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyL = true; e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keyR = true; e.preventDefault(); }
+    else if (k === ' ') { if (paused) { if (!e.repeat) setPause(false); } else keyHold = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', function (e) {
+    var k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keyL = false;
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') keyR = false;
+    else if (k === ' ') keyHold = false;
+  });
+  elJeszcze.addEventListener('click', function () { reset(); });
+
+  /* ---------- prądy powietrzne ---------- */
+  function spawnPrad(dxFrac, z) {
+    var p = { x: bx + dxFrac * PRAD_DX, z: z, n: 3 + Math.floor(rnd() * 3), ph: rnd() * 6, hit: false, flash: 0 };
+    prady.push(p); return p;
+  }
+  function wlot(p) {
+    p.hit = true; p.flash = 1; wlotow++; tint = 1;
+    boost = Math.min(0.8, boost + G.PRAD_S);
+    h = Math.min(1, h + G.PRAD_H);
+  }
+
+  /* ---------- krok symulacji (dt <= ok. 0,034 s czasu gry) ---------- */
+  function endRun() {
+    var m = Math.floor(dist), prev = best;
+    state = 'koniec'; runs++; if (m > best) best = m;
+    elM.textContent = fmtM(m);
+    elRek.textContent = runs < 2 ? '' : (m > prev ? 'Nowy rekord tej sesji' : 'Najlepszy w tej sesji: ' + fmtM(best) + ' m');
+    elWynik.classList.add('pokaz'); elWynik.setAttribute('aria-hidden', 'false'); elJeszcze.tabIndex = 0;
+    setTimeout(function () { if (state === 'koniec') { try { elJeszcze.focus({ preventScroll: true }); } catch (_) { } } }, 80);
+  }
+  function sim(dt) {
+    var k, p, hold, inp, speed, pz;
+    if (state !== 'gra') {
+      /* lądowanie i ekran wyniku: prędkość wygasa, świat sunie powoli, ptaszek odpoczywa */
+      ladT += dt; sHold *= Math.exp(-dt * 2.2); boost *= Math.exp(-dt * 2.2); s = lockS !== null ? lockS : Math.min(1, sHold + boost);
+      vx *= Math.exp(-dt * 4); bx += vx * dt; camX += (bx - camX) * Math.min(1, dt * 7); steer = vx / G.VX;
+      speed = 0.2 + s * 1.9;
+      for (k = 0; k < flats.length; k++) { flats[k].z -= dt * speed; if (flats[k].z < NEAR) flats[k] = makeFlat(flats[k].z + (FAR - NEAR), bx); }
+      flats.sort(function (a, b) { return b.z - a.z; });
+      for (k = prady.length - 1; k >= 0; k--) { prady[k].z -= dt * speed; prady[k].flash = Math.max(0, prady[k].flash - dt * 1.8); if (prady[k].z < 0.12) prady.splice(k, 1); }
+      if (state === 'ladowanie' && ladT > 1.15) endRun();
+      return;
+    }
+    gameT += dt;
+    hold = isHold();
+    /* prędkość: nurkowanie ciągnie ku 1, puszczenie opuszcza ku 0 (podstawowa); wlot w prąd to osobny, szybko zanikający zastrzyk */
+    sHold += ((hold ? 1 : 0) - sHold) * Math.min(1, dt * (hold ? 1.3 : 0.9));
+    boost *= Math.exp(-dt / G.BOOST_TAU);
+    s = lockS !== null ? lockS : Math.min(1, sHold + boost);
+    /* wysokość jako zasób (przy zablokowanej prędkości z haka testu wysokość stoi) */
+    if (lockS === null) {
+      h += hold ? -G.DIVE * dt : (-G.SINK + G.ZOOM * sHold) * dt;
+      if (h > 1) h = 1;
+      if (h < minH) minH = h;
+    }
+    /* skręt: ptaszek naprawdę zmienia x w świecie, kamera idzie za nim */
+    inp = steerInput();
+    vx += (inp * G.VX - vx) * Math.min(1, dt * 6);
+    bx += vx * dt; camX += (bx - camX) * Math.min(1, dt * 7); steer = vx / G.VX;
+    /* ruch w głąb */
+    speed = 0.32 + s * 1.9;
+    for (k = 0; k < flats.length; k++) { flats[k].z -= dt * speed; if (flats[k].z < NEAR) flats[k] = makeFlat(flats[k].z + (FAR - NEAR), bx); }
+    flats.sort(function (a, b) { return b.z - a.z; });
+    for (k = prady.length - 1; k >= 0; k--) {
+      p = prady[k]; pz = p.z; p.z -= dt * speed; p.flash = Math.max(0, p.flash - dt * 1.8);
+      if (!p.hit && pz > G.ZB && p.z <= G.ZB && Math.abs(p.x - bx) < G.HIT) wlot(p);
+      if (p.z < 0.12) prady.splice(k, 1);
+    }
+    dist += (G.M0 + G.M1 * s) * dt;
+    tint = Math.max(0, tint - dt * 2.5);
+    /* harmonogram prądów: z listy PLAN, na starcie co UCZ_GAP s */
+    if (!noPrady && gameT >= nextSpawn) {
+      var e = PLAN[planI % PLAN.length];
+      spawnPrad(e[0], planI === 0 ? 1.7 : 2.4 + 2.6 * s);
+      nextSpawn = gameT + (gameT < UCZ_DO ? UCZ_GAP : e[1]); planI++;
+    }
+    if (h <= 0 && lockS === null) { h = 0; minH = 0; state = 'ladowanie'; ladT = 0; releaseAll(); testHold = false; }
+  }
 
   /* ---------- rysowanie ---------- */
   function drawFlat(f, s) {
@@ -221,13 +392,13 @@
     ctx.closePath();
   }
   /* ptaszek roboczy (finalny rysunek: Z4). Jedyny stały kolor przy s=0: czerwony szalik. */
-  function drawBird(x, y, s, tilt) {
-    var e = ilosc(s, PROG.ptak), flap = reduce ? 0.3 : Math.sin(t * (9 + s * 8)), look = Math.sin(t * 0.7) * 3, side;
+  function drawBird(x, y, s, tilt, dive) {
+    var e = ilosc(s, PROG.ptak), flap = (reduce ? 0.3 : Math.sin(t * (9 + s * 8))) * (1 - 0.85 * dive), look = Math.sin(t * 0.7) * 3, side;
     var body = mixc(mixc(NAVY, [52, 60, 92], 0.8), BODY, e), dark = mixc(mixc(NAVY, [40, 46, 74], 0.8), BODY_D, e), ink = mixc(LINE, [34, 34, 56], e);
-    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * 0.3); ctx.scale(0.85, 0.85);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * 0.3); ctx.scale(0.85 * (1 - 0.1 * dive), 0.85 * (1 + 0.1 * dive));
     ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
     for (side = -1; side <= 1; side += 2) {
-      ctx.save(); ctx.translate(side * 13, -4); ctx.rotate(side * (-0.75 + flap * 0.85));
+      ctx.save(); ctx.translate(side * 13, -4); ctx.rotate(side * (-0.75 * (1 - dive) + 1.05 * dive + flap * 0.85));
       ctx.beginPath(); ctx.ellipse(side * 17, 0, 19, 7.5, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(dark, 1); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(side * 6, -2); ctx.lineTo(side * 30, -1); ctx.moveTo(side * 8, 2); ctx.lineTo(side * 28, 3); ctx.strokeStyle = rgba(ink, 0.35); ctx.stroke(); ctx.strokeStyle = rgba(ink, 0.9); ctx.restore();
     }
@@ -244,19 +415,66 @@
     ctx.restore();
   }
 
-  function frame(now) {
-    var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j; last = now; t += dt; frames++;
-    dts.push(dt); if (dts.length > DTN) dts.shift();
-    /* prędkość: przytrzymanie = rośnie, puszczenie = opada (fizyka lotu: Z2) */
-    var hold = nptr > 0 || keyHold;
-    if (lockS !== null) s = lockS; else s += ((hold ? 1 : 0) - s) * Math.min(1, dt * (hold ? 1.3 : 0.9));
+  /* prąd powietrzny: wstęga 3-5 linii w kulisie; przerywane linie płyną ku górze. Kontur przy s=0, ciepły kolor wraz z prędkością. */
+  function drawPrad(p) {
+    var z = p.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), fade = sm((FAR - z) / 1.0) * sm((z - 0.1) / 0.4), amt, X0, Y0, hy, col, a, gr, n, li, yy, base, taper, wx, dash, lw;
+    if (fade <= 0.02) return;
+    X0 = W / 2 + (p.x - camX) * sc; Y0 = HORIZON + G.PRAD_Y * sc; hy = G.PRAD_HY * sc;
+    if (X0 + G.HW * 1.7 * sc < -20 || X0 - G.HW * 1.7 * sc > W + 20) return;
+    amt = ilosc(s, PROG.daleko + (1 - tt) * (PROG.blisko - PROG.daleko));
+    col = mixc(LINE, [255, 222, 170], Math.max(amt, p.flash * 0.85));
+    a = (0.6 + 0.4 * p.flash) * fade;
+    gr = ctx.createLinearGradient(0, Y0 - hy, 0, Y0 + hy);
+    gr.addColorStop(0, rgba(col, 0)); gr.addColorStop(0.2, rgba(col, a)); gr.addColorStop(0.8, rgba(col, a)); gr.addColorStop(1, rgba(col, 0));
+    n = p.n; dash = Math.max(6, 28 * Math.min(sc, 1.6)); lw = 1.1 + (1 - tt) * 0.9 + p.flash * 1.4;
+    ctx.beginPath();
+    for (li = 0; li < n; li++) {
+      base = (li - (n - 1) / 2) / ((n - 1) / 2) * G.HW;
+      for (yy = G.PRAD_HY; yy >= -G.PRAD_HY; yy -= 40) {
+        taper = 1 - 0.6 * (yy / G.PRAD_HY) * (yy / G.PRAD_HY);
+        wx = base * taper + (reduce ? 0 : Math.sin(yy * 0.014 + t * 2.2 + p.ph + li * 0.9) * 24);
+        if (yy === G.PRAD_HY) ctx.moveTo(X0 + wx * sc, Y0 + yy * sc); else ctx.lineTo(X0 + wx * sc, Y0 + yy * sc);
+      }
+    }
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = gr;
+    if (p.flash > 0.05) { ctx.globalAlpha = 0.28 * p.flash; ctx.lineWidth = lw * 3.2; ctx.stroke(); ctx.globalAlpha = 1; }
+    ctx.setLineDash([dash, dash * 0.5]); ctx.lineDashOffset = reduce ? 0 : -t * 60; ctx.lineWidth = lw; ctx.stroke();
+    ctx.setLineDash([]); ctx.lineDashOffset = 0;
+  }
+
+  /* licznik dystansu (lewa strefa) i pasek wysokości (prawa strefa): stałe miejsca, jedna linia podpisów i jedna linia wartości */
+  function drawHUD() {
+    var pad = 18, bw = 112, bl = h < 0.25 && state === 'gra' ? 0.6 + 0.4 * Math.sin(t * 7) : 1, ls = 'letterSpacing' in ctx;
+    ctx.save(); ctx.shadowColor = 'rgba(13,18,36,0.75)'; ctx.shadowBlur = 5; ctx.textBaseline = 'alphabetic';
+    if (ls) ctx.letterSpacing = '1.4px';
+    ctx.font = '600 10px ' + FONT; ctx.fillStyle = rgba(LINE, 0.72);
+    ctx.textAlign = 'left'; ctx.fillText('DYSTANS', pad, 24);
+    ctx.textAlign = 'right'; ctx.fillText('WYSOKOŚĆ', W - pad, 24);
+    if (ls) ctx.letterSpacing = '0px';
+    ctx.textAlign = 'left'; ctx.fillStyle = rgba(LINE, 0.96); ctx.font = '600 24px ' + FONT;
+    var txt = fmtM(dist); ctx.fillText(txt, pad, 51);
+    var tw = ctx.measureText(txt).width; ctx.font = '600 13px ' + FONT; ctx.fillStyle = rgba(LINE, 0.8); ctx.fillText('m', pad + tw + 4, 51);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = rgba(LINE, 0.55); ctx.lineWidth = 1.2; ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(W - pad - bw, 38, bw, 11, 5.5); else ctx.rect(W - pad - bw, 38, bw, 11);
+    ctx.stroke();
+    ctx.fillStyle = rgba(LINE, 0.92 * bl); var fw = Math.max(0, (bw - 5) * h);
+    if (fw > 0.5) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(W - pad - bw + 2.5, 40.5, fw, 6, 3); else ctx.rect(W - pad - bw + 2.5, 40.5, fw, 6); ctx.fill(); }
+    ctx.restore();
+  }
+
+  function seaPath(pts, y0, drift, amp) {
+    var j; ctx.beginPath(); ctx.moveTo(pts[0][0] + drift, y0 + pts[0][1] * amp);
+    for (j = 1; j < pts.length; j++) ctx.lineTo(pts[j][0] + drift, y0 + pts[j][1] * amp);
+    ctx.lineTo(W + 140, H + 4); ctx.lineTo(-140, H + 4); ctx.closePath();
+  }
+
+  function render(dt) {
+    var k, j, hold = isHold() && state === 'gra';
     var aSky = ilosc(s, PROG.niebo), aStr = ilosc(s, PROG.smugi);
-    var camXt = pointerX !== null ? (pointerX - W / 2) * 2.2 : keyX * 260;
-    var prev = camX; camX += (camXt - camX) * Math.min(1, dt * 3);
-    steer = Math.max(-1, Math.min(1, (camX - prev) / dt / 600));
-    var speed = 0.32 + s * 1.9;
-    for (k = 0; k < flats.length; k++) { flats[k].z -= dt * speed; if (flats[k].z < NEAR) flats[k] = makeFlat(flats[k].z + (FAR - NEAR)); }
-    flats.sort(function (a, b) { return b.z - a.z; });
+    var lad = state === 'gra' ? 0 : sm(ladT / 0.9);
+    var seaDY = -sm((0.4 - h) / 0.4) * 28;
+    diveV += ((hold ? 1 : 0) - diveV) * Math.min(1, dt * 8);
 
     ctx.globalAlpha = 1; ctx.fillStyle = rgba(NAVY, 1); ctx.fillRect(0, 0, W, H);
     if (aSky > 0.005) { ctx.globalAlpha = aSky; ctx.drawImage(skySprite, 0, 0, W, HORIZON + 40); ctx.globalAlpha = 1; }
@@ -264,16 +482,21 @@
     var sunx = W / 2 - camX * 0.04, suny = HORIZON - 30, sr = 90 + aSky * 150;
     ctx.globalAlpha = 0.18 + 0.82 * aSky; ctx.drawImage(sunSprite, sunx - sr, suny - sr, sr * 2, sr * 2); ctx.globalAlpha = 1;
 
-    ctx.fillStyle = rgba(mixc(NAVY, [70, 50, 110], aSky * 0.6), 1); ctx.fillRect(0, HORIZON, W, H - HORIZON);
+    ctx.fillStyle = rgba(mixc(NAVY, [70, 50, 110], aSky * 0.6), 1); ctx.fillRect(0, HORIZON + seaDY, W, H - HORIZON - seaDY);
     for (k = 0; k < seas.length; k++) {
-      var sp = seas[k], drift = -camX * 0.02 * (k + 1) + (t * (6 + s * 30) * (k + 1)) % 28 - 14;
-      ctx.beginPath(); ctx.moveTo(sp[0][0] + drift, HORIZON + sp[0][1]);
-      for (j = 1; j < sp.length; j++) ctx.lineTo(sp[j][0] + drift, HORIZON + sp[j][1]);
-      ctx.lineTo(W + 140, H); ctx.lineTo(-140, H); ctx.closePath();
+      var drift = -camX * 0.02 * (k + 1) + (t * (6 + s * 30) * (k + 1)) % 28 - 14;
+      seaPath(seas[k], HORIZON + seaDY, drift, 1);
       ctx.fillStyle = rgba(mixc(mixc(NAVY, [28, 32, 58], 1 - k * 0.3), SEA[k], aSky), 1); ctx.fill();
       ctx.strokeStyle = rgba(LINE, (0.55 - k * 0.14) * (1 - aSky * 0.8)); ctx.lineWidth = 1; ctx.stroke();
     }
-    for (k = 0; k < flats.length; k++) drawFlat(flats[k], s);
+    /* kulisy i prądy w jednej kolejności od tyłu do przodu */
+    var pi = 0;
+    prady.sort(function (a, b) { return b.z - a.z; });
+    for (k = 0; k < flats.length; k++) {
+      while (pi < prady.length && prady[pi].z >= flats[k].z) drawPrad(prady[pi++]);
+      drawFlat(flats[k], s);
+    }
+    while (pi < prady.length) drawPrad(prady[pi++]);
 
     if (aStr > 0.02) {
       ctx.lineWidth = 1;
@@ -283,8 +506,39 @@
         ctx.moveTo(W / 2 + Math.cos(an) * r0, HORIZON - 20 + Math.sin(an) * r0 * 0.8); ctx.lineTo(W / 2 + Math.cos(an) * r1, HORIZON - 20 + Math.sin(an) * r1 * 0.8); ctx.stroke();
       }
     }
+    if (tint > 0.01) { ctx.globalAlpha = tint * 0.10; ctx.fillStyle = rgba(SUN, 1); ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+
     var bob = reduce ? 0 : Math.sin(t * 1.7) * 4 + Math.sin(t * 9) * (1 - s) * 1.5;
-    drawBird(W / 2 + steer * 18, BIRDY + bob, s, steer);
+    var dip = lad * 8 + sm((0.12 - h) / 0.12) * 4;
+    drawBird(W / 2 + (bx - camX) / G.ZB, BIRDY + bob + dip, s, steer, diveV);
+
+    /* morze chmur wchodzi na ekran, gdy wysokość się kończy (miękkie lądowanie) */
+    var near = sm((0.22 - h) / 0.22);
+    if (near > 0.001 || lad > 0) {
+      var top = lerp(H + 30, BIRDY + 14, near); top = lerp(top, BIRDY + 34, lad);
+      for (k = 0; k < nearSea.length; k++) {
+        seaPath(nearSea[k], top + (1 - k) * -9 + k * 8, -camX * 0.03 + Math.sin(t * 0.6 + k) * 8, 1);
+        ctx.fillStyle = rgba(mixc(mixc(NAVY, [34, 40, 72], 1 - k * 0.25), SEA[k + 1], aSky), 1); ctx.fill();
+        ctx.strokeStyle = rgba(LINE, (0.75 - k * 0.15) * (1 - aSky * 0.8)); ctx.lineWidth = 1.2; ctx.stroke();
+      }
+    }
+    if (state !== 'koniec') drawHUD();
+    if (paused) {
+      ctx.fillStyle = 'rgba(13,18,36,0.6)'; ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center'; ctx.fillStyle = rgba(LINE, 0.95); ctx.font = '600 30px ' + FONT; ctx.fillText('Pauza', W / 2, H * 0.42);
+      ctx.font = '400 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.7); ctx.fillText('Dotknij ekranu albo naciśnij P', W / 2, H * 0.42 + 30); ctx.textAlign = 'left';
+    }
+  }
+
+  function frame(now) {
+    var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j; last = now; frames++;
+    dts.push(dt); if (dts.length > DTN) dts.shift();
+    if (!paused) {
+      t += dt;
+      var dtg = dt * tempo, n = Math.max(1, Math.ceil(dtg / 0.034));
+      for (k = 0; k < n; k++) sim(dtg / n);
+    }
+    render(dt);
 
     /* adaptacyjna jakość: tylko w dół, nigdy w górę; w trybie ?test wyłączona, żeby pomiar był uczciwy */
     if (!TEST && dts.length >= 90) {
@@ -307,17 +561,45 @@
   }
   if (TEST) {
     window.__okruszek = {
+      /* Z1 */
       ustaw: function (v) { lockS = cl(v); s = lockS; },
       odblokuj: function () { lockS = null; },
-      przesun: function (x01) { pointerX = x01 === null ? null : x01 * W; },
+      przesun: function (x01) { mouseX = x01 === null ? null : x01 * W; },
       zerujFps: function () { dts.length = 0; },
       fps: fpsStat,
-      stan: function () { return { s: s, czas: t, klatki: frames, camX: camX, warstw: flats.length, pula: POOL.length, jakosc: quality, W: W, H: H, SC: SC, seed: Q.get('seed') || 23 }; },
-      kolory: function () { return { niebo: ilosc(s, PROG.niebo), daleko: ilosc(s, PROG.daleko), blisko: ilosc(s, PROG.blisko), smugi: ilosc(s, PROG.smugi) }; }
+      stan: function () {
+        return { s: s, czas: t, klatki: frames, camX: camX, warstw: flats.length, pula: POOL.length, jakosc: quality, W: W, H: H, SC: SC, seed: Q.get('seed') || 23,
+          tryb: state, pauza: paused, h: h, minH: minH, dystans: dist, graCzas: gameT, bx: bx, vx: vx, nurkuje: isHold(), palce: nptr, mysz: mouseDown, wloty: wlotow, boost: boost, sHold: sHold, tempo: tempo, prady: prady.length };
+      },
+      kolory: function () { return { niebo: ilosc(s, PROG.niebo), daleko: ilosc(s, PROG.daleko), blisko: ilosc(s, PROG.blisko), smugi: ilosc(s, PROG.smugi) }; },
+      /* Z2 */
+      zdarzenie: function (nazwa, opt) {
+        if (nazwa === 'prad') { opt = opt || {}; spawnPrad(opt.dx || 0, opt.z || 1.4); return true; }
+        return false;
+      },
+      wysokosc: function () { return h; },
+      dystans: function () { return dist; },
+      koniec: function () { return state !== 'gra'; },
+      nowyBieg: function () { reset(); },
+      ustawWysokosc: function (v) { h = cl(v); },
+      bezPradow: function (v) { noPrady = !!v; },
+      tempo: function (m) { tempo = Math.max(0.1, Math.min(8, m || 1)); },
+      nurkuj: function (v) { testHold = !!v; },
+      pauza: function (v) { setPause(v === undefined ? !paused : !!v); },
+      prady: function () { return prady.map(function (p) { return { x: p.x, z: p.z, hit: p.hit, n: p.n }; }); },
+      ptak: function () { return { x: bx, z: G.ZB, hit: G.HIT }; },
+      stale: function () { return { SINK: G.SINK, DIVE: G.DIVE, ZOOM: G.ZOOM, PRAD_H: G.PRAD_H, PRAD_S: G.PRAD_S, H0: G.H0, ZB: G.ZB, HIT: G.HIT }; },
+      /* symulacja palców przez prawdziwe zdarzenia wskaźnika: akcja 'dol' | 'ruch' | 'gora' | 'anuluj', id palca, x w 0..1 */
+      dotyk: function (akcja, id, x01) {
+        var r = cv.getBoundingClientRect(), typ = { dol: 'pointerdown', ruch: 'pointermove', gora: 'pointerup', anuluj: 'pointercancel' }[akcja];
+        if (!typ) return false;
+        var ev = new PointerEvent(typ, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, bubbles: true, cancelable: true, clientX: r.left + (x01 === undefined ? 0.5 : x01) * r.width, clientY: r.top + r.height * 0.7 });
+        (akcja === 'ruch' ? window : cv).dispatchEvent(ev); return true;
+      }
     };
   }
 
-  buildPool(); buildWorld(); resize();
+  buildPool(); buildWorld(); reset(); resize();
   window.addEventListener('resize', resize);
   requestAnimationFrame(function (n) { last = n; frame(n); });
 })();

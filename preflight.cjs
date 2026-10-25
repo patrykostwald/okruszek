@@ -1,6 +1,8 @@
 /* Okruszek: pre-flight. Użycie: node preflight.cjs [plik.html]
    Sprawdza: składnię skryptu, start bez błędów konsoli, hak ?test, niepusty obraz, stany prędkości 0 / 0,5 / 1,
-   progi koloru (od tyłu do przodu), brak zawieszenia pętli, pomiar klatek. Musi skończyć się PRE-FLIGHT OK. */
+   progi koloru (od tyłu do przodu), brak zawieszenia pętli, pomiar klatek.
+   Z2: hak sterowania i fizyki, a potem pełny test bota gra_test_z2.cjs (60 s lotu, lądowanie po ok. 20 s, dwa palce,
+   kolejność koloru). SKIP_Z2=1 pomija długi test bota (ok. 50 s). Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
 const file = path.resolve(process.argv[2] || path.join(__dirname, 'index.html'));
@@ -68,10 +70,35 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     const cam = await page.evaluate(() => window.__okruszek.stan().camX);
     cam > 100 ? ok('skręt w prawo przesuwa kamerę (camX=' + Math.round(cam) + ')') : bad('skręt nie działa (camX=' + cam + ')');
     await page.evaluate(() => window.__okruszek.przesun(null));
+
+    /* Z2: hak sterowania i fizyki lotu */
+    const need = ['zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory'];
+    const miss = await page.evaluate(n => n.filter(k => typeof window.__okruszek[k] !== 'function'), need);
+    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z2 kompletny (' + need.length + ' funkcji)');
+    const z2 = await page.evaluate(() => { const o = window.__okruszek; o.odblokuj(); o.bezPradow(true); o.nowyBieg(); return { h: o.wysokosc(), k: o.koniec(), d: o.dystans() }; });
+    (z2.h > 0.7 && z2.k === false) ? ok('nowy bieg: wysokość ' + z2.h + ', gra trwa') : bad('nowy bieg nie resetuje stanu: ' + JSON.stringify(z2));
+    const ds = await page.evaluate(() => { const o = window.__okruszek; o.dotyk('dol', 1, 0.3); o.dotyk('dol', 2, 0.6); o.dotyk('gora', 1); const m = o.stan().palce; o.dotyk('gora', 2); return [m, o.stan().palce, o.stan().nurkuje]; });
+    (ds[0] === 1 && ds[1] === 0 && ds[2] === false) ? ok('dwa palce: po puszczeniu obu brak ducha') : bad('duch palca: ' + JSON.stringify(ds));
+    await page.evaluate(() => { window.__okruszek.bezPradow(false); window.__okruszek.nowyBieg(); });
   }
   const real = errors.filter(e => !/favicon/i.test(e));
   real.length ? bad('błędy konsoli: ' + real.slice(0, 3).join(' | ')) : ok('brak błędów i ostrzeżeń konsoli');
   await browser.close();
+
+  /* Z2: pełny test bota w osobnym procesie */
+  if (process.env.SKIP_Z2) console.log('  info pominięto test bota Z2 (SKIP_Z2)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z2.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z2.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 400000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z2|BŁĄD|bot leci|lądowanie po|kontrola|metoda/.test(l));
+      lines.forEach(l => console.log('  z2> ' + l.trim()));
+      code === 0 && /TEST Z2 OK/.test(out) ? ok('test bota Z2 (gra_test_z2.cjs) przeszedł') : bad('test bota Z2 nie przeszedł (kod ' + code + ')');
+    }
+  }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('PRE-FLIGHT BŁĄD: ' + e); process.exit(2); });
