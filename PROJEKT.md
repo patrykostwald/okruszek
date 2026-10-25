@@ -125,3 +125,8 @@ Prądy powietrzne wielkości i barw zależnych od pory doby; w L4-L5 prądy rzad
 ### 12.5 Rysowanie piękniejsze (zlecenie Z4 rozszerzone, silnik Opus)
 Chmury: bogatsze kształty (więcej płatów, miękkie przejścia, jasne brzegi od strony słońca/księżyca, cień własny, wielowarstwowe kontury), kreskowanie, światło między warstwami, mgiełka między kulisami.
 Ptaszek (przeuroczy), szalik. Panel designu (laik x3 + Projektant) przed i po. Wszystko własne, nic 1:1 z referencji.
+
+## 5b. Tryby sterowania do testu właściciela (26.10): zbudujmi.com/crumbi
+Właściciel testuje jutro na telefonie różne opcje poruszania; w grze musi być WIDOCZNY przełącznik trybu (ekran startu i pauza; przycisk w stałej strefie, min. 44 px), wybór zapamiętany w localStorage (to jedyna rzecz zapisywana w przeglądarce w tej fazie; try/catch).
+Tryby: 1 = jeden kciuk (przesuwanie w bok = skręt, przytrzymanie = nurkowanie); 2 = dwa kciuki jak skrzydła (sekcja 5a); 3 = drążek (duży, >=130 px, pole chwytu, baza idzie za kciukiem, drugi palec w prawej połowie = nurkowanie).
+Pod przełącznikiem suwak „czułość skrętu” (0,5-1,5) działający we wszystkich trybach; wartości zapisywane razem z trybem. Test wyboru: ?sterowanie=1|2|3 nadpisuje zapisany tryb. Adres wdrożenia: https://zbudujmi.com/crumbi/ (noindex, nofollow; skrypt wdroz_crumbi.cjs).
