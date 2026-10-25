@@ -245,6 +245,8 @@ na chmurce.</p>
     scena.style.width = CSSW + 'px'; scena.style.height = CSSH + 'px';
     W = 390; H = W * CSSH / CSSW; HORIZON = H * 0.6; BIRDY = H * 0.76; YP = (BIRDY - HORIZON) * G.ZB;
     SC = Math.max(0.9, Math.min(window.devicePixelRatio || 1, 1.5) * quality);
+    if (TEST && +Q.get('sc') > 0) SC = Math.min(6, +Q.get('sc'));   /* Z4: zbliżenia do zrzutów (tylko ?test) */
+    BL.sx = null;
     cv.width = Math.round(W * SC); cv.height = Math.round(H * SC);
     ctx.setTransform(SC, 0, 0, SC, 0, 0);
     var kk = CSSW / W;   /* przycisk sterowania: prawy górny róg pod paskiem wysokości, minimum 44 px (CSS) */
@@ -270,7 +272,7 @@ na chmurce.</p>
     var minx = 1e9, maxx = -1e9, top = 1e9, bl = 1e9, br = -1e9, ch, c;
     for (i = 0; i < circles.length; i++) { c = circles[i]; if (c.x - c.r < minx) minx = c.x - c.r; if (c.x + c.r > maxx) maxx = c.x + c.r; if (c.y - c.r < top) top = c.y - c.r; }
     for (i = 0; i < main.length; i++) { m = main[i]; ch = Math.sqrt(Math.max(0, m.r * m.r - m.y * m.y)); if (m.x - ch < bl) bl = m.x - ch; if (m.x + ch > br) br = m.x + ch; }
-    return { circles: circles, h: h, minx: minx, maxx: maxx, top: top, bl: bl, br: br, phase: rnd() * 6 };
+    return { circles: circles, h: h, minx: minx, maxx: maxx, top: top, bl: bl, br: br, phase: rnd() * 6, nmain: main.length };
   }
   function fillCircles(x, g, grow) {
     var i, c; x.beginPath();
@@ -289,115 +291,567 @@ na chmurce.</p>
     else { x.moveTo(g.bl, yy(g.bl)); for (px = g.bl; px <= g.br; px += step) x.lineTo(px, yy(px)); x.lineTo(g.br, yy(g.br)); }
   }
 
-  /* ---------- sprite'y chmur ----------
-     KONTUR (statyczny, osobno od koloru): 'mono' (wypełnienie ciemne + biały kontur, grubość dobrana do dystansu), 'ol' (kontur grubszy z drugą, cieńszą obwódką: L1),
-     'smono' (chmura deszczowa: ciemna z kreskowaniem).
-     KOLOR (przemalowywany przy zmianie palety, po kilka sprite'ów na klatkę): 'tint' (taśmy tonalne / gradient z odcieni, miękkie plamy drugiego odcieni, kreskowanie cieni),
-     'fog' (płaska sylwetka mgiełki), 'stint' (chmura deszczowa), 'ftint' (ławica mgły). Sprite koloru nie pokrywa dokładnie obrysu: kontur leży na nim osobno. */
-  var BUCKETS = [
-    { zmax: 1.2, lw: 1.3, spr: 1.25 },
-    { zmax: 3.5, lw: 3.2, spr: 0.7 },
-    { zmax: 99, lw: 7.5, spr: 0.4 }
-  ];
-  function bucketOf(z) { return z < BUCKETS[0].zmax ? 0 : (z < BUCKETS[1].zmax ? 1 : 2); }
-  function sprFrame(g, lw, spr) {
-    var pad = 3 + lw, cw = Math.max(2, Math.ceil((g.maxx - g.minx + pad * 2) * spr)), chh = Math.max(2, Math.ceil((-g.top + pad * 2 + g.h * 0.06) * spr));
-    var c = document.createElement('canvas'); c.width = cw; c.height = chh;
-    return { c: c, spr: spr, ox: (-g.minx + pad) * spr, oy: (-g.top + pad) * spr, w: cw, h: chh, pad: pad, g: g, ver: -1, key: '' };
-  }
-  function beginSpr(S) {
-    var x = S.c.getContext('2d'), g = S.g, pad = S.pad;
-    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, S.w, S.h); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
-    x.save(); x.beginPath(); x.moveTo(g.minx - pad * 2, g.top - pad * 2); x.lineTo(g.maxx + pad * 2, g.top - pad * 2); x.lineTo(g.maxx + pad * 2, 1); basePath(x, g, true); x.lineTo(g.minx - pad * 2, 1); x.closePath(); x.clip();
-    return x;
-  }
-  function makeSprite(g, mode, lw, spr) {
-    var S = sprFrame(g, mode === 'ol' ? lw * 3.4 : lw, spr), x = beginSpr(S), xx;
-    if (mode === 'mono' || mode === 'smono') {
-      x.fillStyle = rgba(LINE, 1); fillCircles(x, g, lw);
-      x.fillStyle = rgba(mode === 'mono' ? MONO : STM, 1); fillCircles(x, g, 0);
-      if (mode === 'smono') {
-        x.save(); clipCircles(x, g); x.strokeStyle = rgba(LINE, 0.3); x.lineWidth = 1.1 / spr; x.beginPath();
-        for (xx = g.minx; xx < g.maxx + 40; xx += 15) { x.moveTo(xx, -g.h * 0.62); x.lineTo(xx - 20, -2); }
-        x.stroke(); x.restore();
+  /* ---------- Z4: narzędzia rysunku (tusz i akwarela) ----------
+     Wszystko kodem (Canvas 2D), bez obrazków. Osobny generator R32: nie zmienia losowania świata (rnd) ani harmonogramu (rndE).
+     Tekstury (granulacja pigmentu, papier, plamy nieba, szum) liczone raz przy starcie. SPRMEM liczy pamięć sprite'ów (hak pamiec()). */
+  var TAU = Math.PI * 2, SPRMEM = 0, SPRN = 0;
+  function R32(sd) { var a = (sd * 2654435761) >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var q = Math.imul(a ^ a >>> 15, 1 | a); q = q + Math.imul(q ^ q >>> 7, 61 | q) ^ q; return ((q ^ q >>> 14) >>> 0) / 4294967296; }; }
+  function md(a, n) { return ((a % n) + n) % n; }
+  function mkC(w, hh) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(hh)); return c; }
+  function mkS(w, hh) { var c = mkC(w, hh); SPRMEM += c.width * c.height * 4; SPRN++; return c; }   /* sprite trwały (liczony w pamięci) */
+  var FILTER_OK = (function () { try { var x = mkC(2, 2).getContext('2d'); x.filter = 'blur(1px)'; return x.filter === 'blur(1px)'; } catch (_) { return false; } })();
+  function vnoise(size, cells, r) {
+    var g = new Float32Array(cells * cells), out = new Float32Array(size * size), f = cells / size, k, x, y, gx, gy, x0, y0, tx, ty, sx, sy, ya, yb, xa, xb, a, b, c, d;
+    for (k = 0; k < g.length; k++) g[k] = r();
+    for (y = 0; y < size; y++) {
+      gy = y * f; y0 = Math.floor(gy); ty = gy - y0; sy = ty * ty * (3 - 2 * ty); ya = (y0 % cells) * cells; yb = ((y0 + 1) % cells) * cells;
+      for (x = 0; x < size; x++) {
+        gx = x * f; x0 = Math.floor(gx); tx = gx - x0; sx = tx * tx * (3 - 2 * tx); xa = x0 % cells; xb = (x0 + 1) % cells;
+        a = g[ya + xa]; b = g[ya + xb]; c = g[yb + xa]; d = g[yb + xb]; out[y * size + x] = a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
       }
-    } else if (mode === 'ol') {
-      /* kontur grubszy + druga, cieńsza obwódka w odstępie: pierścienie przez wycinanie (destination-out) */
-      var L1 = lw * 1.4;
-      x.fillStyle = rgba(LINE, 0.62); fillCircles(x, g, L1 * 2.7);
-      x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; fillCircles(x, g, L1 * 2.1);
-      x.globalCompositeOperation = 'source-over';
-      x.fillStyle = rgba(LINE, 1); fillCircles(x, g, L1);
-      x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; fillCircles(x, g, 0);
-      x.globalCompositeOperation = 'source-over';
     }
-    x.restore();
-    if (mode === 'mono' || mode === 'smono') { x.beginPath(); basePath(x, g, false); x.lineWidth = lw; x.strokeStyle = rgba(LINE, 1); x.stroke(); }
-    else if (mode === 'ol') {
-      x.beginPath(); basePath(x, g, false); x.lineWidth = lw * 1.4; x.strokeStyle = rgba(LINE, 1); x.stroke();
-      x.save(); x.translate(0, lw * 3.6); x.beginPath(); basePath(x, g, false); x.lineWidth = lw * 0.7; x.strokeStyle = rgba(LINE, 0.55); x.stroke(); x.restore();
+    return out;
+  }
+  function fbm(size, list, sd) {
+    var r = R32(sd), acc = new Float32Array(size * size), tot = 0, k, j, n;
+    for (k = 0; k < list.length; k++) { n = vnoise(size, list[k][0], r); for (j = 0; j < acc.length; j++) acc[j] += n[j] * list[k][1]; tot += list[k][1]; }
+    for (j = 0; j < acc.length; j++) acc[j] /= tot;
+    return acc;
+  }
+  var TEX = {};
+  function grayTex(S, n, r, amp, jit) {   /* neutralna szarość wokół 128 (w trybie soft-light nie zmienia barwy, tylko fakturę) */
+    var c = mkS(S, S), x = c.getContext('2d'), id = x.createImageData(S, S), k, v;
+    for (k = 0; k < S * S; k++) { v = 128 + (n[k] - 0.5) * amp + (r() - 0.5) * jit; id.data[k * 4] = v; id.data[k * 4 + 1] = v; id.data[k * 4 + 2] = v; id.data[k * 4 + 3] = 255; }
+    x.putImageData(id, 0, 0); return c;
+  }
+  function buildTex() {
+    var S = 256, c, x, id, n, r = R32(9), k, px, py, a, l, ox, oy;
+    /* granulacja pigmentu: ciemne drobiny gęstsze w zagłębieniach szumu (nakładana tylko na plamy koloru) */
+    c = mkS(S, S); x = c.getContext('2d'); n = fbm(S, [[8, 0.6], [32, 0.5]], 21); a = fbm(S, [[64, 1], [128, 0.8]], 23); id = x.createImageData(S, S);
+    for (k = 0; k < S * S; k++) { l = cl((a[k] - 0.5) * 3.2 + (n[k] - 0.5) * 1.6); id.data[k * 4] = 74; id.data[k * 4 + 1] = 56; id.data[k * 4 + 2] = 96; id.data[k * 4 + 3] = 255 * l * l * 0.8; }
+    x.putImageData(id, 0, 0); x.lineCap = 'round';
+    for (k = 0; k < 160; k++) { px = r() * S; py = r() * S; a = r() * TAU; l = 4 + r() * 14; x.strokeStyle = 'rgba(80,62,100,' + (0.08 + r() * 0.1).toFixed(3) + ')'; x.lineWidth = 0.6 + r() * 0.6; for (ox = -S; ox <= S; ox += S) for (oy = -S; oy <= S; oy += S) { x.beginPath(); x.moveTo(px + ox, py + oy); x.quadraticCurveTo(px + ox + Math.cos(a + 0.7) * l * 0.5, py + oy + Math.sin(a + 0.7) * l * 0.5, px + ox + Math.cos(a) * l, py + oy + Math.sin(a) * l); x.stroke(); } }   /* włókna papieru w granulacji */
+    TEX.grain = c;
+    /* papier: włókna i ziarno, neutralna szarość */
+    c = grayTex(S, fbm(S, [[4, 0.5], [16, 0.5], [64, 0.6], [256, 0.7]], 11), r, 46, 22); x = c.getContext('2d'); x.lineCap = 'round';
+    for (k = 0; k < 220; k++) {
+      px = r() * S; py = r() * S; a = r() * TAU; l = 5 + r() * 18; x.strokeStyle = r() < 0.5 ? 'rgba(96,96,96,0.10)' : 'rgba(170,170,170,0.10)'; x.lineWidth = 0.5 + r() * 0.7;
+      for (ox = -S; ox <= S; ox += S) for (oy = -S; oy <= S; oy += S) { x.beginPath(); x.moveTo(px + ox, py + oy); x.quadraticCurveTo(px + ox + Math.cos(a + 0.6) * l * 0.5, py + oy + Math.sin(a + 0.6) * l * 0.5, px + ox + Math.cos(a) * l, py + oy + Math.sin(a) * l); x.stroke(); }
+    }
+    TEX.paper = c;
+    /* plamy nieba (mokre w mokre, niska częstotliwość) */
+    TEX.wash = grayTex(128, fbm(128, [[3, 1], [6, 0.7], [13, 0.35]], 404), r, 150, 6);
+    /* szum do masek wzrostu plam */
+    TEX.nz = fbm(128, [[4, 1], [9, 0.6], [23, 0.4]], 303);
+    /* miękka plama (cień, drobina światła, poświata): biała, radialna */
+    c = mkS(64, 64); x = c.getContext('2d'); a = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    a.addColorStop(0, 'rgba(255,255,255,1)'); a.addColorStop(0.35, 'rgba(255,255,255,0.55)'); a.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = a; x.fillRect(0, 0, 64, 64); TEX.dot = c;
+    c = mkS(128, 64); x = c.getContext('2d'); a = x.createRadialGradient(64, 32, 2, 64, 32, 32);
+    a.addColorStop(0, 'rgba(0,0,0,1)'); a.addColorStop(0.55, 'rgba(0,0,0,0.6)'); a.addColorStop(1, 'rgba(0,0,0,0)'); x.setTransform(2, 0, 0, 1, -64, 0); x.fillStyle = a; x.fillRect(0, 0, 128, 64); TEX.shadow = c;
+    /* poświata słońca / księżyca (biała, rysowana z kolorem przez alfę i tryb lighter) */
+    c = mkS(256, 256); x = c.getContext('2d'); a = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+    a.addColorStop(0, 'rgba(255,255,255,1)'); a.addColorStop(0.1, 'rgba(255,255,255,0.7)'); a.addColorStop(0.3, 'rgba(255,255,255,0.22)'); a.addColorStop(0.6, 'rgba(255,255,255,0.06)'); a.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = a; x.fillRect(0, 0, 256, 256); TEX.glow = c;
+    /* promienie światła (god rays): wachlarz miękkich klinów z rozmyciem; biały, barwę daje tryb i alfa */
+    c = mkS(384, 384); x = c.getContext('2d'); x.translate(192, 192);
+    for (k = 0; k < 17; k++) {
+      a = -Math.PI + 0.1 + r() * (TAU - 0.2); l = 120 + r() * 72; px = 0.02 + r() * 0.05;
+      n = x.createRadialGradient(0, 0, 10, 0, 0, l); n.addColorStop(0, 'rgba(255,255,255,0)'); n.addColorStop(0.15, 'rgba(255,255,255,' + (0.35 + r() * 0.4).toFixed(2) + ')'); n.addColorStop(0.55, 'rgba(255,255,255,0.18)'); n.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = n; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, l, a - px, a + px); x.closePath(); x.fill();
+    }
+    if (FILTER_OK) { var c2 = mkC(384, 384), x2 = c2.getContext('2d'); x2.filter = 'blur(4px)'; x2.drawImage(c, 0, 0); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 384, 384); x.drawImage(c2, 0, 0); }
+    TEX.rays = c;
+  }
+  /* linie: wygładzanie catmull-rom, przerwy w kresce, tusz o zmiennej grubości (wypełniony wielokąt) */
+  function catmull(pts, step, closed) {
+    var n = pts.length, out = [], segs, k, j, m, p0, p1, p2, p3, L, q, q2, q3;
+    if (n < 3) return pts.slice();
+    function get(k2) { return closed ? pts[md(k2, n)] : pts[k2 < 0 ? 0 : (k2 > n - 1 ? n - 1 : k2)]; }
+    segs = closed ? n : n - 1;
+    for (k = 0; k < segs; k++) {
+      p0 = get(k - 1); p1 = get(k); p2 = get(k + 1); p3 = get(k + 2); L = Math.sqrt((p2[0] - p1[0]) * (p2[0] - p1[0]) + (p2[1] - p1[1]) * (p2[1] - p1[1])); m = Math.max(1, Math.ceil(L / step));
+      for (j = 0; j < m; j++) {
+        q = j / m; q2 = q * q; q3 = q2 * q;
+        out.push([0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * q + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * q2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * q3),
+                  0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * q + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * q2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * q3)]);
+      }
+    }
+    if (!closed) out.push(pts[n - 1]); else out.push(out[0]);
+    return out;
+  }
+  function gaps(run, r, prob) {
+    var out = [], cur = [], k;
+    for (k = 0; k < run.length; k++) { cur.push(run[k]); if (k > 3 && k < run.length - 4 && r() < prob) { if (cur.length > 1) out.push(cur); cur = []; k += 1 + (r() * 2 | 0); } }
+    if (cur.length > 1) out.push(cur);
+    return out;
+  }
+  function inkLine(x, pts, w, col, r, o) {
+    var seg = [0], L = 0, k, ph, wob, tl, vr, lt = [], rt = [], a, b, tx, ty, tn, nx, ny, d, off, tp, ww, cx, cy;
+    o = o || {}; if (pts.length < 2) return;
+    for (k = 1; k < pts.length; k++) { L += Math.sqrt((pts[k][0] - pts[k - 1][0]) * (pts[k][0] - pts[k - 1][0]) + (pts[k][1] - pts[k - 1][1]) * (pts[k][1] - pts[k - 1][1])); seg.push(L); }
+    ph = r() * 100; wob = o.wob === undefined ? 0.3 : o.wob; tl = o.taper === undefined ? 3 : o.taper; vr = o.vary === undefined ? 0.45 : o.vary;
+    for (k = 0; k < pts.length; k++) {
+      a = pts[Math.max(0, k - 1)]; b = pts[Math.min(pts.length - 1, k + 1)]; tx = b[0] - a[0]; ty = b[1] - a[1]; tn = Math.sqrt(tx * tx + ty * ty) || 1; tx /= tn; ty /= tn;
+      nx = -ty; ny = tx; d = seg[k];
+      off = (Math.sin(d * 0.11 + ph) * 0.6 + Math.sin(d * 0.29 + ph * 1.7) * 0.4) * wob;
+      tp = tl > 0 ? cl(Math.min(d, L - d) / tl) : 1;
+      ww = w * ((1 - vr) + vr * (0.5 + 0.5 * Math.sin(d * 0.07 + ph * 0.7))) * (0.3 + 0.7 * Math.sqrt(tp));
+      cx = pts[k][0] + nx * off; cy = pts[k][1] + ny * off;
+      lt.push([cx + nx * ww * 0.5, cy + ny * ww * 0.5]); rt.push([cx - nx * ww * 0.5, cy - ny * ww * 0.5]);
+    }
+    x.beginPath(); x.moveTo(lt[0][0], lt[0][1]); for (k = 1; k < lt.length; k++) x.lineTo(lt[k][0], lt[k][1]); for (k = rt.length - 1; k >= 0; k--) x.lineTo(rt[k][0], rt[k][1]); x.closePath();
+    x.fillStyle = col; x.fill();
+  }
+  function offsetPts(pts, d) {
+    var out = [], k, a, b, tx, ty, tn;
+    for (k = 0; k < pts.length; k++) { a = pts[Math.max(0, k - 1)]; b = pts[Math.min(pts.length - 1, k + 1)]; tx = b[0] - a[0]; ty = b[1] - a[1]; tn = Math.sqrt(tx * tx + ty * ty) || 1; out.push([pts[k][0] - ty / tn * d, pts[k][1] + tx / tn * d]); }
+    return out;
+  }
+  function blobPath2(x, cx, cy, rr, r, sq) { var n = 22, ph = r() * 6, a1 = 0.06 + r() * 0.08, k, a, q; for (k = 0; k <= n; k++) { a = k / n * TAU; q = rr * (1 + a1 * Math.sin(3 * a + ph) + 0.05 * Math.sin(7 * a + ph * 2)); if (k) x.lineTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q * sq); else x.moveTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q * sq); } x.closePath(); }
+  function blurInPlace(S, px) {   /* tylko przy budowie: rozmycie maski (gdy brak ctx.filter: zostaje ostra) */
+    if (!FILTER_OK || px <= 0) return;
+    var c = mkC(S.w, S.h), x = c.getContext('2d'), y = S.c.getContext('2d');
+    x.filter = 'blur(' + px.toFixed(2) + 'px)'; x.drawImage(S.c, 0, 0);
+    y.save(); y.setTransform(1, 0, 0, 1, 0, 0); y.globalCompositeOperation = 'source-over'; y.globalAlpha = 1; y.clearRect(0, 0, S.w, S.h); y.drawImage(c, 0, 0); y.restore();
+  }
+
+  /* ---------- Z4: geometria chmur wzbogacona: płaty z falującym brzegiem, drobne płaty na grzbiecie, linie sylwetki i zakładek ---------- */
+  function lobeR(l, a) { return l.r * (1 + l.a1 * Math.sin(3 * a + l.p1) + l.a2 * Math.sin(5 * a + l.p2) + 0.012 * Math.sin(9 * a + l.p3)); }
+  function inLobe(l, x, y, pad) { var dx = x - l.x, dy = y - l.y; return Math.sqrt(dx * dx + dy * dy) < lobeR(l, Math.atan2(dy, dx)) + pad; }
+  function cBaseY(g, x) { return Math.sin(x * 0.05 + g.phase) * g.h * 0.025 + 1; }
+  function inCloudZ(g, x, y, pad) { var k; pad = pad || 0; if (y > cBaseY(g, x) + pad) return false; for (k = 0; k < g.L.length; k++) if (inLobe(g.L[k], x, y, pad)) return true; return false; }
+  function mkLobe(r, x, y, rad, lv) { return { x: x, y: y, r: rad, lv: lv, a1: 0.025 + r() * 0.035, a2: 0.01 + r() * 0.02, p1: r() * TAU, p2: r() * TAU, p3: r() * TAU }; }
+  function enrichGeom(g, sd) {
+    var r = R32(sd), L = [], k, c, l, n2, tries, ang, rr, cx, cy, ok, j;
+    g.sd = sd;
+    for (k = 0; k < g.circles.length; k++) { c = g.circles[k]; L.push(mkLobe(r, c.x, c.y, c.r, k < (g.nmain || 3) ? 0 : 1)); }
+    g.L = L;
+    n2 = 4 + Math.floor(r() * 5);
+    for (tries = 0; tries < 60 && n2 > 0; tries++) {   /* drobne płaty na grzbiecie (więcej płatów, miękkie przejścia) */
+      l = L[Math.floor(r() * L.length)]; ang = -Math.PI * (0.14 + r() * 0.72); rr = l.r * (0.2 + r() * 0.18);
+      cx = l.x + Math.cos(ang) * l.r * 0.92; cy = l.y + Math.sin(ang) * l.r * 0.92;
+      if (cy > -g.h * 0.2) continue;
+      ok = true; for (j = 0; j < L.length; j++) if (L[j] !== l && inLobe(L[j], cx, cy, -rr * 0.3)) { ok = false; break; }
+      if (!ok) continue;
+      L.push(mkLobe(r, cx, cy, rr, 2)); n2--;
+    }
+    g.minx = 1e9; g.maxx = -1e9; g.top = 1e9;
+    for (k = 0; k < L.length; k++) { l = L[k]; g.minx = Math.min(g.minx, l.x - l.r * 1.08); g.maxx = Math.max(g.maxx, l.x + l.r * 1.08); g.top = Math.min(g.top, l.y - l.r * 1.08); }
+    g.runs = cloudRunsZ(g); g.inner = cloudInnerZ(g, R32(sd + 99));
+    return g;
+  }
+  function collectRuns(pts, on, cyclic, out) {
+    var n = pts.length, s0, cur = null, k, j;
+    if (!n) return;
+    if (cyclic) {
+      s0 = on.indexOf(false); if (s0 < 0) { out.push(pts.concat([pts[0]])); return; }
+      for (k = 1; k <= n; k++) { j = (s0 + k) % n; if (on[j]) { if (!cur) cur = [pts[md(j - 1, n)]]; cur.push(pts[j]); } else if (cur) { cur.push(pts[j]); out.push(cur); cur = null; } }
+      if (cur) out.push(cur);
+    } else {
+      for (j = 0; j < n; j++) { if (on[j]) { if (!cur) cur = j ? [pts[j - 1]] : []; cur.push(pts[j]); } else if (cur) { cur.push(pts[j]); out.push(cur); cur = null; } }
+      if (cur) out.push(cur);
+    }
+  }
+  function cloudRunsZ(g) {
+    var runs = [], k, l, N, pts, on, j, a, rr, x, y, vis, m;
+    for (k = 0; k < g.L.length; k++) {
+      l = g.L[k]; N = Math.max(28, Math.round(l.r * 1.1)); pts = []; on = [];
+      for (j = 0; j < N; j++) {
+        a = j / N * TAU; rr = lobeR(l, a); x = l.x + Math.cos(a) * rr; y = l.y + Math.sin(a) * rr;
+        vis = y <= cBaseY(g, x) + 0.2;
+        if (vis) for (m = 0; m < g.L.length; m++) { if (m !== k && inLobe(g.L[m], x, y, -0.4)) { vis = false; break; } }
+        pts.push([x, y]); on.push(vis);
+      }
+      collectRuns(pts, on, true, runs);
+    }
+    pts = []; on = [];
+    for (x = g.minx; x <= g.maxx; x += 3) { y = cBaseY(g, x); pts.push([x, y]); vis = false; for (m = 0; m < g.L.length; m++) if (inLobe(g.L[m], x, y - 1.5, 0)) { vis = true; break; } on.push(vis); }
+    collectRuns(pts, on, false, runs);
+    return runs.filter(function (q) { return q.length > 2; });
+  }
+  function cloudInnerZ(g, r) {
+    var arcs = [], k, l, a0, a1, cur, a, rr, x, y, inside, m;
+    for (k = 0; k < g.L.length; k++) {
+      l = g.L[k]; if (l.lv === 0 && r() < 0.4) continue;
+      a0 = Math.PI * (0.08 + r() * 0.12); a1 = Math.PI * (0.92 - r() * 0.12); cur = [];
+      for (a = a0; a <= a1; a += 0.07) {
+        rr = lobeR(l, a) * 0.995; x = l.x + Math.cos(a) * rr; y = l.y + Math.sin(a) * rr;
+        inside = y < cBaseY(g, x) - 4; if (inside) { inside = false; for (m = 0; m < g.L.length; m++) if (m !== k && inLobe(g.L[m], x, y, -1.5)) { inside = true; break; } }
+        if (inside) cur.push([x, y]); else { if (cur.length > 3) arcs.push(cur); cur = []; }
+      }
+      if (cur.length > 3) arcs.push(cur);
+    }
+    return arcs.map(function (q) { var n = Math.max(3, Math.round(q.length * (0.45 + r() * 0.45))), s0 = r() < 0.5 ? 0 : q.length - n; return q.slice(s0, s0 + n); });
+  }
+  function lobePoly(x, l, grow, j1, j2, q1, q2) {
+    var N = Math.max(24, Math.round(l.r * 0.7)), j, a, rr;
+    for (j = 0; j <= N; j++) { a = j / N * TAU; rr = lobeR(l, a) * (1 + (j1 || 0) * Math.sin(2 * a + (q1 || 0)) + (j2 || 0) * Math.sin(4 * a + (q2 || 0))) + grow; if (j) x.lineTo(l.x + Math.cos(a) * rr, l.y + Math.sin(a) * rr); else x.moveTo(l.x + Math.cos(a) * rr, l.y + Math.sin(a) * rr); }
+    x.closePath();
+  }
+  function lobesPath(x, g, grow, jr, jamp) { var k, l; for (k = 0; k < g.L.length; k++) { l = g.L[k]; if (jr) lobePoly(x, l, grow + (jr() - 0.5) * 1.4, (jr() - 0.5) * jamp, (jr() - 0.5) * jamp * 0.6, jr() * TAU, jr() * TAU); else lobePoly(x, l, grow); } }
+  function clipAbove(x, g, grow) {
+    var px; x.beginPath(); x.moveTo(g.minx - 80, g.top - 80); x.lineTo(g.maxx + 80, g.top - 80);
+    for (px = g.maxx + 80; px >= g.minx - 80; px -= 5) x.lineTo(px, cBaseY(g, px) + grow);
+    x.closePath(); x.clip();
+  }
+  function outward(g, pts, d) { var m = Math.floor(pts.length / 2), q = offsetPts(pts.slice(Math.max(0, m - 1), m + 2), d)[1]; return offsetPts(pts, q && inCloudZ(g, q[0], q[1], 0) ? -d : d); }
+
+  /* ---------- sprite'y chmur (Z1, Z3b, Z4) ----------
+     KONTUR (statyczny): 'mono' (granatowe wypełnienie + biały tusz o zmiennej grubości, zakładki płatów, kreskowanie przy podstawie; L0),
+     'smono' (chmura deszczowa), 'ln' (sama kreska: podwójny szkicowy kontur L1; biała maska PRZEMALOWYWANA W MIEJSCU na barwę tuszu przy zmianie etapu).
+     AKWARELA (Z4): maski liczone raz (plama z poszarpanym, rozlanym brzegiem i przesunięciem względem kreski, etapy wzrostu plamy, schnący brzeg,
+     kreskowanie, cień własny i jasny brzeg z lewej i z prawej), a sprite koloru 'tint' składany z nich tanio przy zmianie palety (paintInto).
+     'tfar' = pomniejszona kopia koloru dla dalekich warstw (głębia ostrości), 'fog' = sylwetka mgiełki (przemalowywana w miejscu). */
+  var BUCKETS = [
+    { zmax: 1.2, lw: 1.3, spr: 1.15 },
+    { zmax: 3.5, lw: 3.0, spr: 0.62 },
+    { zmax: 99, lw: 7.0, spr: 0.34 }
+  ];
+  var MSC = 0.6, MSL = 0.32, MFAR = 0.16, BLEED = [1.8, 1.2];
+  function bucketOf(z) { return z < BUCKETS[0].zmax ? 0 : (z < BUCKETS[1].zmax ? 1 : 2); }
+  function zFrame(g, pad, spr) {
+    if (g.tile) return seaFrame(g, spr);
+    var c = mkS((g.maxx - g.minx + pad * 2) * spr, (-g.top + pad * 2 + g.h * 0.06) * spr);
+    return { c: c, spr: spr, ox: (-g.minx + pad) * spr, oy: (-g.top + pad) * spr, w: c.width, h: c.height, pad: pad, g: g, ver: -1, key: '' };
+  }
+  function wctx(S) { var x = S.c.getContext('2d'); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy); return x; }
+  function makeInk(g, kind, lw, spr) {
+    var S = zFrame(g, 4 + lw * 3, spr), x = wctx(S), r = R32(g.sd * 7 + Math.round(lw * 10) + kind.length * 31), k, j, pts, segs, px, yb, hh, dark = kind === 'smono';
+    x.lineJoin = 'round';
+    if (kind === 'mono' || kind === 'smono') {
+      x.save(); clipAbove(x, g, 0.4); x.beginPath(); lobesPath(x, g, 0.3); x.fillStyle = rgba(dark ? STM : MONO, 1); x.fill();
+      x.clip(); x.lineCap = 'round'; x.strokeStyle = rgba(LINE, 1); x.lineWidth = Math.max(0.8, lw * 0.4);   /* kreskowanie cieni przy podstawie (biały tusz, delikatny) */
+      for (px = g.minx; px < g.maxx; px += (dark ? 8 : 6.5) + r() * 3.5) {
+        yb = cBaseY(g, px); if (!inCloudZ(g, px, yb - 4, 0)) continue;
+        hh = dark ? g.h * (0.4 + r() * 0.2) : 8 + r() * 13; x.globalAlpha = (dark ? 0.24 : 0.14) + r() * 0.12;
+        x.beginPath(); x.moveTo(px, yb + 1); x.lineTo(px + hh * 0.45, yb + 1 - hh); x.stroke();
+      }
+      x.globalAlpha = 1; x.restore();
+      for (k = 0; k < g.inner.length; k++) inkLine(x, catmull(g.inner[k], 1.5, false), lw * 0.6, rgba(LINE, 0.5), r, { taper: 4 });
+      for (k = 0; k < g.runs.length; k++) { segs = gaps(g.runs[k], r, 0.012); for (j = 0; j < segs.length; j++) inkLine(x, catmull(segs[j], 1.5, false), lw, rgba(LINE, 0.95), r, { taper: 2.5 }); }
+    } else {
+      for (k = 0; k < g.inner.length; k++) inkLine(x, catmull(g.inner[k], 1.5, false), lw * 0.75, rgba(LINE, 0.66), r, { taper: 4 });
+      for (k = 0; k < g.runs.length; k++) {
+        pts = catmull(g.runs[k], 1.5, false);
+        segs = gaps(pts, r, 0.02); for (j = 0; j < segs.length; j++) inkLine(x, segs[j], lw * 1.3, rgba(LINE, 1), r, { taper: 2.5 });
+        if (pts.length > 6 && r() < 0.75) { segs = gaps(outward(g, pts, lw * 2.4), r, 0.07); for (j = 0; j < segs.length; j++) inkLine(x, segs[j], lw * 0.55, rgba(LINE, 0.6), r, { taper: 4, wob: 0.5 }); }
+      }
     }
     return S;
   }
-  /* malowanie koloru: taśmy tonalne (L1) przechodzące w gładki gradient, miękkie plamy drugiego odcienia, cień i kreskowanie */
-  function paintTint(x, g, C) {
-    var tn = C.tones, w = 0.115 * (1 - C.band) + 0.003, bnd = [0.25, 0.5, 0.75], i, xx, gr, sh, b, cc, rg;
-    if (C.rimA > 0.02) { x.fillStyle = rgba(C.rim, C.rimA); fillCircles(x, g, 2.4); }
-    gr = x.createLinearGradient(0, g.top, 0, 0);
-    gr.addColorStop(0, rgba(tn[0], 1));
-    for (i = 0; i < 3; i++) { gr.addColorStop(bnd[i] - w, rgba(tn[i], 1)); gr.addColorStop(bnd[i] + w, rgba(tn[i + 1], 1)); }
-    gr.addColorStop(1, rgba(tn[3], 1));
-    x.fillStyle = gr; fillCircles(x, g, 0);
-    if (C.blobA > 0.02) {   /* mokre w mokre: plamy drugiego odcienia w płatach */
-      x.save(); clipCircles(x, g);
-      for (i = 0; i < g.circles.length; i += 2) {
-        cc = g.circles[i]; b = cc.r * 1.15;
-        rg = x.createRadialGradient(cc.x, cc.y, 0, cc.x, cc.y, b);
-        rg.addColorStop(0, rgba(i % 4 === 0 ? C.blob : C.blob2, C.blobA)); rg.addColorStop(1, rgba(C.blob, 0));
-        x.fillStyle = rg; x.fillRect(cc.x - b, cc.y - b, b * 2, b * 2);
+  /* maski akwareli jednej chmury (czarne, liczy się alfa); soft = ławica mgły (szerszy, miękki brzeg) */
+  function makeMasks(g, sd, soft) {
+    var r = R32(sd), M = {}, pad = 12, S, x, k, j, l, n, dir, cx, cy, gr, d, px, yb, hh, a, R0, ccx, ccy;
+    function fr(spr) { var S2 = zFrame(g, pad, spr); x = wctx(S2); x.translate(BLEED[0], BLEED[1]); x.lineJoin = 'round'; x.lineCap = 'round'; return S2; }
+    function shapeClip(grow) { clipAbove(x, g, soft ? 6 : 2.5); x.beginPath(); lobesPath(x, g, grow); x.clip(); }
+    /* plama: pełny środek, poszarpana i rozlana obwódka (warstwy z drganiem), ziarno wyżarte z brzegu */
+    S = fr(MSC); x.save(); clipAbove(x, g, soft ? 7 : 2.5); x.fillStyle = '#000';
+    for (k = 0; k < 6; k++) { x.globalAlpha = 0.22; x.beginPath(); lobesPath(x, g, (soft ? 5 : 1.4) + k * 0.55, r, 0.08); x.fill(); }
+    x.globalAlpha = 0.65; x.globalCompositeOperation = 'destination-out'; x.fillStyle = x.createPattern(TEX.grain, 'repeat'); x.fillRect(g.minx - 30, g.top - 30, g.maxx - g.minx + 60, -g.top + 60);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.fillStyle = '#000'; x.beginPath(); lobesPath(x, g, soft ? 1 : -1.2, r, 0.03); x.fill();
+    x.restore(); if (soft) blurInPlace(S, 3); M.body = S;
+    /* etapy wzrostu plamy (kolor rośnie od środków płatów jak malowany obraz): 35% i 65% pokrycia, liczone na pikselach */
+    M.st = [growStage(M.body, g, 0.35, zFrame(g, pad, MSL)), growStage(M.body, g, 0.65, zFrame(g, pad, MSL))];
+    /* schnący brzeg: ciemniejsza obwódka plamy, zakładki płatów, kalafiory */
+    S = fr(MSC); x.save(); shapeClip(1.4); x.strokeStyle = '#000';
+    for (k = 0; k < g.runs.length; k++) { x.beginPath(); n = g.runs[k]; x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.globalAlpha = 0.3; x.lineWidth = 8; x.stroke(); x.globalAlpha = 0.8; x.lineWidth = 2.8; x.stroke(); }
+    x.lineWidth = 2; x.globalAlpha = 0.42;
+    for (k = 0; k < g.inner.length; k++) { n = g.inner[k]; x.beginPath(); x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.stroke(); }
+    for (k = 0; k < g.L.length; k++) { l = g.L[k]; if (l.lv > 0 || r() < 0.45 || soft) continue; x.globalAlpha = 0.45; x.lineWidth = 1.5; x.beginPath(); blobPath2(x, l.x + (r() - 0.5) * l.r * 0.5, l.y - l.r * (0.1 + r() * 0.3), l.r * (0.22 + r() * 0.18), r, 0.8); x.stroke(); }
+    x.restore(); M.edge = S;
+    /* kreskowanie cieni (L1): podstawa i spody płatów */
+    S = fr(MSC); x.save(); shapeClip(0); x.strokeStyle = '#000'; x.lineWidth = 1.25;
+    for (px = g.minx; px < g.maxx; px += 4 + r() * 2.5) { yb = cBaseY(g, px); if (!inCloudZ(g, px, yb - 3, 0)) continue; hh = 8 + r() * 16; x.globalAlpha = 0.5 + r() * 0.4; x.beginPath(); x.moveTo(px, yb + 1); x.lineTo(px + hh * 0.5, yb + 1 - hh); x.stroke(); }
+    for (k = 0; k < g.L.length; k++) {
+      l = g.L[k]; if (r() < 0.35) continue;
+      for (a = Math.PI * 0.58; a < Math.PI * 0.95; a += 0.12) { cx = l.x + Math.cos(a) * l.r * 0.95; cy = l.y + Math.sin(a) * l.r * 0.95; if (!inCloudZ(g, cx + 2, cy - 2, 0)) continue; x.globalAlpha = 0.35 + r() * 0.3; x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + 6, cy - 7); x.stroke(); }
+    }
+    x.restore(); M.hatch = S;
+    /* cień własny i jasny brzeg: światło z lewej-góry (L) i z prawej-góry (P) */
+    M.sh = []; M.rim = [];
+    R0 = Math.max(g.maxx - g.minx, -g.top) * 0.62; ccx = (g.minx + g.maxx) / 2; ccy = g.top * 0.5;
+    for (d = -1; d <= 1; d += 2) {
+      dir = [d * 0.55, -0.83];
+      S = fr(MSL); x.save(); shapeClip(1.4);
+      for (k = 0; k < g.L.length; k++) {
+        l = g.L[k];
+        x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; x.beginPath(); lobePoly(x, l, 1.4); x.fill(); x.globalCompositeOperation = 'source-over';
+        cx = l.x + l.r * 0.36 * dir[0]; cy = l.y + l.r * 0.42 * dir[1];
+        gr = x.createRadialGradient(cx, cy, l.r * 0.1, cx, cy, l.r * 1.3); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.46, 'rgba(0,0,0,0)'); gr.addColorStop(0.84, 'rgba(0,0,0,0.6)'); gr.addColorStop(1, 'rgba(0,0,0,0.82)');
+        x.fillStyle = gr; x.beginPath(); lobePoly(x, l, 1.4); x.fill();
       }
-      x.restore();
+      gr = x.createLinearGradient(0, -g.h * 0.42, 0, 2); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.7)'); x.fillStyle = gr; x.fillRect(g.minx - 20, -g.h * 0.42, g.maxx - g.minx + 40, g.h * 0.5);
+      x.restore(); blurInPlace(S, 1.2); M.sh.push(S);
+      S = fr(MSL); x.save(); shapeClip(1.4); x.strokeStyle = '#000';
+      for (k = 0; k < g.runs.length; k++) { n = g.runs[k]; x.beginPath(); x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.globalAlpha = 0.24; x.lineWidth = 14; x.stroke(); x.globalAlpha = 0.4; x.lineWidth = 7; x.stroke(); x.globalAlpha = 0.7; x.lineWidth = 3; x.stroke(); }
+      for (k = 0; k < g.inner.length; k++) { n = g.inner[k]; x.beginPath(); x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.globalAlpha = 0.4; x.lineWidth = 6; x.stroke(); }   /* światło między płatami */
+      x.restore(); x.save(); x.globalCompositeOperation = 'destination-in';
+      gr = x.createLinearGradient(ccx - dir[0] * R0, ccy - dir[1] * R0, ccx + dir[0] * R0, ccy + dir[1] * R0); gr.addColorStop(0, 'rgba(0,0,0,0.04)'); gr.addColorStop(0.45, 'rgba(0,0,0,0.12)'); gr.addColorStop(1, 'rgba(0,0,0,1)');
+      x.fillStyle = gr; x.fillRect(g.minx - 40, g.top - 40, g.maxx - g.minx + 80, -g.top + 80); x.restore(); blurInPlace(S, 0.6); M.rim.push(S);
     }
-    sh = x.createLinearGradient(0, -g.h * 0.4, 0, 0); sh.addColorStop(0, rgba(C.shade, 0)); sh.addColorStop(1, rgba(C.shade, C.shadeA));
-    x.fillStyle = sh; fillCircles(x, g, 0);
-    if (C.hatchA > 0.02) {
-      x.save(); clipCircles(x, g); x.strokeStyle = rgba(C.hatchC, C.hatchA); x.lineWidth = 1.7; x.beginPath();
-      for (xx = g.minx; xx < g.maxx + 40; xx += 11) { x.moveTo(xx, -g.h * 0.5); x.lineTo(xx - 20, -2); }
-      x.stroke(); x.restore();
-    }
+    return M;
   }
-  function paintInto(S, C) {
-    var x = beginSpr(S), g = S.g, xx;
-    if (S.kind === 'tint') paintTint(x, g, C);
-    else if (S.kind === 'stint') paintTint(x, g, C.storm);
-    else if (S.kind === 'fog') { x.fillStyle = rgba(C.fog, 1); fillCircles(x, g, 0); }
-    else if (S.kind === 'ftint') {
-      x.fillStyle = rgba(C.bank, 0.9); fillCircles(x, g, 0);
-      x.save(); clipCircles(x, g); x.strokeStyle = rgba(mixc(C.bank, LINE, 0.5), 0.35); x.lineWidth = 2; x.beginPath();
-      for (xx = -g.h * 0.55; xx < -2; xx += 14) { x.moveTo(g.minx, xx); x.lineTo(g.maxx, xx + 3); }
-      x.stroke(); x.restore();
+  /* etap wzrostu plamy: pole = najbliższy środek płata + szum; próg zależny od pokrycia; liczone raz na pikselach maski */
+  function growStage(B, g, cov, S) {
+    var nzk = g.tile ? 0.4 : 0.35, x = S.c.getContext('2d'), w = S.w, hh = S.h, id, src, k, px, py, wx, wy, f, v, m, l, dx, dy, nz = TEX.nz, al, th = (1 - cov) * 0.95;
+    x.drawImage(B.c, 0, 0, w, hh); id = x.getImageData(0, 0, w, hh); src = id.data;
+    for (py = 0; py < hh; py++) for (px = 0; px < w; px++) {
+      k = (py * w + px) * 4; al = src[k + 3]; if (!al) continue;
+      wx = (px + 0.5 - S.ox) / S.spr - BLEED[0]; wy = (py + 0.5 - S.oy) / S.spr - BLEED[1]; f = 0;
+      for (m = 0; m < g.L.length; m++) { l = g.L[m]; dx = wx - l.x; dy = wy - l.y; v = 1 - Math.sqrt(dx * dx + dy * dy) / (l.r * 1.1); if (v > f) f = v; }
+      f = f * 0.72 + 0.5 * nz[((Math.floor(wy * nzk) & 127) * 128) + (Math.floor(md(wx, 640) * nzk) & 127)] - 0.12;
+      v = cl((f - th + 0.07) / 0.14); src[k + 3] = al * v * v * (3 - 2 * v);
     }
-    x.restore(); S.ver = tintVer;
+    x.putImageData(id, 0, 0);
+    return S;
+  }
+  var SCR = null, SCRX = null;
+  function scratch(w, hh) { if (!SCR || SCR.width < w || SCR.height < hh) { SCR = mkC(Math.max(w, SCR ? SCR.width : 0), Math.max(hh, SCR ? SCR.height : 0)); SCRX = SCR.getContext('2d'); } return SCRX; }
+  /* plama w kolorze col z masek ws = [[maska, waga], ...] (na płótnie roboczym) i przyłożenie jej do x trybem op */
+  function stampMasks(x, ws, w, hh, col, a, op) {
+    var y, k, any = false;
+    if (a < 0.004) return;
+    y = scratch(w, hh); y.setTransform(1, 0, 0, 1, 0, 0); y.globalCompositeOperation = 'source-over'; y.globalAlpha = 1; y.clearRect(0, 0, w, hh);
+    for (k = 0; k < ws.length; k++) if (ws[k][1] > 0.004) { y.globalAlpha = ws[k][1]; y.drawImage(ws[k][0].c, 0, 0, w, hh); any = true; }
+    if (!any) return;
+    y.globalAlpha = 1; y.globalCompositeOperation = 'source-in'; y.fillStyle = rgba(col, 1); y.fillRect(0, 0, w, hh); y.globalCompositeOperation = 'source-over';
+    x.globalCompositeOperation = op || 'source-atop'; x.globalAlpha = a; x.drawImage(SCR, 0, 0, w, hh, 0, 0, w, hh);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+  }
+  /* przemalowanie w miejscu: alfa zostaje, barwa nowa (kreska tuszu, mgiełka) */
+  function recolor(S, col) { var x = S.c.getContext('2d'); x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-in'; x.fillStyle = rgba(col, 1); x.fillRect(0, 0, S.w, S.h); x.restore(); }
+  /* akwarela chmury: plama rośnie (etapy), taśmy tonalne (L1) przechodzą w laserunek, mokre w mokre, cień własny, kreskowanie, schnący brzeg, jasny brzeg od światła, granulacja */
+  function paintTint(S, M, C) {
+    var x = S.c.getContext('2d'), g = S.g, w = S.w, hh = S.h, tn = C.tones, bw = 0.09 - 0.04 * C.band, bnd = [0.25, 0.5, 0.75], k, gr, cc, b, rg, cov = C.cov, y0, y1, f;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, hh);
+    if (cov >= 0.999) x.drawImage(M.body.c, 0, 0, w, hh);
+    else if (cov < 0.5) { f = cl(cov / 0.5); x.globalAlpha = sm(f / 0.35); x.drawImage(M.st[0].c, 0, 0, w, hh); x.globalAlpha = f; x.drawImage(M.st[1].c, 0, 0, w, hh); }
+    else { f = (cov - 0.5) / 0.5; x.drawImage(M.st[1].c, 0, 0, w, hh); x.globalAlpha = f; x.drawImage(M.body.c, 0, 0, w, hh); }
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-in';
+    y0 = S.oy + g.top * S.spr; y1 = S.oy + 2 * S.spr;
+    gr = x.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, rgba(tn[0], 1));
+    for (k = 0; k < 3; k++) { gr.addColorStop(bnd[k] - bw, rgba(tn[k], 1)); gr.addColorStop(bnd[k] + bw, rgba(tn[k + 1], 1)); }
+    gr.addColorStop(1, rgba(tn[3], 1)); x.fillStyle = gr; x.fillRect(0, 0, w, hh);
+    x.globalCompositeOperation = 'source-atop';
+    if (C.blobA > 0.02) {   /* mokre w mokre: plamy drugiego odcienia wsiąkają w płaty */
+      x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
+      for (k = 0; k < g.L.length && k < 9; k += 3) {
+        cc = g.L[k]; b = cc.r * 1.15; rg = x.createRadialGradient(cc.x + BLEED[0], cc.y, 0, cc.x + BLEED[0], cc.y, b);
+        rg.addColorStop(0, rgba(k % 4 === 0 ? C.blob : C.blob2, C.blobA)); rg.addColorStop(1, rgba(C.blob, 0)); x.fillStyle = rg; x.fillRect(cc.x - b, cc.y - b, b * 2 + 4, b * 2);
+      }
+      x.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    x.globalCompositeOperation = 'source-over';
+    /* ciemne warstwy w jednym przyłożeniu: cień własny (wagi światła), kreskowanie, schnący brzeg; barwa: cień zmieszany z brzegiem */
+    stampMasks(x, [[M.sh[0], C.wL * C.shadeA], [M.sh[1], C.wR * C.shadeA], [M.hatch, C.hatchA], [M.edge, C.edgeA]], w, hh, mixc(C.shade, C.edgeC, 0.25 * cl(C.edgeA / (C.shadeA + C.edgeA + 0.01)) + 0.2 * cl(C.hatchA / (C.shadeA + 0.01))), 1, 'source-atop');
+    stampMasks(x, [[M.rim[0], C.wL], [M.rim[1], C.wR]], w, hh, C.rim, C.rimA, 'source-atop');
+    if (C.granA > 0.01) { x.globalCompositeOperation = 'source-atop'; x.globalAlpha = C.granA; if (!S.c._pat) S.c._pat = x.createPattern(TEX.grain, 'repeat'); x.fillStyle = S.c._pat; x.fillRect(0, 0, w, hh); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; }
+    if (S.far) { var xf = S.far.c.getContext('2d'); xf.setTransform(1, 0, 0, 1, 0, 0); xf.clearRect(0, 0, S.far.w, S.far.h); xf.drawImage(S.c, 0, 0, S.far.w, S.far.h); }
+  }
+  /* ławica mgły: miękka plama w barwie mgły i poziome smugi */
+  function paintBank(S, M, C) {
+    var x = S.c.getContext('2d'), w = S.w, hh = S.h;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, hh);
+    x.globalAlpha = 0.92; x.drawImage(M.body.c, 0, 0, w, hh); x.globalAlpha = 1; x.globalCompositeOperation = 'source-in'; x.fillStyle = rgba(C.bank, 1); x.fillRect(0, 0, w, hh);
+    x.globalCompositeOperation = 'source-over';
+    stampMasks(x, [[M.sh[0], 0.5], [M.sh[1], 0.5]], w, hh, mixc(C.bank, C.shade, 0.5), 0.35, 'source-atop');
+    stampMasks(x, [[M.rim[0], 0.5], [M.rim[1], 0.5]], w, hh, mixc(C.bank, LINE, 0.6), 0.55, 'source-atop');
+  }
+  function withPrev(S) { var P = { c: mkS(S.w, S.h), spr: S.spr, ox: S.ox, oy: S.oy, w: S.w, h: S.h }; S.prev = P; S.mix = 1; return S; }
+  /* sprite akwareli z przenikaniem: po przemalowaniu stara wersja gaśnie przez kilka klatek (barwy nie skaczą, gdy doba biegnie szybko) */
+  function drawTintS(S, X, Y, sc, a) { if (S.mix < 1 && S.prev && !lekki) { drawSpr(S.prev, X, Y, sc, a); drawSpr(S, X, Y, sc, a * S.mix); } else drawSpr(S, X, Y, sc, a); }
+  function paintInto(S, C) {
+    var tmp;
+    if (S.prev && S.ver !== -1) { tmp = S.c; S.c = S.prev.c; S.prev.c = tmp; S.mix = 0; }
+    if (S.kind === 'tint') paintTint(S, S.M, C);
+    else if (S.kind === 'stint') paintTint(S, S.M, C.storm);
+    else if (S.kind === 'sea') paintSea(S, C);
+    else if (S.kind === 'ftint') paintBank(S, S.M, C);
+    else if (S.kind === 'fog') recolor(S, C.fog);
+    else if (S.kind === 'ln') recolor(S, C.lineC);
+    S.ver = tintVer;
   }
   var POOL = [], POOLN = 14, STORM = [], FOGS = [], REG = [], tintVer = 0, tintKeys = {}, regRR = 0;
   function addReg(S, kind, ci) { S.kind = kind; S.ci = ci; REG.push(S); return S; }
+  function makeFogSpr(M) { var S = zFrame(M.body.g, M.body.pad, MSL), x = S.c.getContext('2d'); x.drawImage(M.body.c, 0, 0, S.w, S.h); return S; }
+  function makeTint(g, M, kind, ci) { var S = withPrev(addReg(zFrame(g, M.body.pad, MSC), kind, ci)); S.M = M; S.far = zFrame(g, M.body.pad, MFAR); return S; }
   function buildPool() {
-    var i, g, b;
-    for (i = 0; i < POOLN; i++) {
-      g = makeCloudGeom(240 + rnd() * 340, 85 + rnd() * 115);
-      POOL.push({ g: g, mono: [], ol: [], tint: addReg(sprFrame(g, 0, 0.7), 'tint', i), fog: addReg(sprFrame(g, 0, 0.45), 'fog', i) });
-      for (b = 0; b < BUCKETS.length; b++) { POOL[i].mono.push(makeSprite(g, 'mono', BUCKETS[b].lw, BUCKETS[b].spr)); POOL[i].ol.push(makeSprite(g, 'ol', BUCKETS[b].lw, BUCKETS[b].spr)); }
+    var k, g, b, M, P;
+    buildTex();
+    for (k = 0; k < POOLN; k++) {
+      g = enrichGeom(makeCloudGeom(240 + rnd() * 340, 85 + rnd() * 115), 1000 + k * 37);
+      M = makeMasks(g, 5000 + k * 13, false);
+      P = { g: g, mono: [], ol: [], M: M, tint: makeTint(g, M, 'tint', k), fog: addReg(makeFogSpr(M), 'fog', k) };
+      for (b = 0; b < BUCKETS.length; b++) P.mono.push(makeInk(g, 'mono', BUCKETS[b].lw, BUCKETS[b].spr));
+      for (b = 0; b < 2; b++) P.ol.push(addReg(makeInk(g, 'ln', BUCKETS[b].lw, b ? BUCKETS[1].spr : 0.9), 'ln', k));
+      POOL.push(P);
     }
     /* dwie chmury deszczowe / burzowe: szerokie, niskie, ciemne */
-    for (i = 0; i < 2; i++) {
-      g = makeCloudGeom(310, 132 + i * 14);
-      STORM.push({ g: g, mono: [makeSprite(g, 'smono', 1.6, 0.9), makeSprite(g, 'smono', 4.2, 0.5)], tint: addReg(sprFrame(g, 0, 0.8), 'stint', 0) });
+    for (k = 0; k < 2; k++) {
+      g = enrichGeom(makeCloudGeom(310, 132 + k * 14), 2000 + k * 41); M = makeMasks(g, 6000 + k, false);
+      STORM.push({ g: g, M: M, mono: [makeInk(g, 'smono', 1.6, 0.9), makeInk(g, 'smono', 4.2, 0.5)], tint: makeTint(g, M, 'stint', 0) });
     }
     /* dwie ławice mgły: szerokie, miękkie */
-    for (i = 0; i < 2; i++) {
-      g = makeCloudGeom(340, 100 + i * 12);
-      FOGS.push({ g: g, mono: [makeSprite(g, 'mono', 1.6, 0.9), makeSprite(g, 'mono', 4.2, 0.5)], tint: addReg(sprFrame(g, 0, 0.7), 'ftint', 0) });
+    for (k = 0; k < 2; k++) {
+      g = enrichGeom(makeCloudGeom(340, 100 + k * 12), 3000 + k * 43); M = makeMasks(g, 7000 + k, true);
+      FOGS.push({ g: g, M: M, mono: [makeInk(g, 'mono', 1.6, 0.9), makeInk(g, 'mono', 4.2, 0.5)], tint: withPrev(addReg(zFrame(g, M.body.pad, MSC), 'ftint', 0)) });
+      FOGS[k].tint.M = M;
     }
+    buildSea();
+  }
+
+  /* ---------- Z4: morze chmur pod ptaszkiem ----------
+     Zamiast gładkiego gradientu: rzędy prawdziwych kłębów (kafle okresowe w poziomie, 2 warianty), każdy rząd na swojej głębokości z,
+     przesuwa się ku kamerze z prędkością lotu (położenie = czysta funkcja przebytej drogi seaD) i jest wplatany między kulisy według z.
+     L0: granat i biały tusz; kolor: akwarela z tych samych masek co chmury. Na morzu wędrują cienie chmur, nad nim mgiełka i promienie. */
+  var SEA_TW = 640, SEA_N = 7, SEA_NEAR = 0.26, SEA_FAR = 6.4, SEA_YS = 150, SEA_T = [], seaD = 0, seaRows = [];
+  function seaTopZ(t, x) { var y = 40, k, l, dx, yy; for (k = 0; k < t.L.length; k++) { l = t.L[k]; dx = x - l.x; if (Math.abs(dx) < l.r) { yy = l.y - Math.sqrt(l.r * l.r - dx * dx) * (1 + l.a1 * 0.8 * Math.sin(dx * 0.13 + l.p1)); if (yy < y) y = yy; } } return y; }
+  function makeSeaTile(sd) {
+    var r = R32(sd), base = [], L = [], x = 0, rr, k, j, l, r2, a, x2, y2, t, s0, cur, a0, a1, q, px, py, inside, m, n;
+    while (x < SEA_TW - 12) { rr = 24 + r() * 30; base.push(mkLobe(r, x, -rr * 0.26 + r() * 6, rr, 0)); x += rr * (0.95 + r() * 0.5); }
+    n = base.length;
+    for (k = 0; k < n; k++) {
+      l = base[k]; if (r() > 0.85) continue;
+      for (j = 0; j < (r() < 0.4 ? 2 : 1); j++) {
+        a = -Math.PI / 2 + (r() - 0.5) * 1.7; r2 = l.r * (0.36 + r() * 0.22); x2 = l.x + Math.cos(a) * l.r * 0.7; y2 = l.y + Math.sin(a) * l.r * 0.7; base.push(mkLobe(r, x2, y2, r2, 1));
+        if (r() < 0.4) base.push(mkLobe(r, x2 + Math.cos(a) * r2 * 0.7, y2 + Math.sin(a) * r2 * 0.72, r2 * (0.48 + r() * 0.2), 2));
+      }
+    }
+    for (k = 0; k < base.length; k++) for (j = -1; j <= 1; j++) { l = {}; for (q in base[k]) l[q] = base[k][q]; l.x += j * SEA_TW; L.push(l); }
+    t = { tile: true, L: L, base: base, sd: sd, depth: 400, minx: 0, maxx: SEA_TW, h: 60 };
+    t.top = 0; for (k = 0; k < base.length; k++) t.top = Math.min(t.top, base[k].y - base[k].r * 1.08);
+    t.env = []; t.valley = -60; for (px = -24; px <= SEA_TW + 24; px += 2.5) { t.env.push([px, seaTopZ(t, px)]); if (px >= 0 && px <= SEA_TW) t.valley = Math.max(t.valley, seaTopZ(t, px)); }
+    t.L2 = []; x = 10 + r() * 30;
+    while (x < SEA_TW - 20) { rr = 30 + r() * 26; l = mkLobe(r, x, 46 + r() * 60, rr, 3); for (j = -1; j <= 1; j++) { q = {}; for (a in l) q[a] = l[a]; q.x += j * SEA_TW; t.L2.push(q); } x += rr * (1.1 + r() * 0.6); }
+    t.inner = [];
+    for (k = 0; k < L.length; k++) {
+      l = L[k]; if (Math.abs(l.x - base[Math.floor(k / 3)].x) > 1) continue;   /* tylko płaty bazowe (kopie dostaną te same linie: kafel bez szwów) */
+      if (l.lv === 0 && r() < 0.35) continue; a0 = Math.PI * (0.08 + r() * 0.12); a1 = Math.PI * (0.92 - r() * 0.12); cur = [];
+      for (a = a0; a <= a1; a += 0.08) {
+        q = lobeR(l, a) * 0.99; px = l.x + Math.cos(a) * q; py = l.y + Math.sin(a) * q;
+        inside = py > seaTopZ(t, px) + 2.5; if (inside) { inside = false; for (m = 0; m < L.length; m++) if (m !== k && Math.abs(px - L[m].x) < L[m].r && Math.sqrt((px - L[m].x) * (px - L[m].x) + (py - L[m].y) * (py - L[m].y)) < L[m].r - 1) { inside = true; break; } }
+        if (inside) cur.push([px, py]); else { if (cur.length > 3) t.inner.push(cur); cur = []; }
+      }
+      if (cur.length > 3) t.inner.push(cur);
+    }
+    for (k = 1; k < t.L2.length; k += 3) {   /* górne łuki kłębów drugiego rzędu (tylko bazowe, potem kopie) */
+      l = t.L2[k]; cur = []; a0 = Math.PI * (1.12 + r() * 0.1); a1 = Math.PI * (1.88 - r() * 0.1);
+      for (a = a0; a <= a1; a += 0.08) { px = l.x + Math.cos(a) * l.r; py = l.y + Math.sin(a) * l.r; if (py > seaTopZ(t, px) + 8) cur.push([px, py]); else { if (cur.length > 3) t.inner.push(cur); cur = []; } }
+      if (cur.length > 3) t.inner.push(cur);
+    }
+    t.inner = t.inner.map(function (q2) { var n2 = Math.max(3, Math.round(q2.length * (0.5 + r() * 0.4))), s1 = r() < 0.5 ? 0 : q2.length - n2; return q2.slice(s1, s1 + n2); });
+    t.inner = t.inner.concat(t.inner.map(function (q2) { return q2.map(function (p2) { return [p2[0] - SEA_TW, p2[1]]; }); }), t.inner.map(function (q2) { return q2.map(function (p2) { return [p2[0] + SEA_TW, p2[1]]; }); }));
+    return t;
+  }
+  var SEA_PX = 6;   /* zakładka kafla z każdej strony: rysujemy wycinek bez niej, więc brzeg nie miesza się z przezroczystym tłem (bez szwów) */
+  function seaFrame(t, spr) {
+    var c = mkS((SEA_TW + SEA_PX * 2) * spr, (-t.top + 10 + t.depth) * spr);
+    return { c: c, spr: spr, ox: SEA_PX * spr, oy: (-t.top + 10) * spr, w: c.width, h: c.height, pad: 10, g: t, ver: -1, key: '' };
+  }
+  function drawTileS(S, X, Y, sc, alpha, yMax) { if (S.mix < 1 && S.prev && !lekki) { drawTile(S.prev, X, Y, sc, alpha, yMax); drawTile(S, X, Y, sc, alpha * S.mix, yMax); } else drawTile(S, X, Y, sc, alpha, yMax); }
+  function drawTile(S, X, Y, sc, alpha, yMax) {   /* yMax: rysujemy tylko do góry następnego (bliższego) rzędu: mniej zamalowywania */
+    var top = Y - S.oy / S.spr * sc, dh = S.h / S.spr * sc, sh = S.h;
+    if (yMax !== undefined && top + dh > yMax) { dh = Math.max(1, yMax - top); sh = Math.max(1, Math.min(S.h, dh * S.spr / sc)); }
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(S.c, S.ox, 0, SEA_TW * S.spr, sh, X, top, SEA_TW * sc, dh);
+  }
+  function seaPathZ(x, t, grow, dy) { var k, e = t.env; x.moveTo(-30, t.depth + 20); for (k = 0; k < e.length; k++) x.lineTo(e[k][0], e[k][1] - grow + (dy || 0)); x.lineTo(SEA_TW + 30, t.depth + 20); x.closePath(); }
+  function strokePts(x, pts) { var j; x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (j = 1; j < pts.length; j++) x.lineTo(pts[j][0], pts[j][1]); x.stroke(); }
+  function makeSeaInk(t, spr) {
+    var S = seaFrame(t, spr), x = wctx(S), r = R32(t.sd + 3), k, l, a, cx, cy;
+    x.beginPath(); seaPathZ(x, t, 0); x.fillStyle = 'rgb(21,25,42)'; x.fill();
+    x.save(); x.beginPath(); seaPathZ(x, t, 0); x.clip(); x.strokeStyle = rgba(LINE, 1); x.lineCap = 'round'; x.lineWidth = 1.1;
+    for (k = 0; k < t.L.length; k++) { l = t.L[k]; if (l.lv > 1 || r() < 0.3) continue; for (a = Math.PI * 0.6; a < Math.PI * 0.95; a += 0.16) { cx = l.x + Math.cos(a) * l.r * 0.96; cy = l.y + Math.sin(a) * l.r * 0.96; if (cy < seaTopZ(t, cx) + 3) continue; x.globalAlpha = 0.05 + r() * 0.05; x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + 4, cy - 5); x.stroke(); } }
+    x.restore();
+    for (k = 0; k < t.inner.length; k++) inkLine(x, catmull(t.inner[k], 1.5, false), 1.15, rgba(LINE, 0.3), r, { taper: 3 });
+    inkLine(x, t.env, 2.1, rgba(LINE, 0.5), r, { taper: 0, wob: 0.25 });   /* Z4: morze niżej i dalej niż kulisy: spokojniejsza, przygaszona kreska */
+    return S;
+  }
+  function makeSeaMasks(t) {
+    var r = R32(t.sd + 11), M = {}, S, x, k, l, gr, cx, cy;
+    function fr(spr) { var S2 = seaFrame(t, spr); x = wctx(S2); x.translate(BLEED[0], BLEED[1]); x.lineJoin = 'round'; x.lineCap = 'round'; return S2; }
+    S = fr(MSC); x.fillStyle = '#000';
+    for (k = 0; k < 5; k++) { x.globalAlpha = 0.24; x.beginPath(); seaPathZ(x, t, 1.2 + k * 0.6 + (r() - 0.5), (r() - 0.5) * 1.2); x.fill(); }
+    x.globalAlpha = 0.6; x.globalCompositeOperation = 'destination-out'; var gp = x.createPattern(TEX.grain, 'repeat'); if (gp.setTransform) gp.setTransform(new DOMMatrix([1.25, 0, 0, 1.25, 0, 0])); x.fillStyle = gp; x.fillRect(-30, t.top - 20, SEA_TW + 60, -t.top + 60);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.fillStyle = '#000'; x.beginPath(); seaPathZ(x, t, -1.2); x.fill(); M.body = S;
+    M.st = [growStage(M.body, t, 0.35, seaFrame(t, MSL)), growStage(M.body, t, 0.65, seaFrame(t, MSL))];
+    S = fr(MSC); x.save(); x.beginPath(); seaPathZ(x, t, 1.2); x.clip(); x.strokeStyle = '#000';
+    x.globalAlpha = 0.3; x.lineWidth = 8; strokePts(x, t.env); x.globalAlpha = 0.8; x.lineWidth = 2.6; strokePts(x, t.env);
+    x.globalAlpha = 0.42; x.lineWidth = 2; for (k = 0; k < t.inner.length; k++) strokePts(x, t.inner[k]);
+    x.restore(); M.edge = S;
+    S = fr(MSC); x.save(); x.beginPath(); seaPathZ(x, t, 0); x.clip(); x.strokeStyle = '#000'; x.lineWidth = 1.2;
+    for (k = 0; k < 0; k++) { l = t.L[k]; if (r() < 0.6 || l.lv > 0) continue; for (cx = 0.6; cx < 0.92; cx += 0.14) { cy = Math.PI * cx; x.globalAlpha = 0.35 + r() * 0.35; x.beginPath(); x.moveTo(l.x + Math.cos(cy) * l.r * 0.95, l.y + Math.sin(cy) * l.r * 0.95); x.lineTo(l.x + Math.cos(cy) * l.r * 0.95 + 6, l.y + Math.sin(cy) * l.r * 0.95 - 7); x.stroke(); } }
+    x.restore(); M.hatch = S;
+    S = fr(MSL); x.save(); x.beginPath(); seaPathZ(x, t, 1.2); x.clip();
+    for (k = 0; k < t.L2.length + t.L.length; k++) {
+      l = k < t.L2.length ? t.L2[k] : t.L[k - t.L2.length]; x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; x.beginPath(); lobePoly(x, l, 0); x.fill(); x.globalCompositeOperation = 'source-over';
+      gr = x.createRadialGradient(l.x + l.r * 0.2, l.y - l.r * 0.45, l.r * 0.2, l.x + l.r * 0.2, l.y - l.r * 0.45, l.r * 1.25); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.55, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.65)');
+      x.fillStyle = gr; x.beginPath(); lobePoly(x, l, 0); x.fill();
+    }
+    gr = x.createLinearGradient(0, 10, 0, t.depth); gr.addColorStop(0, 'rgba(0,0,0,0.15)'); gr.addColorStop(1, 'rgba(0,0,0,0.85)'); x.fillStyle = gr; x.fillRect(-30, 10, SEA_TW + 60, t.depth);
+    x.restore(); blurInPlace(S, 1); M.sh = [S, S];
+    S = fr(MSL); x.save(); x.beginPath(); seaPathZ(x, t, 1.2); x.clip(); x.strokeStyle = '#000';
+    x.globalAlpha = 0.25; x.lineWidth = 16; strokePts(x, t.env); x.globalAlpha = 0.45; x.lineWidth = 7; strokePts(x, t.env); x.globalAlpha = 0.75; x.lineWidth = 2.6; strokePts(x, t.env);
+    x.globalAlpha = 0.35; x.lineWidth = 5; for (k = 0; k < t.inner.length; k++) strokePts(x, t.inner[k]);
+    x.restore(); blurInPlace(S, 0.6); M.rim = [S, S];
+    return M;
+  }
+  function buildSea() {
+    var k, t, M, S;
+    for (k = 0; k < 2; k++) {
+      t = makeSeaTile(8100 + k * 57); M = makeSeaMasks(t);
+      S = withPrev(addReg(seaFrame(t, MSC), 'sea', k)); S.M = M; S.far = seaFrame(t, MFAR);
+      SEA_T.push({ t: t, ink: makeSeaInk(t, 0.72), inkHi: makeSeaInk(t, 1.25), tint: S });   /* inkHi: ostry tusz dla najbliższych rzędów */
+    }
+  }
+  function paintSea(S, C) { paintTint(S, S.M, C); }
+  /* barwy morza: tony z palety morza pory doby (etapy koloru jak wszędzie) i odcień palety */
+  function seaParams(v) {
+    var P = PAL, C = cloudParams(9 + v * 2, false), s0 = stageCol(P.bg, P.sea[0], P.warm, 0, 0.3), s1 = stageCol(P.bg, P.sea[1], P.warm, 0, 0.2), s2 = stageCol(P.bg, P.sea[2], P.warm, 0, 0.1);
+    C.tones = [mixc(C.tones[0], s0, 0.35), mixc(C.tones[1], s0, 0.55), mixc(C.tones[2], s1, 0.6), mixc(C.tones[3], s2, 0.7)];
+    C.cov = Math.min(1, C.cov * 1.1); C.wL = 0.5; C.wR = 0.5; C.granA = 0;   /* bez granulacji na kaflu (wzór nie jest okresowy z kaflem) */
+    return C;
+  }
+  /* rzędy morza: czysta funkcja przebytej drogi seaD (bez stanu), posortowane od tyłu */
+  function hsh(a, b) { var q = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263)) | 0; q = Math.imul(q ^ (q >>> 13), 1274126177); return (q ^ (q >>> 16)) >>> 0; }
+  var SEA_SETS = [{ n: 5, a: SEA_NEAR, b: 2.1, id: 0 }, { n: 4, a: 2.1, b: SEA_FAR, id: 1 }], SEA_MID = 2.1;
+  function updSeaRows() {
+    var k, j, q, span, off, z, cyc, hv, row, idx = 0;
+    for (j = 0; j < SEA_SETS.length; j++) {
+      q = SEA_SETS[j]; span = q.b - q.a;
+      for (k = 0; k < q.n; k++) {
+        off = k * span / q.n; z = q.a + md(off - seaD, span); cyc = Math.floor((seaD - off) / span) + 1000; hv = hsh(k * 7 + 3 + q.id * 131, cyc);
+        row = seaRows[idx] || (seaRows[idx] = {}); idx++; row.z = z; row.set = q.id; row.v = hv % 2; row.shift = (hv >>> 3) % SEA_TW; row.sh = (hv >>> 9) % 1000 / 1000;
+        row.fade = q.id ? sm((SEA_FAR - z) / 1.2) * sm((z - SEA_MID) / 0.4) : sm((SEA_MID - z) / 0.4) * sm((z - SEA_NEAR) / 0.12);   /* bliski zestaw wchodzi tam, gdzie daleki znika */
+      }
+    }
+    seaRows.length = idx;
+    seaRows.sort(function (a, b) { return b.z - a.z; });
+  }
+  function drawSeaRow(row, seaDY) {
+    var z = row.z, sc = 1 / z, tt = cl((z - SEA_NEAR) / (SEA_FAR - SEA_NEAR)), T = SEA_T[row.v], se = sk + offAt(tt), gA = sg(se), y = HORIZON + seaDY + SEA_YS * sc, tw = SEA_TW * sc, x0, x, fade, a, far, nr, X, Y, sw, shc;
+    fade = row.fade;
+    if (fade < 0.01 || y + T.t.top * sc > H + 10) return;
+    x0 = W / 2 + (-camX * (1 - tt * 0.5) - row.shift) * sc; x0 = md(x0, tw) - tw;
+    a = fade * (1 - tt * 0.35); far = tt > 0.45 ? sm((tt - 0.45) / 0.2) : 0;
+    for (x = x0; x < W + 1; x += tw) {
+      if (gA < (lekki ? 0.6 : 0.97) || z < 2.2) drawTile(sc > 1.5 ? T.inkHi : T.ink, x, y, sc, a * (1 - gA * 0.8), row.ymax);
+      if (gA > 0.01) { if (far < 0.99) drawTileS(T.tint, x, y, sc, gA * fade, row.ymax); if (far > 0.01) drawTile(T.tint.far, x, y, sc, gA * fade * far, row.ymax); }
+    }
+    /* cień chmury wędrujący po morzu (jeden na rząd, dryfuje z czasem; granat w L0, cień pory w kolorze) */
+    {
+      sw = (220 + row.sh * 160) * sc; X = W / 2 + (md(row.sh * 900 + t * 9, 900) - 450 - camX * 0.5) * sc; Y = y + 30 * sc;
+      shc = stageCol(NAVY, mixc(PAL.sh, PAL.sea[2], 0.5), PAL.warm);
+      if (!lekki && z < 4.2 && X + sw > -20 && X - sw < W + 20) { ctx.globalAlpha = (0.16 + 0.1 * gA) * fade; drawShadowBlob(X, Y, sw, sw * 0.16, shc); }
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* miękka plama cienia (z tekstury, barwa przez wypełnienie płótna roboczego) */
+  var SHB = null;
+  function drawShadowBlob(X, Y, rx, ry, col) {
+    var key = Math.round(col[0] / 6) + ',' + Math.round(col[1] / 6) + ',' + Math.round(col[2] / 6), x;
+    if (!SHB || SHB.key !== key) { if (!SHB) { SHB = { c: mkS(128, 64) }; } x = SHB.c.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, 128, 64); x.drawImage(TEX.shadow, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = rgba(col, 1); x.fillRect(0, 0, 128, 64); x.globalCompositeOperation = 'source-over'; SHB.key = key; }
+    ctx.drawImage(SHB.c, X - rx, Y - ry, rx * 2, ry * 2);
   }
 
   /* ---------- świat ---------- */
@@ -434,7 +888,7 @@ na chmurce.</p>
   var nightK = 0, PAL = {}, ST = { g: 0, p: 0, w: 0, f: 0 }, hueW = [], odcieni = 0;
   var stumbleT = 0, fogT = 0, windDX = 0, gradHit = 0, mglaHit = 0, burzaHit = 0, latHit = 0, stadoHit = 0, flashK = 0, boltT = 0, dbgL = [], predLog = { jastrzab: [], sowa: [] };
   var nextEv = {}, lastBR = -99, lastNew = -99, reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var dts = [], DTN = 240, lowTimer = 0;
+  var dts = [], DTN = 240, lowTimer = 0, cpuMs = [];
   var elWynik = document.getElementById('wynik'), elM = document.getElementById('w-m'), elRek = document.getElementById('w-rek'), elJeszcze = document.getElementById('jeszcze');
   var elEt = document.getElementById('w-et'), elLin = document.getElementById('w-lin');
   var FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -1037,6 +1491,8 @@ na chmurce.</p>
     if (hz) Pc = mixc(Pc, warm, hz);
     c = mixc(base, Gc, ST.g); c = mixc(c, Pc, ST.p); c = mixc(c, Wc, ST.w); return mixc(c, F, ST.f);
   }
+  /* Z4: odcień chmury: chłodne (zielone, turkus, błękit) pochylamy ku barwie pory słabiej, żeby nie robiło się khaki */
+  function hueCz(i2) { var c = HUES[i2].c, cool = c[1] > c[0] + 8 || c[2] > c[0] + 20 ? 0.3 : 1; return mulc(mixc(c, PAL.ht, PAL.ha * cool), PAL.hl); }
   function hueC(i2) { var c = HUES[i2].c; return mulc(mixc(c, PAL.ht, PAL.ha), PAL.hl); }   /* odcień po przechyleniu ku barwie pory */
   function grayTone(F, pivot, gm) {
     var l = lumOf(F), l2 = Math.max(30, Math.min(255, pivot + (l - pivot) * 1.8));
@@ -1050,39 +1506,56 @@ na chmurce.</p>
   }
   /* paleta koloru chmury nr ci: szare tony (L1) przechodzą w jej własny odcień (wejście jak odcień ci), drugi odcień mieszany w plamach */
   function cloudParams(ci, storm) {
-    var P = PAL, se = sk + 0.02, gm = 0.45 + 0.55 * P.hl, pv = lumOf(P.cM) * gm, hk = (ci * 5 + 2) % NHUE, h2 = (hk + 4) % NHUE, wk = hueW[hk], w2 = hueW[h2] * ST.p, C = {}, gB = [], Hc, H2, hT, hM, hB, tones, k;
+    var P = PAL, se = sk + 0.02, gm = 0.45 + 0.55 * P.hl, pv = lumOf(P.cM) * gm, hk = (ci * 5 + 2) % NHUE, h2 = (hk + 1) % NHUE, wk = hueW[hk], w2 = hueW[h2] * ST.p, C = {}, gB = [], Hc, H2, hT, hM, hB, tones, k;
     gB[0] = grayTone(P.cT, pv, gm); gB[1] = grayTone(mixc(P.cT, P.cM, 0.55), pv, gm); gB[2] = grayTone(mixc(P.cM, P.cB, 0.5), pv, gm); gB[3] = grayTone(P.cB, pv, gm);
-    Hc = hueC(hk); H2 = hueC(h2);
-    hT = mixc(Hc, [255, 250, 240], 0.42); hM = mixc(Hc, [255, 250, 240], 0.15); hB = mixc(mixc(Hc, H2, 0.45), mixc(P.sh, [150, 120, 190], 0.4), 0.3);
-    tones = [mixc(gB[0], hT, wk), mixc(gB[1], hM, wk), mixc(gB[2], Hc, wk), mixc(gB[3], hB, wk)];
+    Hc = hueCz(hk); H2 = hueCz(h2);
+    hT = mixc(Hc, [255, 250, 240], 0.42); hM = mixc(Hc, [255, 250, 240], 0.15); hB = mixc(mulc(mixc(Hc, H2, 0.3), 0.86), mixc(P.sh, [176, 156, 220], 0.55), 0.3);
+    var lift = 1.3 * wk * (1 - wk), CRM = [246, 240, 252];   /* Z4: przejście szarość > odcień przez jasny pastel (bez oliwkowego błota) */
+    tones = [mixc(mixc(gB[0], CRM, lift), hT, wk), mixc(mixc(gB[1], CRM, lift), hM, wk), mixc(mixc(gB[2], CRM, lift * 0.8), Hc, wk), mixc(mixc(gB[3], CRM, lift * 0.5), hB, wk)];
     if (storm) {
-      C.tones = [mixc(tones[0], [60, 64, 110], 0.62), mixc(tones[1], [44, 48, 92], 0.62), mixc(tones[2], [30, 32, 70], 0.62), mixc(tones[3], [20, 22, 54], 0.62)];
-    } else C.tones = tones;
+      C.tones = [mixc(tones[0], [104, 108, 156], 0.7), mixc(tones[1], [74, 78, 128], 0.72), mixc(tones[2], [50, 52, 100], 0.74), mixc(tones[3], [34, 36, 76], 0.76)];
+    } else { C.tones = tones; C.tones[3] = mixc(tones[3], tones[2], 0.35 * P.nightW); }
     C.band = 1 - sm((se - 0.30) / 0.22);
-    C.rim = stageCol(LINE, P.rim, P.warm); C.rimA = storm ? 0.25 : 0.9 * sm((se - 0.30) / 0.3);
-    C.shade = stageCol(NAVY, P.sh, P.warm); C.shadeA = 0.12 + 0.28 * sm((se - 0.3) / 0.4);
+    C.rim = mixc(stageCol(LINE, P.rim, P.warm), LIGHTC, 0.4 * ST.w * (1 - 0.5 * P.nightW)); C.rimA = storm ? 0.25 : 0.9 * sm((se - 0.30) / 0.3);
+    C.shade = stageCol(NAVY, mixc(P.sh, [190, 166, 228], 0.45 * (1 - 0.5 * P.nightW)), P.warm); C.shadeA = (0.12 + 0.24 * sm((se - 0.3) / 0.4)) * (1 - 0.35 * P.nightW);
     C.hatchA = (storm ? 0.28 : 0.5) * (1 - sm((se - 0.34) / 0.34)); C.hatchC = mixc(tones[3], [20, 26, 50], 0.5);
     C.blob = mixc(Hc, H2, 0.5); C.blob2 = H2; C.blobA = storm ? 0 : 0.55 * wk * sm((se - 0.22) / 0.3);
     C.fog = stageCol(PAL.bg, P.fog, P.warm); C.bank = mixc(stageCol(PAL.bg, mixc(P.fog, [210, 226, 246], 0.5), P.warm), [200, 214, 236], 0.3);
+    /* Z4: akwarela: plama rośnie w L1-L2 (pokrycie), schnący brzeg i granulacja mocnieją z pastelami, kreska tuszu przechodzi z białej w ciemny tusz,
+       wagi cienia i jasnego brzegu z kierunku światła (słońce / księżyc) */
+    C.cov = storm ? 1 : sm((se - 0.12) / 0.32);
+    C.edgeC = mixc(mixc(tones[2], tones[3], 0.5), inkCol(), 0.3); C.edgeA = storm ? 0.3 : 0.1 + 0.4 * ST.p;
+    C.granA = 0.03 + 0.11 * ST.p;
+    C.lineC = mixc(LINE, inkCol(), sm((se - 0.3) / 0.22));
+    C.wL = LW_L; C.wR = 1 - LW_L;
     return C;
   }
+  function keyC(c) { return Math.round(c[0] / 6) + ',' + Math.round(c[1] / 6) + ',' + Math.round(c[2] / 6) + ';'; }
   function keyOf(C) {
-    var k, s2 = '', a = C.tones.concat([C.rim, C.shade, C.hatchC, C.blob, C.blob2, C.fog, C.bank]);
-    for (k = 0; k < a.length; k++) s2 += Math.round(a[k][0] / 2) + ',' + Math.round(a[k][1] / 2) + ',' + Math.round(a[k][2] / 2) + ';';
-    return s2 + Math.round(C.band * 20) + Math.round(C.rimA * 20) + Math.round(C.shadeA * 20) + Math.round(C.hatchA * 20) + Math.round(C.blobA * 20);
+    var k, s2 = '', a = C.tones.concat([C.rim, C.shade, C.hatchC, C.blob, C.blob2, C.bank, C.edgeC]);
+    for (k = 0; k < a.length; k++) s2 += keyC(a[k]);
+    return s2 + Math.round(C.band * 14) + Math.round(C.rimA * 14) + Math.round(C.shadeA * 14) + Math.round(C.hatchA * 14) + Math.round(C.blobA * 14) + '/' + Math.round(C.cov * 14) + Math.round(C.edgeA * 12) + Math.round(C.granA * 12) + C.wL;
   }
   var forceTint = true;
   /* przemalowanie sprite'ów koloru: co klatkę sprawdzamy kilka kolejnych (okrężnie), maluje się najwyżej 3; po twardej zmianie (hak) wszystkie naraz */
+  var tintAcc = 0;
   function updTint() {
-    var n = 0, budget = forceTint ? 999 : 3, visits = forceTint ? REG.length : 6, k, S, C, key;
+    var n = 0, budget, visits = forceTint ? REG.length : 12, k, S, C, key;
+    /* Z4: kolor niewidoczny (L0) = nic nie przemalowujemy; ciężkie sprite'y (akwarela) najwyżej ok. 0,6 na klatkę (barwy dryfują wolno), lekkie (kreska, mgiełka) taniej */
+    for (k = 0; k < REG.length; k++) if (REG[k].mix < 1) REG[k].mix = forceTint ? 1 : Math.min(1, REG[k].mix + 0.14);
+    if (!forceTint && sg(sk + 0.03) < 0.004) return;
+    tintAcc = Math.min(2, tintAcc + (lekki ? 0.2 : 0.35) * (1 - 0.45 * hyK)); budget = forceTint ? 99999 : tintAcc;
     for (k = 0; k < visits && n < budget; k++) {
       S = REG[(regRR + k) % REG.length];
-      C = S.kind === 'tint' ? cloudParams(S.ci, false) : (S.kind === 'stint' ? cloudParams(S.ci * 3 + 1, false) : cloudParams(0, false));
-      if (S.kind === 'stint') C.storm = cloudParams(S.ci * 3 + 1, true);
-      key = keyOf(S.kind === 'stint' ? C.storm : C);
-      if (key !== S.key) { S.key = key; paintInto(S, C); n++; }
+      if (S.kind === 'sea') C = seaParams(S.ci);
+      else if (S.kind === 'stint') { C = cloudParams(S.ci * 3 + 1, false); C.storm = cloudParams(S.ci * 3 + 1, true); }
+      else C = cloudParams(S.kind === 'ftint' ? 0 : S.ci, false);
+      key = S.kind === 'ln' ? keyC(C.lineC) : (S.kind === 'fog' ? keyC(C.fog) : keyOf(S.kind === 'stint' ? C.storm : C));
+      if (key !== S.key) { S.key = key; paintInto(S, C); n += (S.kind === 'ln' || S.kind === 'fog') ? 0.2 : 1; }
     }
     regRR = (regRR + k) % REG.length;
+    if (!forceTint) tintAcc = Math.max(0, tintAcc - n);
+    else for (k = 0; k < REG.length; k++) REG[k].mix = 1;
     forceTint = false;
   }
 
@@ -1092,27 +1565,31 @@ na chmurce.</p>
     ctx.drawImage(spr.c, X - spr.ox / spr.spr * sc, Y - spr.oy / spr.spr * sc, spr.w / spr.spr * sc, spr.h / spr.spr * sc);
   }
   function drawFlat(f, sk2, idx) {
-    var z = f.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), k, c, p, b, X, Y, se, gA, cc, a, fade, lim = W + 60, olA, hy = hyK, q, VXc = W / 2, VYc = HORIZON - 20;
+    var z = f.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), k, c, p, b, X, Y, se, gA, cc, a, fade, lim = W + 60, olA, hy = hyK, q, VXc = W / 2, VYc = HORIZON - 20, far, tn, sway;
     se = sk2 + offAt(tt); gA = sg(se); cc = cAll(se);
     dbgL[idx] = { z: z, c: cc, a: gA };
-    fade = sm((z - NEAR) / 0.35) * sm((FAR - z) / 1.0);
+    fade = sm((z - NEAR) / 0.6) * sm((FAR - z) / 1.0);   /* Z4: dłuższe wygaszanie najbliższej kulisy (bez skoku jasności przy dużej prędkości) */
     if (fade <= 0.01) return;
-    olA = gA * lerp(1, 0.4, sm((se - 0.35) / 0.5));
-    b = bucketOf(z);
+    olA = gA * lerp(1, 0.45, sm((se - 0.35) / 0.5));
+    b = bucketOf(z); far = tt > 0.4 ? sm((tt - 0.4) / 0.22) : 0;
     for (k = 0; k < f.clouds.length; k++) {
       c = f.clouds[k]; p = POOL[c.p];
       X = W / 2 + (c.x - camX * (1 - tt * 0.6) + (reduce ? 0 : Math.sin(t * 0.2 + c.ph) * 6)) * sc;
       Y = HORIZON + (c.y + (reduce ? 0 : Math.sin(t * 0.35 + c.ph) * p.g.h * 0.02)) * sc;
       if (X + p.g.maxx * sc < -60 || X + p.g.minx * sc > lim) continue;
       a = (1 - tt * 0.45) * (1 - gA * 0.8) * fade;
-      if (a > 0.01) drawSpr(p.mono[b], X, Y, sc, a);
+      if (a > 0.01 && (gA < (lekki ? 0.5 : 0.9) || b === 0)) drawSpr(p.mono[b], X, Y, sc, a);   /* Z4: w pełnym kolorze dalekie chmury bez podkładu tuszu (miękkie, tańsze) */
       if (gA > 0.01) {
-        if (hy > 0.03 && tt < 0.85) for (q = 2; q >= 1; q--) {   /* hiperprzestrzeń: smugi chmur ku punktowi zbiegu */
-          drawSpr(p.tint, VXc + (X - VXc) * (1 - 0.05 * q * hy), VYc + (Y - VYc) * (1 - 0.05 * q * hy), sc * (1 - 0.05 * q * hy), gA * (1 - tt * 0.35) * fade * 0.2 / q);
+        if (hy > 0.03 && tt < 0.85) for (q = 1; q >= 1; q--) {   /* hiperprzestrzeń: smuga chmury ku punktowi zbiegu */
+          drawTintS(p.tint, VXc + (X - VXc) * (1 - 0.05 * q * hy), VYc + (Y - VYc) * (1 - 0.05 * q * hy), sc * (1 - 0.05 * q * hy), gA * (1 - tt * 0.35) * fade * 0.2 / q);
         }
-        drawSpr(p.tint, X, Y, sc, gA * (1 - tt * 0.35) * fade);
-        if (tt > 0.05) drawSpr(p.fog, X, Y, sc, gA * tt * 0.5 * fade);
-        drawSpr(p.ol[b], X, Y, sc, olA * (1 - tt * 0.45) * fade);
+        /* Z4: akwarela (bliżej ostra kopia, daleko pomniejszona = rozmyta: głębia ostrości), farba "oddycha" względem kreski */
+        tn = gA * (1 - tt * 0.35) * fade; sway = reduce ? 0 : Math.sin(t * 0.3 + c.ph) * 1.4;
+        if (lekki) { drawSpr(far > 0.5 ? p.tint.far : p.tint, X, Y, sc, tn); if (b === 0 && olA > 0.01) drawSpr(p.ol[0], X, Y, sc, olA * fade); continue; }   /* tryb lekki: jedna plama i kreska tylko blisko */
+        if (far < 0.99) drawTintS(p.tint, X + sway * sc, Y, sc, tn);
+        if (far > 0.01) drawSpr(p.tint.far, X, Y, sc, tn * far);
+        if (tt > 0.12) drawSpr(p.fog, X, Y, sc, gA * tt * 0.55 * fade);
+        if (b < 2 && olA > 0.01) drawSpr(p.ol[b], X, Y, sc, olA * (1 - tt * 0.45) * fade);
       }
     }
     ctx.globalAlpha = 1;
@@ -1126,30 +1603,205 @@ na chmurce.</p>
     }
     ctx.closePath();
   }
-  /* ptaszek roboczy (finalny rysunek: Z4). Jedyny stały kolor przy s=0: czerwony szalik.
-     wet 0..1: mokre piórka (kudłate, ciemniejsze, skrzydła mniejsze i opadnięte); spinA: kąt wirowania; bs: skala (porwanie) */
-  /* Z2b, tryb 2: dl, dr = złożenie lewego i prawego skrzydła 0..1 zgodnie z kciukami (bez nich oba skrzydła idą za dive) */
-  function drawBird(x, y, s2, tilt, dive, wet, spinA, bs, dl, dr) {
-    var e = ilosc(s2, 0.3), flap0 = (reduce ? 0.3 : Math.sin(t * (9 + s2 * 8))), flap = flap0 * (1 - 0.85 * dive) * (1 - 0.55 * wet), dv, fw, look = Math.sin(t * 0.7) * 3, side, wr = 1 - 0.2 * wet;
-    var body = mixc(mixc(mixc(NAVY, [52, 60, 92], 0.8), BODY, e), mixc([40, 52, 84], [64, 88, 128], e), wet * 0.55), dark = mixc(mixc(mixc(NAVY, [40, 46, 74], 0.8), BODY_D, e), mixc([30, 40, 70], [44, 66, 104], e), wet * 0.55), ink = mixc(LINE, [34, 34, 56], e);
-    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * 0.3 + (spinA || 0)); ctx.scale(0.85 * (1 - 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1), 0.85 * (1 + 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1));
-    ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
-    for (side = -1; side <= 1; side += 2) {
-      dv = dl === undefined ? dive : (side < 0 ? dl : dr); fw = dl === undefined ? flap : flap0 * (1 - 0.85 * dv) * (1 - 0.55 * wet);
-      ctx.save(); ctx.translate(side * 13, -4); ctx.rotate(side * (-0.75 * (1 - dv) + 1.05 * dv + fw * 0.85 + wet * 0.95 * (1 - dv)));
-      ctx.beginPath(); ctx.ellipse(side * 17 * wr, 0, 19 * wr, 7.5 * (1 - 0.1 * wet), 0, 0, Math.PI * 2); ctx.fillStyle = rgba(dark, 1); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(side * 6, -2); ctx.lineTo(side * 30 * wr, -1); ctx.moveTo(side * 8, 2); ctx.lineTo(side * 28 * wr, 3); ctx.strokeStyle = rgba(ink, 0.35); ctx.stroke(); ctx.strokeStyle = rgba(ink, 0.9); ctx.restore();
+  /* ---------- Z4: Okruszek, finalny rysunek (pseudo-3D, kodem, co klatkę) ----------
+     Objętość z cieniowania: światło z kierunku słońca / księżyca (LIGHTX), cień własny po drugiej stronie, światło odbite od chmur od dołu,
+     jasny brzeg (rim light) od strony światła; pióra jako warstwy z mikro-paralaksą przy obrocie; skrzydła z perspektywą (skrót w machnięciu,
+     bliższe skrzydło dłuższe przy skręcie, spód jaśniejszy, gdy skrzydło w górze); obrót ciała przy skręcie (głowa idzie w stronę skrętu,
+     plecy, ogon i węzeł szalika w przeciwną), nie tylko pochylenie; zagubiona minka zerkająca przez ramię (oko z błyskiem, zmartwiona brew, rumieniec).
+     L0: biały tusz na granacie z kreskowaniem cienia, jedyny kolor to czerwony szalik. Mokry: ciemniejszy, nastroszony, oklapnięty, krople.
+     Drzemka po lądowaniu (birdSleep), otrzepanie po zmoknięciu (shakeT). Parametry dl, dr (tryb 2) bez zmian: skrzydło składa się w dół z kciukiem. */
+  var B_BODY = [140, 176, 232], B_DARK = [88, 104, 188], B_LITE = [214, 228, 250], B_BELLY = [253, 236, 214], B_BEAK = [244, 188, 110], B_CHEEK = [246, 150, 164], B_EYE = [36, 28, 50];
+  var SC_D = [146, 28, 42], SC_L = [250, 128, 116], BIRD_F0 = mixc(NAVY, [52, 60, 92], 0.8), BIRD_D0 = mixc(NAVY, [40, 46, 74], 0.8);
+  var birdSleep = 0, shakeT = 0, wasWet = 0;
+  var WING_CP = [[-2, -5.5], [5, -9.6], [13, -11.2], [21, -9.6], [28, -6], [33, -2], [31.4, 1.4], [31, 3.6], [28.2, 4.6], [27.2, 7.2], [23.6, 7.6], [22, 9.8], [17.8, 10], [15.6, 11.4], [9, 10.6], [3, 9.4], [-1.2, 7]];
+  var WING_P = null, WING_LEAD = null;
+  function lookZ(tt) {
+    var kf = [[0, 0], [0.7, -0.92], [2.5, -0.92], [3.0, -0.12], [3.8, -0.12], [4.4, 0.88], [6.1, 0.88], [6.7, 0], [8.4, 0]], T = md(tt, 8.4), k, u;
+    for (k = 1; k < kf.length; k++) if (T <= kf[k][0]) { u = sm((T - kf[k - 1][0]) / (kf[k][0] - kf[k - 1][0])); return lerp(kf[k - 1][1], kf[k][1], u); }
+    return 0;
+  }
+  function polyP(pts) { var k; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]); ctx.closePath(); }
+  function bodyPts(rx, ry, cy, wet, ph) {
+    var out = [], k, a, sa, ca, q, n = 44;
+    for (k = 0; k < n; k++) {
+      a = k / n * TAU; sa = Math.sin(a); ca = Math.cos(a);
+      q = 1 + 0.075 * Math.max(0, sa) + (sa > 0.15 ? 0.03 * Math.sin(a * 11 + ph) : 0.008 * Math.sin(a * 7)) + wet * 0.075 * (2 * Math.abs(Math.sin(a * 6 + ph * 0.2)) - 0.7);
+      out.push([ca * rx * q, cy + sa * ry * q * (sa > 0 ? 1 : 0.96)]);
     }
-    ctx.beginPath(); ctx.moveTo(-6, 16); ctx.lineTo(-11, 32 - 3 * wet); ctx.lineTo(-3, 26); ctx.lineTo(0, 34 - 3 * wet); ctx.lineTo(3, 26); ctx.lineTo(11, 32 - 3 * wet); ctx.lineTo(6, 16); ctx.closePath(); ctx.fillStyle = rgba(dark, 1); ctx.fill(); ctx.stroke();
-    fluff(0, 0, 19, 21, 9, t * 2, wet); ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.stroke();
-    fluff(look, -22, 13, 13, 7, t * 2.5 + 1, wet * 0.8); ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(look - 9, -30); ctx.lineTo(look - 6, -37 + 3 * wet); ctx.lineTo(look - 3, -31); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(look + 3, -31); ctx.lineTo(look + 6, -37 + 3 * wet); ctx.lineTo(look + 9, -30); ctx.closePath(); ctx.fill(); ctx.stroke();
-    var sc1 = mixc([150, 52, 60], SCARF, 0.4 + 0.6 * e), w1 = Math.sin(t * 6) * 5, w2 = Math.sin(t * 6 + 1.2) * 5;
-    ctx.fillStyle = rgba(sc1, 1); ctx.strokeStyle = rgba(mixc(LINE, [90, 20, 30], e), 0.8);
-    ctx.beginPath(); ctx.ellipse(look * 0.5, -10, 15, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-8, -8); ctx.quadraticCurveTo(-22 + w1, 8, -26 + w2, 30); ctx.quadraticCurveTo(-20 + w1, 20, -14, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-12, -10); ctx.quadraticCurveTo(-26 + w2, 2, -34 + w1, 16); ctx.quadraticCurveTo(-24 + w2, 10, -16, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+    return out;
+  }
+  function arcOf(pts, a0, a1, k, cy0) {   /* fragment obrysu w zakresie kątów, wsunięty do środka (k < 1): jasny brzeg i ciężka kreska po stronie cienia */
+    var out = [], n = pts.length, j, a, i0 = Math.round(md(a0, TAU) / TAU * n), len = Math.round((a1 - a0) / TAU * n);
+    for (j = 0; j <= len; j++) { a = pts[md(i0 + j, n)]; out.push([a[0] * k, cy0 + (a[1] - cy0) * k]); }
+    return out;
+  }
+  function strokeOpen(pts) { var k; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]); ctx.stroke(); }
+  function birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, cTop, cUnder, rimC, lit) {
+    var k, gr, fl;
+    if (!WING_P) { WING_P = catmull(WING_CP, 1.2, true); WING_LEAD = catmull(WING_CP.slice(0, 6), 1, false); }
+    ctx.save(); ctx.rotate(ang); ctx.scale(side * lenK, chord * (1 - 0.12 * wet));
+    fl = under ? cUnder : cTop;
+    gr = ctx.createLinearGradient(0, 0, 34, 0); gr.addColorStop(0, rgba(mixc(fl, B_LITE, 0.25 * e), 1)); gr.addColorStop(1, rgba(mixc(fl, B_DARK, under ? 0.15 : 0.35 * e), 1));
+    ctx.save(); ctx.translate(0.7, 0.6); polyP(WING_P); ctx.fillStyle = gr; ctx.fill(); ctx.restore();   /* plama koloru lekko przesunięta względem kreski */
+    if (e > 0.05) {   /* pokrywy: jaśniejszy pas wzdłuż krawędzi natarcia */
+      ctx.beginPath(); ctx.moveTo(1, -4.5); ctx.quadraticCurveTo(14, -10.5, 27, -4.6); ctx.quadraticCurveTo(17, -1.6, 2, 2.2); ctx.closePath();
+      ctx.fillStyle = rgba(under ? B_BELLY : mixc(B_BODY, B_LITE, 0.4), 0.55 * e); ctx.fill();
+    }
+    /* lotki: trzy pióra jako osobne warstwy, każde z małym opóźnieniem ruchu (mikro-paralaksa) */
+    for (k = 2; k >= 0; k--) {
+      ctx.save(); ctx.translate(20 + k * 3.2, 3 + k * 2.4); ctx.rotate(0.32 + k * 0.28 + fw * 0.05 * (k + 1));
+      ctx.beginPath(); ctx.ellipse(5.5 - wet * 1.5, 0, 7.6 - wet * 2, 2.6, 0, 0, TAU);
+      ctx.fillStyle = rgba(mixc(fl, B_DARK, (under ? 0.2 : 0.55) * e + 0.15), 1); ctx.fill(); if (k === 0) { ctx.lineWidth = 0.75; ctx.strokeStyle = rgba(ink, 0.55); ctx.stroke(); } ctx.restore();
+    }
+    polyP(WING_P); ctx.lineWidth = 1.25; ctx.strokeStyle = rgba(ink, 0.92); ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, 1); ctx.quadraticCurveTo(14, -3.4, 26, -1.6); ctx.moveTo(15, 3.6); ctx.lineTo(19.5, 8); ctx.moveTo(10, 4.5); ctx.lineTo(13.4, 9.4);
+    ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, 0.45); ctx.stroke();
+    if (lit > 0.02 && e > 0.05) { ctx.lineCap = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(rimC, 0.8 * e * lit); strokeOpen(WING_LEAD); }
+    ctx.restore();
+  }
+  function ribbonP(c, w0, w1) {
+    var lt = [], rt = [], k, a, b, tx, ty, tn, u, ww;
+    for (k = 0; k < c.length; k++) { a = c[Math.max(0, k - 1)]; b = c[Math.min(c.length - 1, k + 1)]; tx = b[0] - a[0]; ty = b[1] - a[1]; tn = Math.sqrt(tx * tx + ty * ty) || 1; u = k / (c.length - 1); ww = lerp(w0, w1, u) * 0.5; lt.push([c[k][0] - ty / tn * ww, c[k][1] + tx / tn * ww]); rt.push([c[k][0] + ty / tn * ww, c[k][1] - tx / tn * ww]); }
+    return { lt: lt, rt: rt };
+  }
+  function scarfTailPts(kx, ky, which, s2, yaw) {
+    var n = 16, pts = [], k, u, wave, ex = which ? -15 : -9, ey = which ? 26 : 19, dl = Math.sqrt(ex * ex + ey * ey), str = 1 + 0.25 * s2, sp = reduce ? 0 : t * (6.5 + 6 * s2);
+    for (k = 0; k <= n; k++) {
+      u = k / n; wave = Math.sin(u * 4.4 - sp + which * 1.7) * (0.5 + 3.4 * u) * (0.8 + 0.35 * s2);
+      pts.push([kx + (ex * str - yaw * 6) * u + (which ? -3 : -2) * u * u - ey / dl * wave, ky + ey * u * (1 - 0.12 * s2) + ex / dl * wave]);
+    }
+    return pts;
+  }
+  /* cień ptaszka na chmurach pod spodem (miękki, przesunięty od światła, wyraźniejszy, gdy nisko) */
+  function drawBirdShadow(x, y) {
+    var hh = cl(h), k = 1 - hh, sx = x - LIGHTX * (12 + 26 * hh), sy = y + 56 + 92 * hh, rx = 27 - 11 * hh, a = 0.1 + 0.26 * k;
+    ctx.globalAlpha = a; drawShadowBlob(sx, sy, rx, rx * 0.26, stageCol(NAVY, mixc(PAL.sh, PAL.sea[2], 0.5), PAL.warm)); ctx.globalAlpha = 1;
+  }
+  function drawBird(x, y, s2, tilt, dive, wet, spinA, bs, dl, dr) {
+    var e = sm((s2 - 0.13) / 0.55), ph = t * (9 + s2 * 8), flap0 = reduce ? 0.3 : Math.sin(ph), flap = flap0 * (1 - 0.85 * dive) * (1 - 0.55 * wet), side, dv, fw, ang, lenK, chord, under, lit;
+    var yaw = Math.max(-1, Math.min(1, tilt)), lk = (reduce ? 0 : lookZ(t)) * (1 - dive) * (1 - Math.abs(yaw) * 0.6) + yaw * 0.75, sleep = birdSleep, lx = LIGHTX, nW = PAL.nightW;
+    var ink = mixc(LINE, mixc([44, 32, 60], [30, 34, 82], nW), e), fore = reduce ? 1 : 0.88 + 0.12 * Math.cos(ph);
+    var bodyC = mixc(BIRD_F0, B_BODY, e), darkC = mixc(BIRD_D0, mixc(B_DARK, PAL.sh, 0.15), e), liteC = mixc(BIRD_F0, mixc(B_LITE, LIGHTC, 0.22), e), rimC = mixc(LIGHTC, [255, 255, 255], 0.35);
+    var bounce = mixc(stageCol(PAL.bg, PAL.sea[0], PAL.warm), [255, 214, 196], 0.25 * (1 - nW)), shake = shakeT > 0 && !reduce ? Math.sin(t * 46) * 0.16 * (shakeT / 0.6) : 0;
+    var hx, hy, fa, sg, pts, gr, k, ex, ey, rr, sc1, kx, ky, w, c, rb, poly, aL, aS, j, u, bob;
+    if (sleep > 0) lk = lerp(lk, 0.8, sleep);
+    lk = Math.max(-1, Math.min(1, lk));
+    if (wet > 0.01) { bodyC = mixc(bodyC, mixc([40, 52, 84], [74, 98, 146], e), wet * 0.5); darkC = mixc(darkC, mixc([30, 40, 70], [52, 70, 120], e), wet * 0.5); liteC = mixc(liteC, bodyC, wet * 0.6); }
+    bob = sleep > 0 && !reduce ? Math.sin(t * 1.6) * 0.025 * sleep : 0;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * 0.3 + (spinA || 0) + shake);
+    ctx.scale(0.88 * (1 - 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1) * (1 - 0.05 * Math.abs(yaw)) * (1 + bob), 0.88 * (1 + 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1) * (1 - bob));
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    /* skrzydła (za ciałem) */
+    for (side = -1; side <= 1; side += 2) {
+      dv = dl === undefined ? dive : (side < 0 ? dl : dr); if (sleep > 0) dv = Math.max(dv, sleep);
+      fw = dl === undefined ? flap : flap0 * (1 - 0.85 * dv) * (1 - 0.55 * wet); if (sleep > 0) fw *= 1 - sleep;
+      ang = side * (-0.75 * (1 - dv) + 1.05 * dv + fw * 0.85 + wet * 0.95 * (1 - dv));
+      lenK = (1 + 0.18 * yaw * side) * fore * (1 - 0.2 * wet) * (1 - 0.06 * dv);
+      chord = 0.8 + 0.2 * Math.abs(Math.cos(fw * 1.2)); under = fw < -0.2 && dv < 0.5;
+      lit = cl(0.5 + 0.5 * side * lx);
+      ctx.save(); ctx.translate(side * 12.5 - yaw * 2.2, -4.5);
+      birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, mixc(darkC, bodyC, 0.3), mixc(bodyC, liteC, 0.2), rimC, lit);
+      ctx.restore();
+    }
+    /* ogon: wachlarz trzech piór, rozkłada się przy skręcie, chowa przy nurkowaniu */
+    ctx.save(); ctx.translate(-yaw * 3.5, 17); ctx.rotate(-yaw * 0.18);
+    for (k = -1; k <= 1; k++) {
+      ctx.save(); ctx.rotate(k * (0.42 - 0.25 * dive + 0.1 * Math.abs(yaw)));
+      ctx.beginPath(); ctx.moveTo(-3.6, 0); ctx.quadraticCurveTo(-4.8, 10, -3.2, 15 - 3 * wet); ctx.quadraticCurveTo(0, 18.5 - 3 * wet, 3.2, 15 - 3 * wet); ctx.quadraticCurveTo(4.8, 10, 3.6, 0); ctx.closePath();
+      ctx.fillStyle = rgba(k ? darkC : mixc(darkC, bodyC, 0.3), 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, 13); ctx.lineWidth = 0.55; ctx.strokeStyle = rgba(ink, 0.4); ctx.stroke(); ctx.restore();
+    }
+    ctx.restore();
+    /* ciało: objętość z cieniowania */
+    pts = bodyPts(20, 21, 3, wet, t * 2);
+    gr = ctx.createRadialGradient(lx * 8 + yaw * 3, -8, 1, lx * 3, 1, 27);
+    gr.addColorStop(0, rgba(liteC, 1)); gr.addColorStop(0.32, rgba(mixc(liteC, bodyC, 0.6), 1)); gr.addColorStop(0.66, rgba(bodyC, 1)); gr.addColorStop(1, rgba(darkC, 1));
+    ctx.save(); ctx.translate(0.8, 0.6); polyP(pts); ctx.fillStyle = gr; ctx.fill(); ctx.restore();
+    if (e > 0.02) {   /* bez clip(): gradienty wypełniają tę samą sylwetkę (taniej) */
+      gr = ctx.createRadialGradient(0, 30, 2, 0, 30, 22); gr.addColorStop(0, rgba(bounce, 0.6 * e)); gr.addColorStop(1, rgba(bounce, 0)); polyP(pts); ctx.fillStyle = gr; ctx.fill();   /* światło odbite od chmur */
+      if (Math.abs(yaw) > 0.05) { ctx.beginPath(); ctx.ellipse((yaw > 0 ? 1 : -1) * 12.5, 12, 6.5, 10.5, 0, 0, TAU); ctx.fillStyle = rgba(B_BELLY, 0.75 * e * cl(Math.abs(yaw) * 1.4)); ctx.fill(); }   /* brzuszek przy obrocie */
+    }
+    ctx.beginPath(); ctx.ellipse(yaw * 3 + lk * 1.5, -14, 14, 4.6, 0, 0, TAU); ctx.fillStyle = rgba(mixc(NAVY, PAL.sh, e), 0.24); ctx.fill();   /* cień głowy na plecach */
+    /* pióra jako warstwy: trzy rzędy łusek, bliższe rzędy przesuwają się mocniej przy obrocie (mikro-paralaksa) */
+    ctx.lineWidth = 0.75;
+    for (j = 0; j < 3; j++) {
+      w = [4, 5, 4][j]; ey = -3 + j * 8; ex = -yaw * (1.6 + j * 1.6);
+      ctx.strokeStyle = rgba(e > 0.5 ? mixc(darkC, ink, 0.25) : ink, 0.28 + 0.12 * e);
+      ctx.beginPath(); for (k = 0; k < w; k++) { c = ex + (k - (w - 1) / 2) * 7.4; ctx.moveTo(c - 3.6, ey + Math.abs(c) * 0.12); ctx.quadraticCurveTo(c, ey + 4.6 + Math.abs(c) * 0.12, c + 3.6, ey + Math.abs(c) * 0.12); } ctx.stroke();
+    }
+    aS = Math.atan2(0.7, -lx * 0.9);   /* strona cienia: kreskowanie (L0 rysunek, w kolorze słabsze) */
+    ctx.strokeStyle = rgba(ink, 0.32 * (1 - 0.6 * e)); ctx.lineWidth = 0.7; ctx.beginPath();
+    for (k = -3; k <= 3; k++) { c = aS + k * 0.24; ctx.moveTo(Math.cos(c) * 19, 3 + Math.sin(c) * 20); ctx.lineTo(Math.cos(c) * 13 + 2, 3 + Math.sin(c) * 14 - 4); } ctx.stroke();
+    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, 0.92); ctx.stroke();
+    ctx.lineWidth = 2.1; ctx.strokeStyle = rgba(ink, 0.45); strokeOpen(arcOf(pts, aS - 0.9, aS + 0.9, 0.985, 3));   /* cięższa kreska po stronie cienia */
+    aL = Math.atan2(-0.75, lx * 0.9);
+    if (e > 0.03) { ctx.lineWidth = 2; ctx.strokeStyle = rgba(rimC, 0.85 * e); strokeOpen(arcOf(pts, aL - 1.0, aL + 1.0, 0.955, 3)); }
+    /* głowa */
+    hx = yaw * 4.5 + lk * 1.4; hy = -21.5 + dive * 2.5 + sleep * 3;
+    ctx.save(); ctx.translate(hx, hy); if (sleep > 0) ctx.rotate(0.22 * sleep);
+    gr = ctx.createRadialGradient(lx * 5 + 2, -6, 1, 0, 0, 17); gr.addColorStop(0, rgba(liteC, 1)); gr.addColorStop(0.55, rgba(bodyC, 1)); gr.addColorStop(1, rgba(darkC, 1));
+    pts = bodyPts(14.6, 14, 0, wet * 0.8, t * 2.5 + 1);
+    ctx.save(); ctx.translate(0.7, 0.5); polyP(pts); ctx.fillStyle = gr; ctx.fill(); ctx.restore();
+    fa = sm((Math.abs(lk) - 0.22) / 0.4); sg = lk < 0 ? -1 : 1;
+    if (fa > 0.01 && e > 0.02) { ctx.beginPath(); ctx.ellipse(sg * 9.6, 5, 4.2, 2.9, 0, 0, TAU); ctx.fillStyle = rgba(B_CHEEK, 0.75 * fa * e); ctx.fill(); }   /* rumieniec */
+
+    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, 0.92); ctx.stroke();
+    if (e > 0.03) { ctx.lineWidth = 1.8; ctx.strokeStyle = rgba(rimC, 0.8 * e); strokeOpen(arcOf(pts, aL - 0.9, aL + 0.9, 0.95, 0)); }
+    ctx.beginPath(); ctx.moveTo(-6, 7); ctx.quadraticCurveTo(-yaw * 2, 9.5, 6, 7); ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, 0.35); ctx.stroke();
+    /* czubek: dwa piórka, podskakują z machnięciem, mokre oklapnięte */
+    ctx.save(); ctx.translate(-lk * 2.2, -13); ctx.rotate((reduce ? 0 : Math.sin(t * 3.1) * 0.12 + flap0 * 0.05) - wet * 0.5 * sg);
+    for (k = 0; k < 2; k++) {
+      ctx.beginPath(); ctx.moveTo(k ? 0.6 : -1.6, 1); ctx.quadraticCurveTo(k ? 2.6 : -4.2, -5 + wet * 3, k ? 6.2 : -1.2, -8.4 + wet * 4); ctx.quadraticCurveTo(k ? 3.6 : 0.4, -3.6 + wet * 2, k ? 2.4 : 1, 1); ctx.closePath();
+      ctx.fillStyle = rgba(k ? bodyC : liteC, 1); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
+    }
+    ctx.restore();
+    /* twarz przy zerkaniu przez ramię: duże oko z błyskami, zmartwiona brew, dzióbek; w drzemce oko zamknięte */
+    if (fa > 0.01) {
+      ctx.globalAlpha = fa; ex = sg * (7.4 + 3 * fa); ey = -1.6;
+      if (sleep > 0.5) { ctx.beginPath(); ctx.moveTo(ex - 2.6, ey); ctx.quadraticCurveTo(ex, ey + 2.4, ex + 2.6, ey); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke(); }
+      else {
+        ctx.beginPath(); ctx.ellipse(ex, ey, 2.25, 3.25, sg * 0.12, 0, TAU); ctx.fillStyle = rgba(B_EYE, 1); ctx.fill();
+        if (e < 0.5) { ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(LINE, 0.8 * (1 - e)); ctx.stroke(); }
+        ctx.beginPath(); ctx.arc(ex - sg * 0.6, ey - 1.2, 0.95, 0, TAU); ctx.fillStyle = 'rgba(255,253,246,1)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + sg * 0.7, ey + 1.3, 0.45, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(ex - sg * 2.4, ey - 4.4); ctx.quadraticCurveTo(ex, ey - 5.6, ex + sg * 2.6, ey - 6.6); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(ink, 0.85); ctx.stroke();   /* brew uniesiona od strony dzióbka: zmartwienie */
+      }
+      ctx.beginPath(); ctx.moveTo(sg * 12.4, -0.4); ctx.quadraticCurveTo(sg * (15.6 + 1.8 * fa), 1.2, sg * (16.6 + 1.6 * fa), 2.2); ctx.quadraticCurveTo(sg * 14.8, 3.4, sg * 12.4, 3.6); ctx.closePath();
+      ctx.fillStyle = rgba(mixc(BIRD_F0, B_BEAK, e), 1); ctx.fill(); ctx.lineWidth = 0.9; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    if (sleep > 0.6 && !reduce) {   /* "z" nad głową w drzemce */
+      ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, 0.8);
+      for (k = 0; k < 2; k++) { u = md(t * 0.45 + k * 0.5, 1); rr = 2.2 + u * 2; ex = 15 + u * 8 + k * 3; ey = -16 - u * 18; ctx.globalAlpha = (sleep - 0.6) / 0.4 * Math.sin(u * Math.PI); ctx.beginPath(); ctx.moveTo(ex - rr, ey - rr); ctx.lineTo(ex + rr, ey - rr); ctx.lineTo(ex - rr, ey + rr); ctx.lineTo(ex + rr, ey + rr); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+    /* szalik: opaska z objętością, węzeł z tyłu (przesuwa się przeciwnie do obrotu), dwa końce powiewają ku widzowi */
+    sc1 = mixc([150, 52, 60], SCARF, 0.4 + 0.6 * e); kx = -9 - yaw * 2.5; ky = -6.4 + dive * 2;
+    for (w = 1; w >= 0; w--) {
+      c = scarfTailPts(kx, ky, w, s2, yaw); rb = ribbonP(c, 4.6, 7.2); poly = rb.lt.concat(rb.rt.slice().reverse());
+      polyP(poly); ctx.fillStyle = rgba(w ? mixc(sc1, SC_D, 0.25) : sc1, 1); ctx.fill();
+      ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(SC_D, 0.5); strokeOpen(offsetPts(rb.rt, -0.7));   /* cień spodu wstęgi (bez clip) */
+      for (j = 0; j < 2; j++) { k = Math.round([0.6, 0.74][j] * (c.length - 1)); ctx.beginPath(); ctx.moveTo(lerp(rb.lt[k][0], rb.rt[k][0], 0.12), lerp(rb.lt[k][1], rb.rt[k][1], 0.12)); ctx.lineTo(lerp(rb.lt[k][0], rb.rt[k][0], 0.88), lerp(rb.lt[k][1], rb.rt[k][1], 0.88)); ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(mixc(sc1, [255, 236, 226], 0.6), 0.6); ctx.stroke(); }
+      polyP(poly); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+      k = c.length - 1; u = Math.atan2(c[k][1] - c[k - 1][1], c[k][0] - c[k - 1][0]);   /* frędzle */
+      ctx.beginPath(); for (j = 0; j < 4; j++) { ex = lerp(rb.lt[k][0], rb.rt[k][0], j / 3); ey = lerp(rb.lt[k][1], rb.rt[k][1], j / 3); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(u) * 3.2 + (reduce ? 0 : Math.sin(t * 9 + j) * 0.6), ey + Math.sin(u) * 3.2); }
+      ctx.lineWidth = 0.8; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(-14.6 - yaw, -12.4); ctx.quadraticCurveTo(-yaw * 1.5, -9 + dive * 1.5, 14.6 - yaw, -12.4); ctx.lineTo(14 - yaw, -5.6); ctx.quadraticCurveTo(-yaw * 1.5, -2.4 + dive * 1.5, -14 - yaw, -5.6); ctx.closePath();
+    gr = ctx.createLinearGradient(0, -12, 0, -3); gr.addColorStop(0, rgba(mixc(sc1, SC_L, 0.5 * (0.4 + 0.6 * e)), 1)); gr.addColorStop(0.55, rgba(sc1, 1)); gr.addColorStop(1, rgba(mixc(sc1, SC_D, 0.6), 1));
+    ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+    ctx.beginPath(); for (j = -2; j <= 2; j++) { ex = j * 5.4 - yaw * 1.2; ctx.moveTo(ex, -11 + Math.abs(j) * 0.4); ctx.lineTo(ex + 0.5, -4.2 + Math.abs(j) * 0.4); } ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(SC_D, 0.55); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(kx, ky, 4.3, 3.6, -0.4, 0, TAU); ctx.fillStyle = rgba(mixc(sc1, SC_D, 0.3), 1); ctx.fill(); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+    /* mokry: krople pod brzuszkiem; otrzepanie: rozprysk */
+    if (wet > 0.05) {
+      ctx.fillStyle = rgba(mixc(LINE, [176, 206, 246], e), 0.8 * wet);
+      for (j = 0; j < 2; j++) { u = reduce ? 0.5 : md(t * 0.9 + j * 0.5, 1); ex = j ? 6 : -5; ey = 24 + u * 7; ctx.beginPath(); ctx.moveTo(ex, ey - 2.6); ctx.quadraticCurveTo(ex + 1.6, ey, ex, ey + 1.3); ctx.quadraticCurveTo(ex - 1.6, ey, ex, ey - 2.6); ctx.fill(); }
+    }
+    if (shakeT > 0 && !reduce) {
+      u = 1 - shakeT / 0.6; ctx.fillStyle = rgba(mixc(LINE, [190, 216, 250], e), 0.85 * (1 - u));
+      for (j = 0; j < 8; j++) { c = j / 8 * TAU + 0.3; rr = 20 + u * 26; ctx.beginPath(); ctx.arc(Math.cos(c) * rr * 1.2, 2 + Math.sin(c) * rr, 1.3, 0, TAU); ctx.fill(); }
+    }
     ctx.restore();
   }
 
@@ -1175,6 +1827,7 @@ na chmurce.</p>
       }
     }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = gr;
+    if (amt > 0.05) { ctx.globalAlpha = 0.16 * amt * fade; ctx.lineWidth = Math.max(3, 15 * Math.min(sc, 1.6)); ctx.stroke(); ctx.globalAlpha = 0.22 * amt * fade; ctx.lineWidth = Math.max(2, 6 * Math.min(sc, 1.6)); ctx.stroke(); ctx.globalAlpha = 1; }   /* Z4: laserunek pędzla pod kreską */
     if (p.flash > 0.05) { ctx.globalAlpha = 0.28 * p.flash; ctx.lineWidth = lw * 3.2; ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.setLineDash([dash, dash * 0.5]); ctx.lineDashOffset = reduce ? 0 : -t * 60; ctx.lineWidth = lw; ctx.stroke();
     ctx.setLineDash([]); ctx.lineDashOffset = 0;
@@ -1188,7 +1841,8 @@ na chmurce.</p>
   function drawWing(rx, ry, ang, L, fill) {
     ctx.save(); ctx.translate(rx, ry); ctx.rotate(ang);
     ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(L * 0.5, -27, L, -4); ctx.lineTo(L * 0.96, 4); ctx.quadraticCurveTo(L * 0.88, 14, L * 0.72, 12); ctx.quadraticCurveTo(L * 0.6, 20, L * 0.46, 16); ctx.quadraticCurveTo(L * 0.25, 19, 0, 9); ctx.closePath();
-    ctx.fillStyle = rgba(fill, 1); ctx.fill(); ctx.stroke();
+    var wg = ctx.createLinearGradient(0, -14, L * 0.4, 18); wg.addColorStop(0, rgba(mixc(fill, LINE, 0.18), 1)); wg.addColorStop(1, rgba(mulc(fill, 0.82), 1));   /* Z4: objętość pióra */
+    ctx.fillStyle = wg; ctx.fill(); ctx.stroke();
     ctx.save(); ctx.globalAlpha *= 0.45; ctx.beginPath(); ctx.moveTo(L * 0.3, -8); ctx.lineTo(L * 0.92, -2); ctx.moveTo(L * 0.3, 1); ctx.lineTo(L * 0.86, 3); ctx.moveTo(L * 0.32, 8); ctx.lineTo(L * 0.7, 9); ctx.stroke(); ctx.restore();
     ctx.restore();
   }
@@ -1204,7 +1858,10 @@ na chmurce.</p>
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95);
     drawWing(2, -8, a2, 56, cwf);
     ctx.beginPath(); ctx.moveTo(-36, -2); ctx.lineTo(-62, -9); ctx.lineTo(-66, 2); ctx.lineTo(-60, 11); ctx.lineTo(-36, 8); ctx.closePath(); ctx.fillStyle = rgba(cwf, 1); ctx.fill(); ctx.stroke();
-    ctx.save(); ctx.rotate(-0.06); ctx.beginPath(); ctx.ellipse(-6, 2, 36, 16, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(cb, 1); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.rotate(-0.06); ctx.beginPath(); ctx.ellipse(-6, 2, 36, 16, 0, 0, Math.PI * 2);
+    var bg2 = ctx.createLinearGradient(0, -14, 0, 18); bg2.addColorStop(0, rgba(mixc(cb, LIGHTC, 0.22 * amt), 1)); bg2.addColorStop(0.55, rgba(cb, 1)); bg2.addColorStop(1, rgba(mulc(cb, 0.78), 1)); ctx.fillStyle = bg2; ctx.fill(); ctx.stroke();
+    if (amt > 0.05) { ctx.beginPath(); ctx.ellipse(-6, 1, 33, 13, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.lineWidth = 2.2 / k; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95); }   /* jasny brzeg */
+    ctx.restore();
     ctx.beginPath(); ctx.moveTo(24, -4); ctx.quadraticCurveTo(40, -8, 47, -27);
     ctx.lineWidth = 10 + 3.4 / k; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke(); ctx.lineWidth = 10; ctx.strokeStyle = rgba(cn, 1); ctx.stroke();
     ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95);
@@ -1227,6 +1884,7 @@ na chmurce.</p>
       ctx.lineWidth = 7 / Math.max(0.8, k * 0.8); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
       ctx.lineWidth = 4.2 / Math.max(0.8, k * 0.8); ctx.strokeStyle = rgba(cw, 1); ctx.stroke();
       ctx.beginPath(); ctx.ellipse(bxx, byy + 3, 6.5, 4.6, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(cb, 1); ctx.fill(); ctx.lineWidth = 1.4 / k; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
+      if (amt > 0.05) { ctx.beginPath(); ctx.ellipse(bxx, byy + 2.4, 5, 3.2, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.lineWidth = 1.2 / k; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); }
     }
     ctx.restore(); ctx.globalAlpha = 1;
   }
@@ -1236,7 +1894,7 @@ na chmurce.</p>
     var fade = sm(o.age / 0.8) * sm((z - 0.12) / (front ? 0.5 : 0.4)), a = (front ? 0.42 : 0.96) * fade, i2, fx, ph, yy, col, xx, ln, nr = bu ? 26 : 18, j, bxp, byp;
     if (fade <= 0.02 || X + 190 * sc * sx < -20 || X - 190 * sc * sx > W + 20) return;
     drawSpr(S.mono[b], X, Y, sc * sx, a * (1 - gA * 0.85));
-    if (gA > 0.01) drawSpr(S.tint, X, Y, sc * sx, a * gA);
+    if (gA > 0.01) drawTintS(S.tint, X, Y, sc * sx, a * gA);
     if (bu && o.flash > 0.02 && !reduce) { ctx.globalCompositeOperation = 'lighter'; drawSpr(S.tint, X, Y, sc * sx, a * o.flash * 0.5); ctx.globalCompositeOperation = 'source-over'; }
     col = mixc(LINE, mixc([150, 178, 238], [170, 186, 255], nk), amt);
     ctx.strokeStyle = rgba(col, 0.62 * fade * (front ? 0.8 : 1)); ctx.lineWidth = Math.max(1, 1.3 * Math.min(sc, 1.6)); ctx.lineCap = 'round';
@@ -1248,6 +1906,9 @@ na chmurce.</p>
       ctx.moveTo(X + xx * sc, Y + yy * sc); ctx.lineTo(X + (xx - ln * 0.12) * sc, Y + (yy + ln) * sc);
     }
     ctx.stroke();
+    ctx.fillStyle = ctx.strokeStyle; ctx.beginPath();   /* Z4: krople na końcach kresek */
+    for (i2 = 0; i2 < nr; i2 += 2) { fx = ((i2 * 0.381966 + o.ph * 0.13) % 1) - 0.5; ph = (t * (bu ? 2.0 : 1.5) + i2 * 0.37 + o.ph) % 1; if (ph < 0.08 || ph > 0.94) continue; yy = 6 + ph * 215; xx = fx * 250 * sx - yy * 0.12; ln = 18 + 8 * (i2 % 3); ctx.moveTo(X + (xx - ln * 0.12) * sc + 1.6 * Math.min(sc, 1.6), Y + (yy + ln) * sc); ctx.arc(X + (xx - ln * 0.12) * sc, Y + (yy + ln) * sc, 1.6 * Math.min(sc, 1.6), 0, TAU); }
+    ctx.fill();
     if (bu && o.bolt > 0.05) {   /* piorun: łamana linia spod podstawy, jasna z poświatą */
       bxp = X + (o.seed - 0.5) * 160 * sc; byp = Y + 4 * sc;
       ctx.beginPath(); ctx.moveTo(bxp, byp);
@@ -1271,10 +1932,13 @@ na chmurce.</p>
     kx = X + o.kd * half; ky = Y - 96 * sc + Math.sin(t * 1.4 + o.ph) * 5 * sc;
     ctx.beginPath(); ctx.moveTo(kx, Y + (o.kd < 0 ? 0 : sag * 0.4)); ctx.lineTo(kx, ky + ks); ctx.lineWidth = Math.max(0.8, 1 * Math.min(sc, 1.6)); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky + ks * 1.2); ctx.lineTo(kx - ks * 0.7, ky); ctx.closePath();
-    ctx.fillStyle = rgba(kc, 1); ctx.fill(); ctx.lineWidth = Math.max(1, 1.4 * Math.min(sc, 1.6)); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+    ctx.fillStyle = rgba(kc, 1); ctx.fill();
+    if (amt > 0.05) { ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky + ks * 1.2); ctx.closePath(); ctx.fillStyle = rgba(mulc(kc, 0.8), 0.55 * amt); ctx.fill(); ctx.beginPath(); ctx.moveTo(kx - ks * 0.7, ky); ctx.lineTo(kx, ky - ks); ctx.lineTo(kx, ky); ctx.closePath(); ctx.fillStyle = rgba(mixc(kc, [255, 248, 236], 0.5), 0.5 * amt); ctx.fill(); }   /* Z4: płaszczyzny latawca w świetle i w cieniu */
+    ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky + ks * 1.2); ctx.lineTo(kx - ks * 0.7, ky); ctx.closePath(); ctx.lineWidth = Math.max(1, 1.4 * Math.min(sc, 1.6)); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx, ky + ks * 1.2); ctx.moveTo(kx - ks * 0.7, ky); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineWidth = 1; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(kx, ky + ks * 1.2); ctx.quadraticCurveTo(kx + 8 * sc, ky + ks * 2, kx - 4 * sc, ky + ks * 2.8); ctx.quadraticCurveTo(kx + 6 * sc, ky + ks * 3.4, kx, ky + ks * 4);
     ctx.strokeStyle = rgba(kc2, 1); ctx.lineWidth = Math.max(1.4, 2 * Math.min(sc, 1.5)); ctx.stroke();
+    for (i2 = 1; i2 <= 3; i2++) { px = kx + Math.sin(i2 * 1.9 + t * 2) * 4 * sc; py = ky + ks * (1.2 + i2 * 0.7); ctx.beginPath(); ctx.moveTo(px - 4 * sc, py - 2.4 * sc); ctx.lineTo(px + 4 * sc, py + 2.4 * sc); ctx.lineTo(px + 4 * sc, py - 2.4 * sc); ctx.lineTo(px - 4 * sc, py + 2.4 * sc); ctx.closePath(); ctx.fillStyle = rgba(i2 % 2 ? kc : kc2, 1); ctx.fill(); ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(ink, 0.8); ctx.stroke(); }   /* kokardki */
     for (i2 = 0; i2 < 3; i2++) {   /* blaski na sznurze */
       u = (t * 0.45 + i2 * 0.33 + o.ph * 0.1) % 1; px = lerp(X - half, X + half, u); py = (1 - u) * (1 - u) * Y + 2 * u * (1 - u) * (Y + sag * 2) + u * u * (Y + sag * 0.4);
       ctx.beginPath(); ctx.arc(px, py, Math.max(1.4, 2.2 * Math.min(sc, 1.5)), 0, Math.PI * 2); ctx.fillStyle = rgba(LINE, 0.55 + 0.4 * Math.sin(t * 6 + i2)); ctx.fill();
@@ -1283,17 +1947,22 @@ na chmurce.</p>
   }
   /* mgła: zimna, miękka ławica; gasi kolor */
   function drawMgla(o, front) {
-    var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, 44), gA = obG(z), F = FOGS[o.gi], b = z < 1.6 ? 0 : 1, k, wob;
+    var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, 44), gA = obG(z), F = FOGS[o.gi], b = z < 1.6 ? 0 : 1, k, wob, j, px, py, u, wcol, ww;
     var fade = sm(o.age / 0.9) * sm((z - 0.12) / (front ? 0.5 : 0.4)), a = (front ? 0.45 : 0.9) * fade;
     if (fade <= 0.02 || X + 190 * sc < -20 || X - 190 * sc > W + 20) return;
     drawSpr(F.mono[b], X, Y, sc, a * 0.6 * (1 - gA * 0.9));
-    if (gA > 0.01) drawSpr(F.tint, X, Y, sc, a * gA);
-    ctx.strokeStyle = rgba(mixc(LINE, [196, 214, 238], gA), 0.4 * fade); ctx.lineWidth = Math.max(1, 1.4 * Math.min(sc, 1.6)); ctx.lineCap = 'round'; ctx.beginPath();
-    for (k = 0; k < 4; k++) {
-      wob = reduce ? 0 : Math.sin(t * 0.8 + k + o.ph) * 14;
-      ctx.moveTo(X - (150 - k * 24) * sc + wob * sc, Y - (50 - k * 26) * sc); ctx.quadraticCurveTo(X + wob * sc, Y - (62 - k * 26) * sc, X + (140 - k * 20) * sc + wob * sc, Y - (48 - k * 26) * sc);
+    if (gA > 0.01) drawTintS(F.tint, X, Y, sc, a * gA);
+    /* Z4: smugi mgły: kilka pasm o zmiennej grubości, każde płynie z inną prędkością (zimny welon) */
+    wcol = mixc(LINE, [206, 222, 244], gA); ctx.lineCap = 'round';
+    for (k = 0; k < 6; k++) {
+      wob = reduce ? 0 : Math.sin(t * (0.5 + k * 0.13) + k * 1.7 + o.ph) * 18;
+      ctx.beginPath();
+      for (j = 0; j <= 14; j++) { u = j / 14; px = X + (lerp(-170, 160, u) + wob + (k % 2 ? 10 : -6)) * sc; py = Y - (58 - k * 17 + Math.sin(u * 5.2 + k * 1.3 + (reduce ? 0 : t * 0.7)) * 5) * sc; if (j) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+      ww = Math.max(1, (k % 3 === 0 ? 2.4 : 1.3) * Math.min(sc, 1.6));
+      ctx.strokeStyle = rgba(wcol, (0.16 + 0.1 * (k % 3)) * fade); ctx.lineWidth = ww * 5; ctx.stroke();
+      ctx.strokeStyle = rgba(wcol, (0.32 + 0.12 * (k % 2)) * fade); ctx.lineWidth = ww; ctx.setLineDash([60 * sc, 26 * sc + k * 3]); ctx.lineDashOffset = reduce ? 0 : -t * 22 * (1 + k * 0.2); ctx.stroke(); ctx.setLineDash([]);
     }
-    ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.lineDashOffset = 0; ctx.globalAlpha = 1;
   }
   /* jastrząb widziany od tyłu z góry: rozpostarte skrzydła z palcami, wachlarz ogona, mała głowa z haczykowatym dziobem */
   var HK_W = [[10, -12], [60, -34], [110, -40], [150, -30], [160, -16], [146, -12], [153, 2], [136, 5], [140, 20], [114, 20], [92, 30], [58, 36], [26, 26], [10, 12]];
@@ -1307,10 +1976,13 @@ na chmurce.</p>
     for (side = -1; side <= 1; side += 2) {
       ctx.beginPath();
       for (j = 0; j < HK_W.length; j++) { p = HK_W[j]; var wy = p[1] - flap * Math.pow(p[0] / 150, 2) * 34; if (j) ctx.lineTo(side * p[0], wy); else ctx.moveTo(side * p[0], wy); }
-      ctx.closePath(); ctx.fillStyle = F(cw); ctx.fill(); ctx.stroke();
+      ctx.closePath();
+      if (!cien && amt > 0.05) { var hg2 = ctx.createLinearGradient(0, -40, 0, 36); hg2.addColorStop(0, rgba(mixc(cw, LIGHTC, 0.3 * amt), 1)); hg2.addColorStop(1, rgba(mulc(cw, 0.8), 1)); ctx.fillStyle = hg2; } else ctx.fillStyle = F(cw);   /* Z4: objętość skrzydła */
+      ctx.fill(); ctx.stroke();
       if (!cien) { ctx.save(); ctx.globalAlpha = alpha * 0.4; ctx.beginPath(); ctx.moveTo(side * 100, -2 - flap * 15); ctx.lineTo(side * 146, -7 - flap * 28); ctx.moveTo(side * 96, 8 - flap * 14); ctx.lineTo(side * 140, 3 - flap * 25); ctx.moveTo(side * 76, 16); ctx.lineTo(side * 124, 13 - flap * 20); ctx.stroke(); ctx.restore(); }
     }
     ctx.beginPath(); ctx.ellipse(0, 6, 18, 34, 0, 0, Math.PI * 2); ctx.fillStyle = F(cbd); ctx.fill(); ctx.stroke();
+    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, 6, 15, 31, 0, Math.PI * (LIGHTX > 0 ? 1.55 : 1.1), Math.PI * (LIGHTX > 0 ? 1.95 : 1.5)); ctx.lineWidth = 2.6 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, 0.95); }   /* jasny brzeg grzbietu */
     ctx.beginPath(); ctx.ellipse(0, -30, 11, 10, 0, 0, Math.PI * 2); ctx.fillStyle = F(cbd); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-4, -37); ctx.quadraticCurveTo(0, -56, 5, -43); ctx.lineTo(4, -37); ctx.closePath(); ctx.fillStyle = cien ? F(cbd) : rgba(mixc([60, 66, 100], [250, 190, 80], amt), 1); ctx.fill(); ctx.stroke();
     if (!cien) { ctx.beginPath(); ctx.moveTo(-8, -35); ctx.lineTo(-3, -32); ctx.moveTo(8, -35); ctx.lineTo(3, -32); ctx.lineWidth = 2 / sz; ctx.strokeStyle = rgba(mixc(LINE, [30, 24, 30], amt), 1); ctx.stroke(); }
@@ -1332,7 +2004,10 @@ na chmurce.</p>
     if (!cien) { ctx.save(); ctx.globalAlpha = alpha * 0.4; ctx.beginPath(); for (j = 0; j < 4; j++) { ctx.moveTo(-14, 6 + j * 12); ctx.quadraticCurveTo(0, 12 + j * 12, 14, 6 + j * 12); } ctx.stroke(); ctx.restore(); }
     ctx.beginPath(); ctx.moveTo(-24, -40); ctx.lineTo(-20, -62); ctx.lineTo(-8, -48); ctx.moveTo(24, -40); ctx.lineTo(20, -62); ctx.lineTo(8, -48);
     ctx.fillStyle = F(cbd); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(0, -30, 30, 25, 0, 0, Math.PI * 2); ctx.fillStyle = F(cbd); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, -30, 30, 25, 0, 0, Math.PI * 2);
+    if (!cien && amt > 0.05) { var og = ctx.createRadialGradient(LIGHTX * 10, -42, 4, 0, -30, 34); og.addColorStop(0, rgba(mixc(cbd, LIGHTC, 0.35 * amt), 1)); og.addColorStop(1, rgba(mulc(cbd, 0.82), 1)); ctx.fillStyle = og; } else ctx.fillStyle = F(cbd);   /* Z4: objętość głowy */
+    ctx.fill(); ctx.stroke();
+    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, -30, 27, 22, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.lineWidth = 2.4 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.55 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, 0.95); }
     if (!cien) {
       for (side = -1; side <= 1; side += 2) {
         ctx.beginPath(); ctx.arc(side * 12, -32, 12, 0, Math.PI * 2); ctx.fillStyle = rgba(cf, 1); ctx.fill(); ctx.stroke();
@@ -1377,11 +2052,12 @@ na chmurce.</p>
     ctx.fillStyle = rgba(LINE, b); ctx.font = '700 15px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('!', cx, cy + 8); ctx.restore();
   }
   function drawParts() {
-    var k, p, e = ilosc(sk, 0.3), body = mixc(mixc(NAVY, [52, 60, 92], 0.8), BODY, e), ink = mixc(LINE, [34, 34, 56], e), dc = mixc(LINE, [150, 180, 240], e);
+    var k, p, e = sm((sk - 0.13) / 0.55), body = mixc(BIRD_F0, B_BODY, e), ink = mixc(LINE, [44, 32, 60], e), dc = mixc(LINE, [150, 180, 240], e);
     for (k = 0; k < plumki.length; k++) {
       p = plumki[k]; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = cl(p.life / 0.6);
-      ctx.beginPath(); ctx.ellipse(0, 0, 7.5, 2.4, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(8, 0); ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-2, -3.6, 7.5, -0.6); ctx.quadraticCurveTo(8.6, 0.6, 7, 1); ctx.quadraticCurveTo(-1, 3.2, -8, 0); ctx.closePath();
+      ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1; ctx.stroke();   /* Z4: pióro z chorągiewką */
+      ctx.beginPath(); ctx.moveTo(-10, 0.4); ctx.quadraticCurveTo(0, -0.6, 7.6, 0); ctx.lineWidth = 0.7; ctx.stroke(); ctx.restore();
     }
     ctx.strokeStyle = rgba(dc, 0.65); ctx.lineWidth = 1.4; ctx.lineCap = 'round'; ctx.beginPath();
     for (k = 0; k < kropl.length; k++) { p = kropl[k]; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 0.8, p.y + 6); }
@@ -1389,25 +2065,37 @@ na chmurce.</p>
   }
   /* grad: zapowiedź = ciemny łuk chmury i przerywane pasy w trzech kolumnach nad ptaszkiem, potem kamyki lodu; rysowany w płaszczyźnie ptaszka */
   function drawGrad(o) {
-    var cols = [-45, 0, 45], X0 = W / 2 + (o.x - camX) / G.ZB, env, k, j, xc, ph, yy, jx, top = H * 0.2, amt = cAll(sk), col, a;
+    var cols = [-45, 0, 45], X0 = W / 2 + (o.x - camX) / G.ZB, env, k, j, xc, ph, yy, jx, top = H * 0.2, amt = cAll(sk), gA = sg(sk), col, a, S = STORM[0], rr, rot, gr;
     env = o.faza === 'zapowiedz' ? sm(o.t / 0.5) : (o.faza === 'aktywny' ? 1 : 1 - sm(o.t / 0.5));
-    col = mixc(LINE, [200, 228, 255], amt);
+    col = mixc(LINE, [214, 232, 255], amt);
     ctx.save();
-    ctx.fillStyle = 'rgba(8,10,24,' + (0.4 * env).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(X0, top, 112, 22, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = rgba(LINE, 0.5 * env); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(X0, top, 112, 22, 0, 0, Math.PI * 2); ctx.stroke();
+    /* Z4: chmura gradowa w stylu kulis (tusz w L0, akwarela burzowa w kolorze), lekko kołysze się */
+    drawSpr(S.mono[1], X0 + (reduce ? 0 : Math.sin(t * 1.3) * 3), top + 26, 0.72, env * (1 - gA * 0.85));
+    if (gA > 0.01) drawTintS(S.tint, X0 + (reduce ? 0 : Math.sin(t * 1.3) * 3), top + 26, 0.72, env * gA);
     if (o.faza === 'zapowiedz') {
-      a = (0.25 + 0.2 * (reduce ? 0.5 : 0.5 + 0.5 * Math.sin(t * 9))) * env; ctx.strokeStyle = rgba(col, a); ctx.lineWidth = 1.2; ctx.setLineDash([5, 9]); ctx.lineDashOffset = reduce ? 0 : -t * 70;
-      ctx.beginPath(); for (k = 0; k < 3; k++) { xc = X0 + cols[k] / G.ZB; ctx.moveTo(xc, top + 20); ctx.lineTo(xc, BIRDY + 30); } ctx.stroke(); ctx.setLineDash([]);
+      a = (0.25 + 0.2 * (reduce ? 0.5 : 0.5 + 0.5 * Math.sin(t * 9))) * env;
+      for (k = 0; k < 3; k++) {   /* miękkie pasy cienia tam, gdzie spadnie grad */
+        xc = X0 + cols[k] / G.ZB; gr = ctx.createLinearGradient(0, top + 24, 0, BIRDY + 40); gr.addColorStop(0, rgba(col, 0.22 * a)); gr.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = gr; ctx.fillRect(xc - 9, top + 24, 18, BIRDY + 16 - top);
+      }
+      ctx.strokeStyle = rgba(col, a); ctx.lineWidth = 1.1; ctx.setLineDash([3, 10]); ctx.lineDashOffset = reduce ? 0 : -t * 70;
+      ctx.beginPath(); for (k = 0; k < 3; k++) { xc = X0 + cols[k] / G.ZB; ctx.moveTo(xc, top + 30); ctx.lineTo(xc, BIRDY + 30); } ctx.stroke(); ctx.setLineDash([]);
     } else {
-      ctx.fillStyle = rgba(col, 0.92 * env); ctx.beginPath();
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       for (k = 0; k < 3; k++) {
         xc = X0 + cols[k] / G.ZB;
         for (j = 0; j < 9; j++) {
-          ph = (t * 1.9 + j / 9 + k * 0.31 + (j * 0.137 % 0.1)) % 1; yy = lerp(top + 14, BIRDY + 40, ph); jx = (((j * 7 + k * 3) % 11) / 11 - 0.5) * 38;
-          ctx.moveTo(xc + jx, yy - 5.2); ctx.lineTo(xc + jx + 3.8, yy); ctx.lineTo(xc + jx, yy + 5.2); ctx.lineTo(xc + jx - 3.8, yy);
+          ph = (t * 1.9 + j / 9 + k * 0.31 + (j * 0.137 % 0.1)) % 1; yy = lerp(top + 34, BIRDY + 40, ph); jx = (((j * 7 + k * 3) % 11) / 11 - 0.5) * 38; rr = 3.4 + ((j * 5 + k) % 3) * 0.8; rot = (reduce ? 0 : t * 4) + j + k;
+          ctx.globalAlpha = 0.9 * env;
+          ctx.strokeStyle = rgba(col, 0.35); ctx.lineWidth = rr * 0.9; ctx.beginPath(); ctx.moveTo(xc + jx, yy - rr * 4.5); ctx.lineTo(xc + jx, yy - rr); ctx.stroke();   /* smuga spadania */
+          ctx.save(); ctx.translate(xc + jx, yy); ctx.rotate(rot);
+          ctx.beginPath(); ctx.moveTo(rr, 0); ctx.quadraticCurveTo(rr * 0.9, rr * 0.9, 0, rr * 1.05); ctx.quadraticCurveTo(-rr * 1.05, rr * 0.8, -rr, 0); ctx.quadraticCurveTo(-rr * 0.8, -rr * 1.05, 0, -rr); ctx.quadraticCurveTo(rr * 1.0, -rr * 0.8, rr, 0); ctx.closePath();
+          ctx.fillStyle = rgba(mixc(MONO, mixc([196, 220, 250], LIGHTC, 0.2), amt), 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(mixc(LINE, inkCol(), amt * 0.7), 0.95); ctx.stroke();
+          ctx.beginPath(); ctx.arc(-rr * 0.3, -rr * 0.35, rr * 0.28, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();   /* połysk lodu */
+          ctx.restore();
         }
       }
-      ctx.fill();
+      ctx.globalAlpha = 1;
     }
     ctx.restore();
   }
@@ -1563,6 +2251,9 @@ na chmurce.</p>
       case 'latawiec': drawLatawiec(it, front); break;
       case 'mgla': drawMgla(it, front); break;
       case 'prad': drawPrad(it); break;
+      case 'sea': if (!DBG.sea) drawSeaRow(it, it.dy); break;
+      case 'slab': if (!DBG.slab) drawHazeSlab(it); break;
+      case 'rays': if (!DBG.rays) drawRaysZ(); break;
     }
   }
   /* niebo: gradient z 8 przystanków; pora doby nadaje odcień, etapy koloru nasycenie, a odcienie palety wchodzą w pasy po kolei */
@@ -1578,10 +2269,209 @@ na chmurce.</p>
     }
     return { pos: pos, col: out };
   }
+  /* ---------- Z4: światło, niebo (laserunek i papier), słońce i księżyc, mgiełka między kulisami, promienie, drobiny światła ----------
+     LIGHTX (-1 lewo .. 1 prawo) = kierunek światła z położenia słońca albo księżyca; wagi masek cienia i jasnego brzegu chmur (LW_L) i barwa światła (LIGHTC).
+     lekki = tryb lekki (automatycznie przy < 50 kl/s poza ?test; w ?test przełącznik __okruszek.lekki()): bez papieru, laserunku nieba, promieni, drobin i poświaty, jedna warstwa mgiełki. */
+  var DBG = {};
+  var LIGHTX = 0, LW_L = 0.5, LIGHTC = [255, 226, 170], SUNP = { x: 0, y: 0, a: 0, e: 0, mx: 0, my: 0, ma: 0 }, lekki = Q.get('lekki') === '1', hazeCol = [13, 18, 36], TCACHE = {}, PAT = {};
+  function inkCol() { return mixc([62, 46, 80], [38, 44, 100], PAL.nightW); }
+  function updLight() {
+    var ths = (phi - 0.25) / 0.5 * Math.PI, esun = Math.sin(ths), pm = phi < 0.25 ? phi + 1 : phi, thm = (pm - 0.75) / 0.5 * Math.PI, em = Math.sin(thm), lx;
+    SUNP.e = esun; SUNP.x = W / 2 + (phi - 0.75) / 0.5 * W * 0.24 - camX * 0.04; SUNP.y = HORIZON - 30 - Math.max(-0.3, esun) * H * 0.3;
+    SUNP.a = sm((esun + 0.12) / 0.3) * (phi > 0.2 && phi < 0.8 ? 1 : 0);
+    SUNP.mx = W * 0.62 + (pm - 1.0) / 0.5 * W * 0.18 - camX * 0.03; SUNP.my = HORIZON - 20 - Math.max(-0.2, em) * HORIZON * 0.55;
+    SUNP.ma = (pm >= 0.75 && pm <= 1.25) ? sm((em + 0.1) / 0.3) : 0;
+    lx = (SUNP.x * SUNP.a + SUNP.mx * SUNP.ma + W / 2 * 0.001) / (SUNP.a + SUNP.ma + 0.001);   /* płynnie między słońcem a księżycem */
+    LIGHTX = Math.max(-1, Math.min(1, (lx - W / 2) / (W * 0.3)));
+    LW_L = Math.round((0.5 - 0.5 * LIGHTX) * 8) / 8;
+    LIGHTC = mixc(mixc([255, 212, 146], [255, 244, 224], PAL.dayW), [200, 214, 255], PAL.nightW);
+  }
+  /* tekstura biała zabarwiona na kolor (pamięć podręczna, przemalowywana tylko przy zmianie barwy) */
+  function tintTex(name, tex, col) {
+    var e = TCACHE[name], key = Math.round(col[0] / 5) + ',' + Math.round(col[1] / 5) + ',' + Math.round(col[2] / 5), x;
+    if (!e) e = TCACHE[name] = { c: mkS(tex.width, tex.height), key: '' };
+    if (e.key !== key) { x = e.c.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, tex.width, tex.height); x.drawImage(tex, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = rgba(col, 1); x.fillRect(0, 0, tex.width, tex.height); x.globalCompositeOperation = 'source-over'; e.key = key; }
+    return e.c;
+  }
+  function patOf(name, tex, k) { if (!PAT[name]) { PAT[name] = ctx.createPattern(tex, 'repeat'); if (k && PAT[name].setTransform) PAT[name].setTransform(new DOMMatrix([k, 0, 0, k, 0, 0])); } return PAT[name]; }
+  /* laserunek nieba: nierówne plamy (mokre w mokre), neutralne (soft-light), od L1 */
+  function drawSkyWash() {
+    var a = 0.55 * (0.25 * ST.g + 0.75 * ST.p);
+    if (lekki || a < 0.01) return;
+    ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = a; ctx.fillStyle = patOf('wash', TEX.wash, 3.2);
+    ctx.translate(reduce ? 0 : -(t * 3) % 409.6 - camX * 0.05, 0); ctx.fillRect(-500, -70, W + 1000, HORIZON + 120); ctx.restore();
+  }
+  function wobRing(cx, cy, r, ph, amp) { var k, a, q; ctx.beginPath(); for (k = 0; k <= 40; k++) { a = k / 40 * TAU; q = r * (1 + amp * Math.sin(3 * a + ph) + amp * 0.5 * Math.sin(7 * a + ph * 1.7)); if (k) ctx.lineTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q); else ctx.moveTo(cx + Math.cos(a) * q, cy + Math.sin(a) * q); } ctx.closePath(); }
+  /* słońce: poświata, tarcza malowana akwarelą (krem > miód > morela), nierówna kreska tuszu z przerwami; w L0 promyki kreską */
+  function drawSunMoon(cSky) {
+    var a = SUNP.a, gc, sr, gr, r0, k, an, inkA, mc, pm;
+    if (a > 0.01) {
+      gc = stageCol(LINE, PAL.glow, PAL.warm); sr = 70 + cSky * 110 + (1 - cl(SUNP.e)) * 50;
+      ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = a * (0.12 + 0.36 * cSky); ctx.drawImage(tintTex('slonce', TEX.glow, gc), SUNP.x - sr * 1.3, SUNP.y - sr * 1.3, sr * 2.6, sr * 2.6); ctx.restore();
+      r0 = 15 + (1 - cl(SUNP.e)) * 5;
+      if (cSky > 0.01) {
+        gr = ctx.createRadialGradient(SUNP.x - r0 * 0.25, SUNP.y - r0 * 0.3, 1, SUNP.x, SUNP.y, r0 * 1.1);
+        gr.addColorStop(0, rgba(mixc(gc, [255, 252, 238], 0.75), 1)); gr.addColorStop(0.6, rgba(mixc(gc, [255, 222, 150], 0.4), 1)); gr.addColorStop(1, rgba(mixc(gc, [246, 168, 120], 0.45 * (1 - PAL.dayW)), 1));
+        wobRing(SUNP.x + 0.8, SUNP.y + 0.6, r0 + 1.2, 1.3, 0.03); ctx.fillStyle = gr; ctx.globalAlpha = 0.9 * cSky * a; ctx.fill();
+      }
+      inkA = (0.6 * (1 - cSky) + 0.25 * cSky) * a; ctx.globalAlpha = 1;
+      if (inkA > 0.01) {
+        ctx.strokeStyle = rgba(mixc(LINE, inkCol(), sm((cSky - 0.3) / 0.4) * 0.8), inkA); ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+        ctx.setLineDash([22, 3, 9, 4]); wobRing(SUNP.x, SUNP.y, r0, 0.4, 0.02); ctx.stroke(); ctx.setLineDash([]);
+        ctx.lineWidth = 1; ctx.beginPath();   /* promyki kreską (L0-L1, gasną z kolorem) */
+        for (k = 0; k < 11; k++) { an = Math.PI * 1.05 + k / 10 * Math.PI * 0.9; ctx.moveTo(SUNP.x + Math.cos(an) * (r0 + 7 + (k % 2) * 4), SUNP.y + Math.sin(an) * (r0 + 7 + (k % 2) * 4)); ctx.lineTo(SUNP.x + Math.cos(an) * (r0 + 13 + (k % 3) * 3), SUNP.y + Math.sin(an) * (r0 + 13 + (k % 3) * 3)); }
+        ctx.globalAlpha = 0.7 * (1 - cSky); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+    }
+    if (SUNP.ma > 0.01) {
+      a = SUNP.ma; gc = stageCol(LINE, MOON, PAL.warm); pm = 105 + cSky * 40;
+      ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = a * (0.14 + 0.3 * cSky); ctx.drawImage(tintTex('ksiezyc', TEX.glow, gc), SUNP.mx - pm, SUNP.my - pm, pm * 2, pm * 2); ctx.restore();
+      ctx.save(); wobRing(SUNP.mx, SUNP.my, 17, 2.1, 0.015); ctx.clip();
+      mc = mixc(gc, [255, 252, 240], 0.5);
+      gr = ctx.createRadialGradient(SUNP.mx - 6, SUNP.my - 6, 1, SUNP.mx, SUNP.my, 19); gr.addColorStop(0, rgba(mixc(mc, [255, 255, 250], 0.6), 1)); gr.addColorStop(1, rgba(mixc(mc, [180, 190, 240], 0.35), 1));
+      ctx.fillStyle = gr; ctx.globalAlpha = (0.3 + 0.62 * cSky) * a; ctx.beginPath(); ctx.rect(SUNP.mx - 20, SUNP.my - 20, 40, 40); ctx.arc(SUNP.mx + 8, SUNP.my - 3, 15, 0, TAU); ctx.fill('evenodd');
+      ctx.fillStyle = rgba(mixc(mc, [150, 156, 214], 0.6), 0.35 * cSky * a); ctx.beginPath(); ctx.arc(SUNP.mx - 9, SUNP.my + 3, 2.6, 0, TAU); ctx.arc(SUNP.mx - 5, SUNP.my - 8, 1.7, 0, TAU); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = rgba(mixc(LINE, inkCol(), sm((cSky - 0.3) / 0.4) * 0.6), (0.6 - 0.3 * cSky) * a); ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+      ctx.beginPath(); for (k = 0; k <= 24; k++) { an = 0.9 + k / 24 * 4.4; pm = 17 * (1 + 0.015 * Math.sin(an * 3 + 2.1)); if (k) ctx.lineTo(SUNP.mx + Math.cos(an) * pm, SUNP.my + Math.sin(an) * pm); else ctx.moveTo(SUNP.mx + Math.cos(an) * pm, SUNP.my + Math.sin(an) * pm); } ctx.stroke();
+      ctx.beginPath(); for (k = 0; k <= 18; k++) { an = 1.75 + k / 18 * 2.8; ctx.lineTo(SUNP.mx + 8 + Math.cos(an) * 15, SUNP.my - 3 + Math.sin(an) * 15); } ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  }
+  /* mgiełka powietrzna między kulisami: pas w barwie horyzontu zakrywa wszystko, co za nim (dalekie bledną, także w L0) */
+  var SLABS = [{ typ: 'slab', z: 5.2, k: 0 }, { typ: 'slab', z: 2.6, k: 1 }], RAYS = { typ: 'rays', z: 4.3 };
+  function drawHazeSlab(o) {
+    var k = o.k, y0, y1, gr, a;
+    if (lekki && k !== 1) return;
+    y0 = HORIZON - 250 + k * 40; y1 = HORIZON + 36 + k * 30; a = lekki ? 0.26 : 0.11;
+    gr = ctx.createLinearGradient(0, y0, 0, y1 + 70); gr.addColorStop(0, rgba(hazeCol, 0)); gr.addColorStop(0.55, rgba(hazeCol, a * 0.55)); gr.addColorStop(0.8, rgba(hazeCol, a)); gr.addColorStop(1, rgba(hazeCol, 0));
+    ctx.fillStyle = gr; ctx.fillRect(-70, y0, W + 140, y1 + 70 - y0);
+  }
+  /* promienie światła między chmurami (god rays): od L3 (ciepło), w nocy srebrne od księżyca, słabsze */
+  function drawRaysZ() {
+    if (lekki) return;
+    raysFrom(SUNP.x, SUNP.y, 0.5 * SUNP.a * (1 - PAL.nightW) * ST.w);
+    raysFrom(SUNP.mx, SUNP.my, 0.22 * SUNP.ma * PAL.nightW * ST.w);
+  }
+  function raysFrom(ox, oy, a) {
+    var c;
+    if (a < 0.01) return;
+    c = tintTex('promienie', TEX.rays, mixc(LIGHTC, [255, 250, 240], 0.3));
+    ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.translate(ox, oy);
+    ctx.rotate(reduce ? 0 : Math.sin(t * 0.09) * 0.06); ctx.globalAlpha = a * (reduce ? 0.9 : 0.85 + 0.15 * Math.sin(t * 0.7)); ctx.drawImage(c, -420, -420, 840, 840);
+    ctx.rotate(0.13 + (reduce ? 0 : Math.sin(t * 0.13) * 0.04)); ctx.globalAlpha = a * 0.45; ctx.drawImage(c, -420, -420, 840, 840);
+    ctx.restore();
+  }
+  /* drobiny światła na różnych głębokościach (lecą ku kamerze z prędkością lotu; bliskie większe i miękkie) */
+  function drawMotes() {
+    var a = 0.8 * ST.p + 0.25 * PAL.nightW * ST.g, c, k, hv, z, wx, wy, X, Y, r, f;
+    if (lekki || a < 0.02) return;
+    c = tintTex('drobina', TEX.dot, mixc(LIGHTC, [255, 255, 255], 0.35));
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (k = 0; k < (lekki ? 0 : 24); k++) {
+      hv = hsh(k, 77); z = 0.38 + md((hv % 1000) / 1000 * 4.4 - seaD * 0.9, 4.4); wx = ((hv >>> 10) % 760) - 380; wy = -((hv >>> 4) % 320) + 150;
+      X = W / 2 + (wx - camX * (1 - z / 9) + (reduce ? 0 : Math.sin(t * 0.7 + k) * 8)) / z; Y = HORIZON + wy / z;
+      if (X < -20 || X > W + 20 || Y < -20 || Y > H + 20) continue;
+      r = Math.min(7, 1.3 / z + 0.5); f = sm((4.7 - z) / 0.7) * sm((z - 0.38) / 0.3) * (reduce ? 0.8 : 0.6 + 0.4 * Math.sin(t * 2 + k));
+      ctx.globalAlpha = a * f * 0.75; ctx.drawImage(c, X - r * 2.4, Y - r * 2.4, r * 4.8, r * 4.8);
+    }
+    ctx.restore();
+  }
+  /* papier: delikatna faktura na całym obrazie (neutralna, soft-light), mocniejsza z kolorem */
+  function drawPaper() {
+    var a = 0.04 + 0.1 * ST.p;
+    if (lekki) return;
+    ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = a; ctx.fillStyle = patOf('papier', TEX.paper, 1); ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+
+  /* ---------- Z4: poświata (bloom) na słońcu i w turbo ----------
+     Przebieg WebGL2 (opcjonalny) na zmniejszonej kopii obrazu: próg jasności, rozmycie w dwóch kierunkach, wynik na osobnym płótnie nad grą (mix-blend-mode: screen).
+     Tryb awaryjny Canvas 2D włącza się SAM: brak WebGL2, renderer programowy (SwiftShader, llvmpipe), błąd shadera, utrata kontekstu.
+     Awaryjnie: kopia 1/4 i 1/8, próg przez mnożenie obrazu przez siebie, powiększenie z wygładzaniem, dodanie trybem lighter. W trybie lekkim wyłączony.
+     ?bloom=canvas wymusza tryb awaryjny, ?bloom=gl dopuszcza programowy WebGL2 (do testów). */
+  var BL = { mode: 'brak', w: 0, h: 0, sx: null, s8: null, gl: null, glc: null, prog: null, tex: [], fb: [], src: null, vao: null, on: false, amt: 0, why: '' };
+  function initBloom() {
+    var gl, c, dbg, name = '', want = Q.get('bloom');
+    BL.mode = 'canvas';
+    if (want === 'canvas') { BL.why = 'wymuszony ?bloom=canvas'; return; }
+    try {
+      c = document.createElement('canvas'); gl = c.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false });
+      if (!gl) { BL.why = 'brak WebGL2'; return; }
+      dbg = gl.getExtension('WEBGL_debug_renderer_info'); name = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+      if (/swiftshader|llvmpipe|software|basic render/i.test(name) && want !== 'gl') { BL.why = 'programowy WebGL (' + name.slice(0, 40) + ')'; return; }
+      if (!glSetup(gl)) { BL.why = 'błąd shadera'; return; }
+      c.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;';
+      c.addEventListener('webglcontextlost', function (e) { e.preventDefault(); BL.mode = 'canvas'; BL.why = 'utrata kontekstu'; c.style.display = 'none'; });
+      cv.insertAdjacentElement('afterend', c); BL.glc = c; BL.gl = gl; BL.mode = 'webgl2'; BL.why = name.slice(0, 60);
+    } catch (e) { BL.mode = 'canvas'; BL.why = 'wyjątek: ' + String(e).slice(0, 60); }
+  }
+  function glSetup(gl) {
+    var vs = '#version 300 es\nin vec2 p;out vec2 uv;void main(){uv=p*0.5+0.5;gl_Position=vec4(p,0.,1.);}';
+    var fsB = '#version 300 es\nprecision mediump float;in vec2 uv;uniform sampler2D s;uniform float th;out vec4 o;void main(){vec3 c=texture(s,vec2(uv.x,1.-uv.y)).rgb;float l=dot(c,vec3(.299,.587,.114));float k=smoothstep(th,th+.25,l);o=vec4(c*k,1.);}';
+    var fsG = '#version 300 es\nprecision mediump float;in vec2 uv;uniform sampler2D s;uniform vec2 d;out vec4 o;void main(){vec3 a=texture(s,uv).rgb*.227;a+=(texture(s,uv+d).rgb+texture(s,uv-d).rgb)*.194;a+=(texture(s,uv+2.*d).rgb+texture(s,uv-2.*d).rgb)*.121;a+=(texture(s,uv+3.*d).rgb+texture(s,uv-3.*d).rgb)*.054;a+=(texture(s,uv+4.*d).rgb+texture(s,uv-4.*d).rgb)*.016;o=vec4(a,1.);}';
+    var fsO = '#version 300 es\nprecision mediump float;in vec2 uv;uniform sampler2D s;uniform float k;uniform vec3 tc;out vec4 o;void main(){vec3 c=texture(s,uv).rgb*k*tc;o=vec4(c,1.);}';
+    function sh(t2, src) { var q = gl.createShader(t2); gl.shaderSource(q, src); gl.compileShader(q); if (!gl.getShaderParameter(q, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(q)); return q; }
+    function pr(fs) { var p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.bindAttribLocation(p, 0, 'p'); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('link'); return p; }
+    try {
+      BL.prog = { b: pr(fsB), g: pr(fsG), o: pr(fsO) };
+      BL.vao = gl.createVertexArray(); gl.bindVertexArray(BL.vao); var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+      BL.src = gl.createTexture(); BL.tex = [gl.createTexture(), gl.createTexture()]; BL.fb = [gl.createFramebuffer(), gl.createFramebuffer()];
+      [BL.src, BL.tex[0], BL.tex[1]].forEach(function (tx) { gl.bindTexture(gl.TEXTURE_2D, tx); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); });
+      return true;
+    } catch (e) { return false; }
+  }
+  function sizeBloom() {
+    var w = 96, hh = Math.max(8, Math.round(96 * H / W)), gl = BL.gl, k;
+    BL.w = w; BL.h = hh; BL.sx = mkC(w, hh); BL.s8 = mkC(Math.ceil(w / 2), Math.ceil(hh / 2));
+    if (BL.mode === 'webgl2' && gl) {
+      BL.glc.width = w; BL.glc.height = hh;
+      for (k = 0; k < 2; k++) { gl.bindTexture(gl.TEXTURE_2D, BL.tex[k]); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, hh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); gl.bindFramebuffer(gl.FRAMEBUFFER, BL.fb[k]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, BL.tex[k], 0); }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+  }
+  function bloomAmt(cSky, f4) { return lekki ? 0 : Math.max(SUNP.a * sm((cSky - 0.25) / 0.5) * 0.55 * (1 - 0.6 * PAL.nightW), f4 * 0.55, hyK * 0.8); }
+  function drawBloom(amt) {
+    var x, gl = BL.gl, P;
+    BL.amt = amt;
+    if (amt < 0.01) { if (BL.on && gl && BL.mode === 'webgl2') { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); } BL.on = false; return; }
+    if (!BL.sx) sizeBloom();
+    BL.fr = (BL.fr || 0) + 1;
+    if (BL.mode === 'webgl2' && gl && BL.on && BL.fr % 2) return;   /* poświata jest miękka i wolna: co druga klatka wystarcza */
+    x = BL.sx.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    if (BL.mode !== 'webgl2' && BL.on && BL.fr % 2) { drawBloomCanvas(amt); return; }
+    x.drawImage(cv, 0, 0, BL.w, BL.h);
+    if (BL.mode === 'webgl2' && gl) {
+      try {
+        P = BL.prog; gl.viewport(0, 0, BL.w, BL.h); gl.bindVertexArray(BL.vao);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, BL.src); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, BL.sx);
+        gl.useProgram(P.b); gl.uniform1i(gl.getUniformLocation(P.b, 's'), 0); gl.uniform1f(gl.getUniformLocation(P.b, 'th'), 0.62 - 0.12 * hyK);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, BL.fb[0]); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.useProgram(P.g); gl.uniform1i(gl.getUniformLocation(P.g, 's'), 0);
+        gl.bindTexture(gl.TEXTURE_2D, BL.tex[0]); gl.uniform2f(gl.getUniformLocation(P.g, 'd'), 1.4 / BL.w, 0); gl.bindFramebuffer(gl.FRAMEBUFFER, BL.fb[1]); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.bindTexture(gl.TEXTURE_2D, BL.tex[1]); gl.uniform2f(gl.getUniformLocation(P.g, 'd'), 0, 1.4 / BL.h); gl.bindFramebuffer(gl.FRAMEBUFFER, BL.fb[0]); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.useProgram(P.o); gl.uniform1i(gl.getUniformLocation(P.o, 's'), 0); gl.uniform1f(gl.getUniformLocation(P.o, 'k'), amt * 1.1); gl.uniform3f(gl.getUniformLocation(P.o, 'tc'), LIGHTC[0] / 255, LIGHTC[1] / 255, LIGHTC[2] / 255);
+        gl.bindTexture(gl.TEXTURE_2D, BL.tex[0]); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        BL.on = true; return;
+      } catch (e) { BL.mode = 'canvas'; BL.why = 'błąd w klatce'; if (BL.glc) BL.glc.style.display = 'none'; }
+    }
+    /* tryb awaryjny Canvas 2D: próg = obraz razy obraz (dwa razy), potem kopia 1/8 i dodanie z rozmyciem przez powiększenie */
+    x.globalCompositeOperation = 'multiply'; x.drawImage(BL.sx, 0, 0); x.drawImage(BL.sx, 0, 0); x.globalCompositeOperation = 'source-over';
+    var y = BL.s8.getContext('2d'); y.clearRect(0, 0, BL.s8.width, BL.s8.height); y.drawImage(BL.sx, 0, 0, BL.s8.width, BL.s8.height);
+    drawBloomCanvas(amt);
+    BL.on = true;
+  }
+  function drawBloomCanvas(amt) {
+    ctx.save(); ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.globalCompositeOperation = 'lighter'; ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = amt * 0.42; ctx.drawImage(BL.s8, 0, 0, W, H); ctx.globalAlpha = amt * 0.22; ctx.drawImage(BL.sx, 0, 0, W, H); ctx.restore();
+  }
+
   var items = [];
   function render(dt) {
     var qd, k, j, hold = isHold() && state === 'gra', nk = nightK, hy = hyK, f4 = sm((sk - 0.78) / 0.15);
-    updStage(); updTint();
+    var c0z = performance.now();   /* Z4: czas rysowania świata (hak cpu()) */
+    updStage(); updLight(); if (!DBG.tint) updTint();
+    if (!paused) seaD += dt * tempo * curSpeed * 0.55;   /* Z4: droga morza chmur (czysto wizualna); morze leży nisko pod ptaszkiem, więc płynie wolniej niż kulisy (paralaksa) */
+    updSeaRows();
     var cSky = cAll(sk + OFF_NIEBO), aStr = streakC(sk);
     var lad = (state === 'gra' || state === 'zlapany' || isPred(endKind)) ? 0 : sm(ladT / 0.9);
     var seaDY = -sm((0.4 - h) / 0.4) * 28, warmP = PAL.warm;
@@ -1596,6 +2486,7 @@ na chmurce.</p>
     var sk2 = skyStops(), gs = ctx.createLinearGradient(0, 0, 0, HORIZON + 40);
     for (k = 0; k < sk2.pos.length; k++) gs.addColorStop(sk2.pos[k], rgba(sk2.col[k], 1));
     ctx.fillStyle = gs; ctx.fillRect(-70, -70, W + 140, HORIZON + 110);
+    if (!DBG.wash) drawSkyWash();
     /* gwiazdy: widoczne w nocy także przy kolorze; za dnia gasną z kolorem; w hiperprzestrzeni rozciągają się promieniście */
     starsA = lerp((1 - cSky) * PAL.st, 0.95, PAL.nightW);
     var VXc = W / 2, VYc = HORIZON - 20, sa, sx, sy, dxs, dys, dd, ln2;
@@ -1608,51 +2499,37 @@ na chmurce.</p>
         ctx.strokeStyle = rgba(LINE, sa * 0.9); ctx.lineWidth = st.r; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + dxs / dd * ln2, sy + dys / dd * ln2); ctx.stroke();
       } else { ctx.fillStyle = rgba(LINE, sa); ctx.beginPath(); ctx.arc(sx, sy, st.r, 0, Math.PI * 2); ctx.fill(); }
     }
-    /* słońce w dzień i na zachodzie, księżyc w nocy: położenie z pory doby */
-    var ths = (phi - 0.25) / 0.5 * Math.PI, esun = Math.sin(ths), sunx = W / 2 + (phi - 0.75) / 0.5 * W * 0.24 - camX * 0.04, suny = HORIZON - 30 - Math.max(-0.3, esun) * H * 0.3;
-    var sunA = sm((esun + 0.12) / 0.3) * (phi > 0.2 && phi < 0.8 ? 1 : 0), sr = 70 + cSky * 110 + (1 - cl(esun)) * 50, gr, gc;
-    if (sunA > 0.01) {
-      gc = stageCol(LINE, PAL.glow, warmP);
-      gr = ctx.createRadialGradient(sunx, suny, 2, sunx, suny, sr * 1.3); gr.addColorStop(0, rgba(gc, 0.6 * (0.18 + 0.82 * cSky) * sunA)); gr.addColorStop(0.4, rgba(gc, 0.25 * (0.18 + 0.82 * cSky) * sunA)); gr.addColorStop(1, rgba(gc, 0));
-      ctx.fillStyle = gr; ctx.fillRect(sunx - sr * 1.3, suny - sr * 1.3, sr * 2.6, sr * 2.6);
-      ctx.beginPath(); ctx.arc(sunx, suny, 15 + (1 - cl(esun)) * 5, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(mixc(gc, [255, 250, 235], 0.6), 0.85 * cSky * sunA); ctx.fill();
-      ctx.strokeStyle = rgba(LINE, 0.55 * (1 - cSky) * sunA); ctx.lineWidth = 1.3; ctx.stroke();
-    }
-    var pm = phi < 0.25 ? phi + 1 : phi, thm = (pm - 0.75) / 0.5 * Math.PI, em = Math.sin(thm), moonx = W * 0.62 + (pm - 1.0) / 0.5 * W * 0.18 - camX * 0.03, moony = HORIZON - 20 - Math.max(-0.2, em) * HORIZON * 0.55;
-    var moonA = (pm >= 0.75 && pm <= 1.25) ? sm((em + 0.1) / 0.3) : 0, mr = 105 + cSky * 40;
-    if (moonA > 0.01) {
-      gc = stageCol(LINE, MOON, warmP);
-      gr = ctx.createRadialGradient(moonx, moony, 2, moonx, moony, mr); gr.addColorStop(0, rgba(gc, 0.55 * (0.2 + 0.5 * cSky) * moonA)); gr.addColorStop(0.4, rgba(gc, 0.22 * (0.2 + 0.5 * cSky) * moonA)); gr.addColorStop(1, rgba(gc, 0));
-      ctx.fillStyle = gr; ctx.fillRect(moonx - mr, moony - mr, mr * 2, mr * 2);
-      ctx.save(); ctx.beginPath(); ctx.arc(moonx, moony, 17, 0, Math.PI * 2); ctx.clip();
-      ctx.fillStyle = rgba(mixc(gc, [255, 252, 240], 0.5), (0.35 + 0.6 * cSky) * moonA);
-      ctx.beginPath(); ctx.rect(moonx - 20, moony - 20, 40, 40); ctx.arc(moonx + 8, moony - 3, 15, 0, Math.PI * 2); ctx.fill('evenodd');
-      ctx.restore();
-      ctx.beginPath(); ctx.arc(moonx, moony, 17, 0.9, 5.3); ctx.strokeStyle = rgba(LINE, 0.6 * moonA); ctx.lineWidth = 1.3; ctx.stroke();
-    }
+    /* słońce w dzień i na zachodzie, księżyc w nocy: położenie z pory doby (Z4: akwarela, kreska tuszu, poświata) */
+    var gr;
+    drawSunMoon(cSky);
     ctx.globalAlpha = 1;
+    hazeCol = mixc(sk2.col[6], stageCol(PAL.bg, PAL.fog, warmP), 0.45);
 
     var seaBase = stageCol(PAL.bg, mixc(PAL.sea[2], PAL.sM, 0.3), warmP, 0, 0.15), seaTop = mixc(seaBase, sk2.col[6], 0.4 * ST.p), sgr = ctx.createLinearGradient(0, HORIZON + seaDY, 0, H + 20);
     sgr.addColorStop(0, rgba(seaTop, 1)); sgr.addColorStop(1, rgba(seaBase, 1));
     ctx.fillStyle = sgr; ctx.fillRect(-70, HORIZON + seaDY, W + 140, H - HORIZON - seaDY + 70);
-    for (k = 0; k < seas.length; k++) {
-      var drift = -camX * 0.02 * (k + 1) + (t * (6 + s * 30) * (k + 1)) % 28 - 14, sh = hueW[(6 + k * 4) % NHUE] * ST.p * 0.4;
-      seaPath(seas[k], HORIZON + seaDY, drift, 1);
-      ctx.fillStyle = rgba(mixc(stageCol(mixc(PAL.bg, [28, 32, 58], 1 - k * 0.3), PAL.sea[k], warmP, 0, 0.15), hueC((6 + k * 4) % NHUE), sh), 1); ctx.fill();
-      ctx.strokeStyle = rgba(LINE, (0.55 - k * 0.14) * (1 - cSky * 0.8)); ctx.lineWidth = 1; ctx.stroke();
-    }
+    /* Z4: mgiełka nad dalekim morzem (pas przy horyzoncie) */
+    gr = ctx.createLinearGradient(0, HORIZON + seaDY - 26, 0, HORIZON + seaDY + 40); gr.addColorStop(0, rgba(hazeCol, 0)); gr.addColorStop(0.5, rgba(hazeCol, 0.5)); gr.addColorStop(1, rgba(hazeCol, 0));
+    ctx.fillStyle = gr; ctx.fillRect(-70, HORIZON + seaDY - 26, W + 140, 66);
     /* kulisy, prądy i przeszkody (jeszcze za ptaszkiem) w jednej kolejności od tyłu do przodu */
     var pi = 0, it;
     items.length = 0;
     for (k = 0; k < prady.length; k++) items.push(prady[k]);
     for (k = 0; k < obst.length; k++) if (obst[k].z >= G.ZB && obst[k].typ !== 'grad' && obst[k].typ !== 'wiatr') items.push(obst[k]);
+    for (k = 0; k < seaRows.length; k++) {
+      seaRows[k].typ = 'sea'; seaRows[k].dy = seaDY; seaRows[k].ymax = H + 30;
+      for (j = k + 1; j < seaRows.length; j++) if (seaRows[j].fade > 0.98) { seaRows[k].ymax = HORIZON + seaDY + (SEA_YS + SEA_T[seaRows[j].v].t.valley + 6) / seaRows[j].z; break; }   /* przycina tylko pełny rząd przed nim */
+      items.push(seaRows[k]);
+    }   /* Z4: rzędy morza, mgiełka i promienie wplecione między kulisy */
+    for (k = 0; k < SLABS.length; k++) items.push(SLABS[k]);
+    items.push(RAYS);
     items.sort(function (a, b) { return b.z - a.z; });
     for (k = 0; k < flats.length; k++) {
       while (pi < items.length && items[pi].z >= flats[k].z) { it = items[pi++]; drawItem(it, false); }
-      drawFlat(flats[k], sk, k);
+      if (!DBG.flat) drawFlat(flats[k], sk, k);
     }
     while (pi < items.length) { it = items[pi++]; drawItem(it, false); }
+    if (!DBG.motes) drawMotes();
 
     if (aStr > 0.02) {   /* smugi prędkości: barwa pory, liczba rośnie z poziomem */
       var ns = 10 + Math.round(14 * f4), scol = mixc(LINE, PAL.acc, aStr);
@@ -1674,13 +2551,17 @@ na chmurce.</p>
     var wk = wetK(), spinA = 0, bsc = 1, bxs = W / 2 + (bx - camX) / G.ZB;
     if (spinT > 0) { var su = 1 - spinT / G.SPIN; spinA = (1 - (1 - su) * (1 - su)) * Math.PI * 4; bsc = 1 - 0.12 * Math.sin(Math.PI * su); }
     if (stumbleT > 0 && !reduce) spinA += Math.sin((1 - stumbleT / G.STUMBLE) * Math.PI * 3) * 0.5 * (stumbleT / G.STUMBLE);
+    /* Z4: otrzepanie po zmoknięciu i drzemka po lądowaniu (tylko wygląd) */
+    if (wk > 0.05) wasWet = 1; else if (wasWet && wk <= 0.001) { wasWet = 0; shakeT = 0.6; }
+    shakeT = Math.max(0, shakeT - dt); birdSleep = lad;
     if (state !== 'zlapany' && !isPred(endKind)) {
+      if (!DBG.bird) drawBirdShadow(bxs, BIRDY + bob + dip);
       if (hy > 0.03 || f4 > 0.5) {   /* ptaszek świeci w turbo i w hiperprzestrzeni */
         var gl = Math.max(hy, f4 * 0.35);
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; gr = ctx.createRadialGradient(bxs, BIRDY + bob, 4, bxs, BIRDY + bob, 78);
         gr.addColorStop(0, hsla(hueFlow() + 30, 90, 70, 0.55 * gl)); gr.addColorStop(1, hsla(hueFlow() + 30, 90, 70, 0)); ctx.fillStyle = gr; ctx.fillRect(bxs - 80, BIRDY + bob - 80, 160, 160); ctx.restore();
       }
-      drawBird(bxs, BIRDY + bob + dip, sk, steer, diveV, wk, spinA, bsc, ctrlMode === 2 ? wfL : undefined, ctrlMode === 2 ? wfR : undefined);
+      if (!DBG.bird) drawBird(bxs, BIRDY + bob + dip, sk, steer, diveV, wk, spinA, bsc, ctrlMode === 2 ? wfL : undefined, ctrlMode === 2 ? wfR : undefined);
     }
 
     /* przeszkody, które już minęły płaszczyznę ptaszka: przelatują tuż przed kamerą; grad i wiatr w płaszczyźnie ptaszka */
@@ -1700,11 +2581,11 @@ na chmurce.</p>
     var near = sm((0.22 - h) / 0.22);
     if (near > 0.001 || lad > 0) {
       var top = lerp(H + 30, BIRDY + 14, near); top = lerp(top, BIRDY + 34, lad);
-      for (k = 0; k < nearSea.length; k++) {
-        seaPath(nearSea[k], top + (1 - k) * -9 + k * 8, -camX * 0.03 + Math.sin(t * 0.6 + k) * 8, 1);
-        ctx.fillStyle = rgba(mixc(stageCol(mixc(PAL.bg, [34, 40, 72], 1 - k * 0.25), PAL.sea[k + 1], warmP, 0, 0.15), hueC((10 + k * 3) % NHUE), hueW[(10 + k * 3) % NHUE] * ST.p * 0.4), 1); ctx.fill();
-        ctx.strokeStyle = rgba(LINE, (0.75 - k * 0.15) * (1 - cSky * 0.8)); ctx.lineWidth = 1.2; ctx.stroke();
+      for (k = 1; k >= 0; k--) {   /* Z4: bliskie kłęby (te same kafle co morze, w dużej skali) */
+        var nT = SEA_T[k], nsc = 2.3 - k * 0.45, nY = top + 14 + k * 16 - nT.t.top * nsc * 0.55, ntw = SEA_TW * nsc, nx0 = md(W / 2 + (-camX * 0.9 - 170 * k) * nsc + (reduce ? 0 : Math.sin(t * 0.6 + k) * 8), ntw) - ntw, nx;
+        for (nx = nx0; nx < W + 1; nx += ntw) { drawTile(nT.ink, nx, nY, nsc, 1 - ST.g * 0.8); if (ST.g > 0.01) drawTileS(nT.tint, nx, nY, nsc, ST.g); }
       }
+      ctx.globalAlpha = 1;
     }
     ctx.restore();   /* koniec transformacji pola widzenia */
 
@@ -1720,6 +2601,8 @@ na chmurce.</p>
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'wiatr') drawWiatr(obst[k]);
     drawEdgeGlow(); drawHyper();
     if (flashK > 0.02 && !reduce) { ctx.fillStyle = 'rgba(232,238,255,' + (0.55 * Math.min(1, flashK)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (!DBG.bloom) drawBloom(bloomAmt(cSky, f4));
+    cpuMs.push(performance.now() - c0z); if (cpuMs.length > DTN) cpuMs.shift();   /* Z4: faktura papieru i poświata (bloom) */
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
     if (state !== 'koniec') drawHUD();
@@ -1746,7 +2629,8 @@ na chmurce.</p>
       lowTimer += dt;
       if (lowTimer > 2) {
         lowTimer = 0; var sum = 0; for (j = dts.length - 90; j < dts.length; j++) sum += dts[j];
-        if (90 / sum < 48 && quality > 0.7) { quality -= 0.15; resize(); dts.length = 0; }
+        if (90 / sum < 50 && !lekki) { lekki = true; dts.length = 0; }   /* Z4: najpierw tryb lekki (bez papieru, promieni, drobin, poświaty) */
+        else if (90 / sum < 48 && quality > 0.7) { quality -= 0.15; resize(); dts.length = 0; }
       }
     }
     requestAnimationFrame(frame);
@@ -1869,11 +2753,19 @@ na chmurce.</p>
       tempoDoby: function () { return periodFor(s, hyK); },
       jasnosc: function () { var q = skyStops(), k, sum = 0, wsum = 0, wt = [1, 1.5, 2, 2, 2, 1.5, 1, 0.5]; for (k = 0; k < q.col.length; k++) { sum += lumOf(q.col[k]) * wt[k]; wsum += wt[k]; } return sum / wsum; },
       jasnoscPory: function (x) { var sv = phi, snv = nightK, pal0 = {}, k; for (k in PAL) pal0[k] = PAL[k]; phi = poraIdx(x); palAt(phi, PAL); var r = this.jasnosc(); phi = sv; for (k in pal0) PAL[k] = pal0[k]; nightK = snv; return r; },
-      odcienie: function () { return { n: odcieni, max: NHUE, wagi: hueW.map(r6) }; }
+      odcienie: function () { return { n: odcieni, max: NHUE, wagi: hueW.map(r6) }; },
+      /* Z4: tryb lekki (przełącznik), poświata (tryb i powód), pamięć sprite'ów, kierunek światła */
+      lekki: function (v) { if (v !== undefined) lekki = !!v; return lekki; },
+      bloom: function () { return { tryb: BL.mode, powod: BL.why, aktywny: BL.on, sila: BL.amt }; },
+      pamiec: function () { return { MB: Math.round(SPRMEM / 1048576 * 10) / 10, sprite: SPRN, rejestr: REG.length }; },
+      cpu: function () { var a = cpuMs.slice().sort(function (x, y) { return x - y; }), n = a.length, sum = 0, q; for (q = 0; q < n; q++) sum += a[q]; return n ? { n: n, sr: Math.round(sum / n * 100) / 100, p50: Math.round(a[Math.floor(n / 2)] * 100) / 100, p95: Math.round(a[Math.floor(n * 0.95)] * 100) / 100 } : null; },
+      zerujCpu: function () { cpuMs.length = 0; },
+      dbg: function (o) { DBG = o || {}; return DBG; },
+      swiatlo: function () { return { x: LIGHTX, wL: LW_L, slonce: SUNP.a, ksiezyc: SUNP.ma }; }
     };
   }
 
-  buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); resize();
+  buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); initBloom(); resize();
   window.addEventListener('resize', resize);
   if (firstRun) openPanel(true);   /* pierwsze uruchomienie bez zapisanego wyboru i bez ?sterowanie=: ekran "Wybierz sterowanie" */
   requestAnimationFrame(function (n) { last = n; frame(n); });
