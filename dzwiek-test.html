@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Okruszek — odsłuch dźwięków</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#141b3a;color:#ecf0f8;font:18px/1.5 system-ui;padding:24px}main{max-width:600px;margin:auto}h1{font-size:28px}button{font:inherit;min-height:48px;padding:10px 16px;background:#ffc9a0;color:#141b3a;border:0;border-radius:12px;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #f08a4b;outline-offset:4px}.efekty{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;margin:18px 0}input[type=checkbox]{width:22px;height:22px;vertical-align:middle}input[type=range]{width:100%}p{color:#b9c9e1}#stan{min-height:3em}
+</style>
+<main>
+  <h1>Posłuchaj Okruszka</h1>
+  <p>Uruchom dźwięk, potem sprawdzaj po jednym elemencie. Wyłącz muzykę, aby odsłuchać same efekty.</p>
+  <button id="start">Uruchom dźwięk</button>
+  <p id="stan" role="status">Dźwięk czeka na uruchomienie.</p>
+  <label><input id="muzyka" type="checkbox" checked> Muzyka i wiatr (N)</label>
+  <label><input id="dzwiek" type="checkbox" checked> Efekty (M)</label>
+  <label for="predkosc">Prędkość: <output id="wartosc">0.00</output></label>
+  <input id="predkosc" type="range" min="0" max="1" step="0.01" value="0">
+  <div class="efekty">
+    <button data-efekt="prad">Prąd — fiu</button>
+    <button data-efekt="cwir">Ptaszek — ćwir</button>
+    <button data-efekt="och">Złapanie — och</button>
+    <button data-efekt="ladowanie">Lądowanie</button>
+  </div>
+  <label><input id="nurkowanie" type="checkbox"> Nurkowanie</label>
+  <label><input id="pauza" type="checkbox"> Pauza całego dźwięku</label>
+  <p>Przełącz kartę i wróć: dźwięk powinien łagodnie wrócić. Ręczna pauza pozostaje włączona.</p>
+</main>
+<script src="dzwiek.js"></script>
+<script>
+  const audio = window.OkruszekDzwiek;
+  document.getElementById('start').onclick = async () => {
+    const ok = await audio.start();
+    document.getElementById('stan').textContent = ok ? 'Dźwięk działa. Miłego słuchania.' : 'Dźwięk niedostępny. Spróbuj uruchomić ponownie.';
+  };
+  for (const nazwa of ['muzyka', 'dzwiek', 'nurkowanie', 'pauza']) {
+    document.getElementById(nazwa).onchange = e => audio[nazwa](e.target.checked);
+  }
+  document.getElementById('predkosc').oninput = e => {
+    const s = Number(e.target.value); audio.predkosc(s);
+    document.getElementById('wartosc').value = s.toFixed(2);
+  };
+  document.querySelectorAll('[data-efekt]').forEach(b => b.onclick = () => audio[b.dataset.efekt]());
+  document.addEventListener('keydown', e => {
+    if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+    const id = { n: 'muzyka', m: 'dzwiek' }[e.key.toLowerCase()];
+    if (!id) return;
+    const pole = document.getElementById(id); pole.checked = !pole.checked;
+    audio[id](pole.checked); e.preventDefault();
+  });
+</script>
+</html>
