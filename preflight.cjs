@@ -13,6 +13,7 @@
    hak Drogi, potem pełny test gra_test_z10.cjs (krainy, boty z bramy do bramy, zapowiedzi, klasy skutku, zapis, brama). SKIP_Z10=1 pomija go (ok. 1,5 min).
    Z3c: hak energii koloru (energia, lancuchE, ustawEnergie, rozkwit, pelnyKolor, serie, stala), potem pełny test gra_test_z3c.cjs (model E, boty w symulacji, kolejność koloru przy E = 0/0,3/0,62/1,
    rozkwit, iskierki HUD, fps względem bazy). SKIP_Z3C=1 pomija go (ok. 2,5 min).
+   Z5: manifest, ikony, sw.js, wstęp, dźwięk (wywołania podpięte), przełączniki M/N, prywatność i „Usuń zapis”, service worker na localhost: pełny test gra_test_z5.cjs. SKIP_Z5=1 pomija go (ok. 1,5 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -201,6 +202,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z3c|BŁĄD|^\(| info (stałe|zanik|idealny|bot 50|geometria|rozkwit|fps|piksele)/.test(l));
       lines.forEach(l => console.log('  z3c> ' + l.trim()));
       code === 0 && /TEST Z3c OK/.test(out) ? ok('test Z3c (gra_test_z3c.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z3c nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z5: intro, dźwięk, PWA, prywatność; własny lokalny serwer na localhost, pełny test w osobnym procesie */
+  if (process.env.SKIP_Z5) console.log('  info pominięto test Z5 (SKIP_Z5)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z5.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z5.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 590000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z5|BŁĄD|^[(]/.test(l));
+      lines.forEach(l => console.log('  z5> ' + l.trim()));
+      code === 0 && /TEST Z5 OK/.test(out) ? ok('test Z5 (gra_test_z5.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z5 nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

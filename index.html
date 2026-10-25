@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d1224">
 <meta name="robots" content="noindex">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Crumbi">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="ikona-192.png">
+<link rel="apple-touch-icon" href="ikona-180.png">
 <title>Okruszek</title>
 <style>
   html, body { margin:0; height:100%; background:#0d1224; overflow:hidden; overscroll-behavior:none; }
@@ -64,18 +70,54 @@
   #wynik .bramy .lst { display:flex; justify-content:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
   #wynik .bramy .br { margin:0; min-width:44px; width:44px; height:44px; padding:0; font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; border-radius:20px 23px 21px 24px; border-width:1px; }
   #wynik .bramy .br[aria-pressed="true"] { background:rgba(236,240,248,.18); border-width:1.5px; }
+  /* Z5: intro (ukrywa przycisk sterowania), czytnik ekranu, przełączniki dźwięku, link do prywatności, ekran prywatności i regulaminu */
+  .sr { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  body.intro #sterb { display:none; }
+  #ster .snd { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 0; }
+  #ster .przel { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:3px; min-height:52px; box-sizing:border-box; padding:6px 14px; text-align:left;
+                 font:inherit; color:#ecf0f8; background:rgba(236,240,248,.05); border:1px solid rgba(236,240,248,.28); border-radius:14px 17px 15px 18px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #ster .przel .nz { font-size:14px; line-height:18px; font-weight:600; white-space:nowrap; }
+  #ster .przel .nz kbd { margin-left:6px; font:600 10px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.06em; opacity:.55; }
+  #ster .przel .st { font-size:12px; line-height:16px; opacity:.7; }
+  #ster .przel[aria-pressed="false"] .nz { opacity:.6; }
+  #ster .przel[aria-pressed="true"] { background:rgba(236,240,248,.14); border-color:#ecf0f8; border-width:1.5px; padding:5.5px 13.5px; }
+  #ster .przel:focus-visible, #ster .lnk:focus-visible, #priv button:focus-visible { outline:2px solid #ecf0f8; outline-offset:3px; }
+  #ster .lnk { display:block; margin:6px auto 0; min-height:46px; padding:0 14px; font:400 13px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#ecf0f8; opacity:.7; background:transparent; border:0;
+               text-decoration:underline; text-decoration-skip-ink:none; text-underline-offset:3px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #priv { position:absolute; inset:0; z-index:9; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box; padding:max(14px,env(safe-area-inset-top)) 16px 0; overflow-y:auto;
+          background:#0d1224; color:#ecf0f8; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s linear .25s; }
+  #priv.pokaz { opacity:1; visibility:visible; transition:opacity .25s ease; }
+  #priv .pan { width:min(100%,340px); }
+  #priv h2 { margin:0 0 10px; font:400 24px/30px Georgia,"Times New Roman",serif; text-align:center; }
+  #priv h3 { margin:14px 0 3px; font:600 13px/18px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.02em; }
+  #priv p { margin:0; font-size:13.5px; line-height:20px; opacity:.86; -webkit-user-select:text; user-select:text; }
+  #priv code { font:12px/1 ui-monospace,Consolas,monospace; padding:1px 4px; background:rgba(236,240,248,.1); border-radius:4px; }
+  #priv a { color:#ecf0f8; text-underline-offset:3px; }
+  #priv .pasek { position:sticky; bottom:0; margin-top:16px; padding:14px 0 max(14px,env(safe-area-inset-bottom)); background:linear-gradient(to top, #0d1224 80%, rgba(13,18,36,0)); }
+  #priv .wiersz { display:flex; gap:10px; }
+  #priv .pasek button, #priv .pyt button { flex:1 1 0; min-height:48px; padding:0 14px; font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#ecf0f8; background:transparent; border:1.5px solid #ecf0f8; border-radius:24px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #priv .pasek button.cichy, #priv .pyt button.cichy { border-color:rgba(236,240,248,.45); font-weight:400; }
+  @media (hover:hover) { #priv .pasek button:hover, #priv .pyt button:hover { background:#ecf0f8; color:#0d1224; } }
+  #priv .pyt { margin:0; padding:12px 14px; background:#0d1224; border:1px solid rgba(236,240,248,.4); border-radius:14px 17px 15px 18px; }
+  #priv .pyt[hidden] { display:none; }
+  #priv .pyt p { margin-bottom:10px; opacity:1; }
+  #priv .wiersz[hidden] { display:none; }
+  #priv .info { margin:0 0 10px; font-size:13.5px; line-height:20px; text-align:center; opacity:.95; }
+  #priv .info:empty { display:none; }
 </style>
 <script src="teksty.js"></script>
+<script src="dzwiek.js"></script>
 </head>
 <body>
 <div id="scena">
 <canvas id="g" aria-label="Okruszek: malutki ptaszek leci w głąb ekranu przez warstwy chmur. Przytrzymaj, żeby nurkować i przyspieszyć, przesuń palec w bok, żeby skręcić. Wlatuj w prądy powietrzne jeden po drugim, bo wtedy świat nabiera kolorów, a poziom prędkości rośnie. Omijaj ptaki, grad, burze, sznury latawców i mgłę, a przed jastrzębiem i nocą przed sową uciekaj prędkością albo schowaj się w chmurze."></canvas>
+<div id="intro-sr" class="sr" aria-live="polite"></div>
 <div id="wynik" role="dialog" aria-modal="true" aria-labelledby="w-et" aria-hidden="true">
   <div class="karta">
-    <div class="et" id="w-et">Miękkie lądowanie</div>
+    <div class="et" id="w-et">Przeleciał</div>
     <div class="metry"><span id="w-m">0</span><small>m</small></div>
-    <p class="linia" id="w-lin">Okruszek odpoczywa
-na chmurce.</p>
+    <p class="linia" id="w-lin">Okruszek zasnął na chmurce.
+Słońce obiecało wrócić rano.</p>
     <p class="rekord" id="w-rek"></p>
     <button id="jeszcze" type="button" tabindex="-1">Jeszcze raz</button>
     <div class="bramy" id="w-bramy" style="display:none"><div class="et2">Skąd lecimy?</div><div class="lst" id="w-bramy-l"></div></div>
@@ -121,7 +163,40 @@ na chmurce.</p>
       <label for="ster-c"><span>Czułość skrętu</span><span id="ster-cv">1,0</span></label>
       <input type="range" id="ster-c" min="0.5" max="1.5" step="0.05" value="1">
     </div>
+    <div class="snd" role="group" aria-label="Dźwięk">
+      <button type="button" class="przel" id="snd-e" aria-pressed="true"><span class="nz">Efekty<kbd>M</kbd></span><span class="st" id="snd-e-s">włączone</span></button>
+      <button type="button" class="przel" id="snd-m" aria-pressed="true"><span class="nz">Muzyka<kbd>N</kbd></span><span class="st" id="snd-m-s">włączona</span></button>
+    </div>
     <button type="button" class="ok" id="ster-ok">Leć</button>
+    <button type="button" class="lnk" id="ster-priv">Prywatność i regulamin</button>
+  </div>
+</div>
+<!-- Z5: SZKIC DO PRAWNIKA. Treść wymaga przeglądu prawnego przed publicznym ogłoszeniem gry. Dane operatora skopiowane z regulaminu Kociłapek (potwierdzone w KRS). -->
+<div id="priv" role="dialog" aria-modal="true" aria-labelledby="priv-t" aria-hidden="true">
+  <div class="pan">
+    <h2 id="priv-t">Prywatność i regulamin</h2>
+    <h3>Kto prowadzi grę</h3>
+    <p>iapply sp. z o.o., Pl. Wolności 16, 61-739 Poznań, KRS 0001133291 (Sąd Rejonowy Poznań - Nowe Miasto i Wilda w Poznaniu, VIII Wydział Gospodarczy KRS), NIP 7831915094, REGON 529962488, kapitał zakładowy 50 000 zł, www.iapply.pl, <a href="mailto:kontakt@iapply.pl?subject=Okruszek">kontakt@iapply.pl</a>.</p>
+    <h3>Co dostajesz</h3>
+    <p>Darmową grę w przeglądarce, bez konta, reklam i zakupów. Gra jest projektem hobbystycznym: bywają przerwy i błędy, które naprawiamy, gdy tylko możemy. Nic tu nie ogranicza Twoich praw wynikających z przepisów, w tym praw konsumenta.</p>
+    <h3>Jakich danych nie zbieramy</h3>
+    <p>Gra nie zbiera danych osobowych, nie wysyła na serwer Twoich wyników ani ustawień, nie używa ciasteczek i nie ma analityki. Stronę dostarcza Cloudflare; jak każdy serwer WWW technicznie widzi on adres IP odwiedzającego, a gra go nie zapisuje.</p>
+    <h3>Co zapisuje się w Twojej przeglądarce</h3>
+    <p>Tylko na Twoim urządzeniu, w pamięci lokalnej przeglądarki. Klucz <code>okruszek-sterowanie</code>: wybrany sposób sterowania i czułość skrętu. Klucz <code>okruszek.zapis</code>: postęp na Drodze Słońca (otwarte bramy, najdalszy i najdłuższy lot, metry i liczba lotów w krainach), ustawienia dźwięku i informacja, że wstęp został już obejrzany. Gdyby zapis się uszkodził, jego kopia trafia do klucza <code>okruszek.zapis.zly</code>. Gra może też trzymać własne pliki w pamięci podręcznej przeglądarki, żeby działać szybciej i bez internetu; to nie są dane o Tobie.</p>
+    <h3>Jak to usunąć</h3>
+    <p>Przycisk „Usuń zapis” poniżej kasuje wszystkie trzy wpisy (po potwierdzeniu). Możesz też wyczyścić dane witryny w ustawieniach przeglądarki.</p>
+    <h3>Dźwięk</h3>
+    <p>Wszystkie dźwięki gra tworzy sama w przeglądarce (synteza), bez cudzych nagrań. Efekty i muzykę wyłączysz klawiszami M i N albo przełącznikami w panelu sterowania.</p>
+    <h3>Zasady i uwagi</h3>
+    <p>Graj uczciwie i nie próbuj naruszać działania gry. Reklamacje i uwagi wysyłaj na kontakt@iapply.pl; odpowiemy w 14 dni od zgłoszenia. Umowa zaczyna się, gdy zaczynasz grać, a kończy, gdy przestajesz. Zasady i istotne cechy gry zmienimy, a grę zakończymy, tylko z ważnego powodu (np. koszty, bezpieczeństwo, zmiana prawa); ogłosimy to tutaj z 14-dniowym wyprzedzeniem, a w pilnych sprawach od razu.</p>
+    <div class="pasek">
+      <p class="info" id="priv-info" role="status"></p>
+      <div class="pyt" id="priv-pyt" hidden>
+        <p>Usunąć zapis? Zniknie postęp, wybór sterowania i ustawienia dźwięku, a gra zacznie od wstępu.</p>
+        <div class="wiersz"><button type="button" id="priv-tak">Tak, usuń</button><button type="button" id="priv-nie" class="cichy">Nie</button></div>
+      </div>
+      <div class="wiersz" id="priv-bar1"><button type="button" id="priv-usun" class="cichy">Usuń zapis</button><button type="button" id="priv-wroc">Wróć</button></div>
+    </div>
   </div>
 </div>
 </div>
@@ -999,7 +1074,7 @@ na chmurce.</p>
     if (lastTapSide && side !== lastTapSide && now - lastTapT < FLAP_WIN && flapReq < 2) flapReq++;
     lastTapSide = side; lastTapT = now;
   }
-  function setPause(v) { paused = v; releaseAll(); last = performance.now(); }
+  function setPause(v) { paused = v; releaseAll(); last = performance.now(); syncPauza(); }
   function togglePause() { if (state === 'gra') setPause(!paused); }
 
   /* zapis wyboru (jedyna rzecz zapisywana w przeglądarce w tej fazie): tryb i czułość, try/catch, gra działa bez zapisu */
@@ -1023,25 +1098,27 @@ na chmurce.</p>
   function cycleMode() { setMode(ctrlMode % 3 + 1, true); modeMsg = { t: 0, txt: ctrlMode + '. ' + MODE_NAMES[ctrlMode] }; }
   function openPanel(first) {
     if (panelOpen) return;
-    panelOpen = true; panelPrev = paused; firstRun = !!first;
+    panelOpen = true; panelPrev = paused; firstRun = !!first; modeMsg = null;
     releaseAll(); if (state !== 'koniec') { paused = true; last = performance.now(); }
     elSterT.textContent = first ? 'Wybierz sterowanie' : 'Sterowanie';
     elSterPod.textContent = first ? 'Zmienisz to w każdej chwili.' : 'Zmiana działa od razu.';
     elSterOk.textContent = first ? 'Leć' : (state === 'koniec' ? 'Gotowe' : 'Wróć do lotu');
-    elSter.classList.add('pokaz'); elSter.setAttribute('aria-hidden', 'false');
+    elSter.classList.add('pokaz'); elSter.setAttribute('aria-hidden', 'false'); syncPauza();
     setTimeout(function () { try { var c = elCards[ctrlMode - 1]; if (panelOpen && c) c.focus({ preventScroll: true, focusVisible: false }); } catch (_) { } }, 60);
   }
   function closePanel() {
     if (!panelOpen) return;
-    var was = document.activeElement;
+    var was = document.activeElement, fr = firstRun;
     panelOpen = false; firstRun = false; elSter.classList.remove('pokaz'); elSter.setAttribute('aria-hidden', 'true');
     if (was && elSter.contains(was)) { try { was.blur(); } catch (_) { } }
     if (state !== 'koniec' && !panelPrev) setPause(false); else last = performance.now();
+    syncPauza(); if (fr) startBiegu();   /* Z5: Leć z ekranu startu = start biegu (ćwir) */
     if (state === 'koniec') { try { elJeszcze.focus({ preventScroll: true }); } catch (_) { } }
   }
   function onDown(e) {
     var x, y, side;
     if (e.cancelable) e.preventDefault();
+    if (introOn) { introEnd(true); return; }   /* Z5: dotknięcie pomija wstęp */
     if (panelOpen) return;
     if (paused) { setPause(false); return; }
     if (state !== 'gra') return;
@@ -1079,10 +1156,15 @@ na chmurce.</p>
   window.addEventListener('blur', releaseAll);
   document.addEventListener('visibilitychange', function () {
     releaseAll(); last = performance.now();
-    if (document.hidden && state === 'gra') paused = true;
+    if (document.hidden && state === 'gra' && !introOn) paused = true;
+    syncPauza();
   });
   window.addEventListener('keydown', function (e) {
     var k = e.key;
+    if (introOn) { if (!e.repeat && k !== 'Shift' && k !== 'Control' && k !== 'Alt' && k !== 'Meta' && k !== 'Tab') introEnd(true); return; }   /* Z5: dowolny klawisz pomija wstęp */
+    if (privWidoczny) { if (k === 'Escape') { privZamknij(); e.preventDefault(); } return; }
+    if ((k === 'm' || k === 'M') && !e.repeat) { przelEfekty(true); return; }   /* Z5: M = efekty, N = muzyka */
+    if ((k === 'n' || k === 'N') && !e.repeat) { przelMuzyka(true); return; }
     if (panelOpen) {   /* panel sterowania: Esc zamyka, T przełącza tryb, reszta (Tab, Enter, spacja, strzałki w suwaku) działa natywnie */
       if (k === 'Escape') { closePanel(); e.preventDefault(); } else if ((k === 't' || k === 'T') && !e.repeat) cycleMode();
       return;
@@ -1100,7 +1182,7 @@ na chmurce.</p>
     else if (k === 'ArrowRight' || k === 'd' || k === 'D') keyR = false;
     else if (k === ' ') keyHold = false;
   });
-  elJeszcze.addEventListener('click', function () { reset(); });
+  elJeszcze.addEventListener('click', function () { if (swNowa) { location.reload(); return; } reset(); startBiegu(); });   /* Z5: nowa wersja gry (service worker) wczytuje się przy kolejnym locie */
   elSterb.addEventListener('click', function () { if (panelOpen) closePanel(); else openPanel(false); });
   elSterOk.addEventListener('click', closePanel);
   elSterC.addEventListener('input', function () { setSens(elSterC.value, true); });
@@ -1110,7 +1192,7 @@ na chmurce.</p>
     if (sv) { ctrlMode = sv.m; sens = sv.c; }
     if (has) ctrlMode = qm;
     syncUi();
-    firstRun = !sv && !has && (!TEST || Q.has('pierwszy'));
+    firstRun = !has && (TEST ? ((Q.has('pierwszy') && !sv) || Q.has('start')) : true);   /* Z5: ekran startu (wybór sterowania + Leć) przy każdym uruchomieniu; ?sterowanie= i ?test go pomijają */
   })();
 
   /* ---------- prędkość: s (ruch), sk (kolor); mokre piórka, mgła i bramki łańcucha ograniczają ---------- */
@@ -1182,7 +1264,7 @@ na chmurce.</p>
   }
   function wlot(p) {
     var ideal = Math.abs(p.x - bx) < ((p.ratunek || gameT < UCZ_DO) ? G.HIT_IDEAL_UCZ : G.HIT_IDEAL), S;   /* Z3c: nauka na starcie i prąd ratunkowy mają szersze "idealne wejście" */
-    p.hit = true; wlotow++;
+    p.hit = true; wlotow++; snd('prad');
     if (!ideal) {   /* Z3c: brzeg prądu: mały skok, bez łańcucha, bez energii koloru */
       p.flash = 0.45; tint = 0.4; wlotBrzeg++;
       boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * G.EDGE_K); updSpeed(); h = Math.min(1, h + G.PRAD_H * G.EDGE_K);
@@ -1410,7 +1492,7 @@ na chmurce.</p>
     } else if (haw.faza === 'poscig') {
       d = G.HAW_S - s;
       if (d > 0) haw.g -= 0.25 * Math.pow(d, 1.4) * dt; else haw.g = Math.min(1, haw.g - 0.12 * d * dt);
-      if (haw.g <= 0) { haw.g = 0; haw.faza = 'zlapany'; haw.t = 0; state = 'zlapany'; zlapT = 0; hawkLog.zlapany++; releaseAll(); testHold = false; }
+      if (haw.g <= 0) { haw.g = 0; haw.faza = 'zlapany'; haw.t = 0; state = 'zlapany'; zlapT = 0; hawkLog.zlapany++; releaseAll(); testHold = false; snd('och'); }
       else if (haw.t >= G.HAW_CHASE) { haw.faza = 'odlot'; haw.t = 0; haw.reason = 'predkosc'; hawkLog.uciekl++; }
     } else if (haw.faza === 'odlot') {
       if (haw.t >= 2.2) { haw = null; nextHawk = gameT + G.HAW_EVERY + (rndE() - 0.5) * 10; }
@@ -1493,8 +1575,11 @@ na chmurce.</p>
     drogaKoniec(typ);   /* Z10: zapis na końcu biegu */
     state = 'koniec'; endKind = typ; runs++; if (m > best) best = m;
     elM.textContent = fmtM(m);
-    elEt.textContent = hk ? 'Koniec lotu' : 'Miękkie lądowanie';
-    elLin.textContent = typ === 'sowa' ? 'Sowa była szybsza.\nOkruszek wraca jutro.' : (typ === 'jastrzab' ? 'Jastrząb był szybszy.\nOkruszek wraca jutro.' : 'Okruszek odpoczywa\nna chmurce.');
+    var kk = ((TX.koniec || {})[typ === 'sowa' ? 'sowa' : (typ === 'jastrzab' ? 'jastrzab' : 'ladowanie')]) || {}, cal;   /* Z5: teksty końca biegu w teksty.js */
+    elEt.textContent = kk.et || (hk ? 'Koniec lotu' : 'Przeleciał');
+    elLin.textContent = kk.lin || (typ === 'sowa' ? 'Sowa była szybsza.\nOkruszek wraca jutro.' : (typ === 'jastrzab' ? 'Jastrząb był szybszy.\nOkruszek wraca jutro.' : 'Okruszek zasnął na chmurce.\nSłońce obiecało wrócić rano.'));
+    cal = hk ? (elEt.textContent + '. ' + elLin.textContent.replace(/\n/g, ' ')) : (kk.calosc ? kk.calosc.replace('{m}', fmtM(m)) : ('Przeleciał ' + fmtM(m) + ' m. ' + elLin.textContent.replace(/\n/g, ' ')));
+    elWynik.removeAttribute('aria-labelledby'); elWynik.setAttribute('aria-label', cal);   /* czytnik ekranu czyta całość: „Okruszek zasnął na chmurce. Przeleciał N m. Słońce obiecało wrócić rano.” */
     elRek.textContent = runs < 2 ? '' : (m > prev ? 'Nowy rekord tej sesji' : 'Najlepszy w tej sesji: ' + fmtM(best) + ' m');
     elWynik.classList.add('pokaz'); elWynik.setAttribute('aria-hidden', 'false'); elJeszcze.tabIndex = 0;
     setTimeout(function () { if (state === 'koniec') { try { elJeszcze.focus({ preventScroll: true }); } catch (_) { } } }, 80);
@@ -1558,7 +1643,7 @@ na chmurce.</p>
       else spawnCluster();
     }
     drogaKrok(dt); schedule(); updHawk(dt);
-    if (h <= 0 && lockS === null && state === 'gra') { h = 0; minH = 0; state = 'ladowanie'; ladT = 0; haw = null; releaseAll(); testHold = false; }
+    if (h <= 0 && lockS === null && state === 'gra') { h = 0; minH = 0; state = 'ladowanie'; ladT = 0; haw = null; releaseAll(); testHold = false; snd('ladowanie'); }
   }
 
   /* ---------- kolor: etapy, odcienie, paleta światła ---------- */
@@ -2366,7 +2451,7 @@ na chmurce.</p>
     modeMsg.t += dt; if (modeMsg.t > 2) { modeMsg = null; return; }
     env = sm(modeMsg.t / 0.15) * sm((2 - modeMsg.t) / 0.5);
     ctx.save(); ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(13,18,36,0.85)'; ctx.shadowBlur = 8; if (ls) ctx.letterSpacing = '0.5px';
-    ctx.font = '600 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.95 * env); ctx.fillText('Sterowanie ' + modeMsg.txt, W / 2, 190);
+    ctx.font = '600 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.95 * env); ctx.fillText((modeMsg.raw ? '' : 'Sterowanie ') + modeMsg.txt, W / 2, 190);
     ctx.restore();
   }
   function seaPath(pts, y0, drift, amp) {
@@ -2682,12 +2767,13 @@ na chmurce.</p>
     var bob = reduce ? 0 : Math.sin(t * 1.7) * 4 + Math.sin(t * 9) * (1 - s) * 1.5;
     var dip = lad * 8 + sm((0.12 - h) / 0.12) * 4 + (stumbleT > 0 ? Math.sin(Math.PI * cl(1 - stumbleT / G.STUMBLE)) * 10 : 0);
     var wk = wetK(), spinA = 0, bsc = 1, bxs = W / 2 + (bx - camX) / G.ZB;
+    if (introOn) { dip += introY; bsc *= introS; }   /* Z5: Okruszek wlatuje w kadr od dołu */
     if (spinT > 0) { var su = 1 - spinT / G.SPIN; spinA = (1 - (1 - su) * (1 - su)) * Math.PI * 4; bsc = 1 - 0.12 * Math.sin(Math.PI * su); }
     if (stumbleT > 0 && !reduce) spinA += Math.sin((1 - stumbleT / G.STUMBLE) * Math.PI * 3) * 0.5 * (stumbleT / G.STUMBLE);
     /* Z4: otrzepanie po zmoknięciu i drzemka po lądowaniu (tylko wygląd) */
     if (wk > 0.05) wasWet = 1; else if (wasWet && wk <= 0.001) { wasWet = 0; shakeT = 0.6; }
     shakeT = Math.max(0, shakeT - dt); birdSleep = lad;
-    if (state !== 'zlapany' && !isPred(endKind)) {
+    if (state !== 'zlapany' && !isPred(endKind) && !(introOn && introHide)) {
       if (!DBG.bird) drawBirdShadow(bxs, BIRDY + bob + dip);
       if (hy > 0.03 || f4 > 0.5) {   /* ptaszek świeci w turbo i w hiperprzestrzeni */
         var gl = Math.max(hy, f4 * 0.35);
@@ -2739,25 +2825,31 @@ na chmurce.</p>
     cpuMs.push(performance.now() - c0z); if (cpuMs.length > DTN) cpuMs.shift();   /* Z4: faktura papieru i poświata (bloom) */
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
-    if (state !== 'koniec') drawHUD();
-    drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
-    drawLvMsg(); drawModeMsg(dt);
+    if (!introOn) {   /* Z5: we wstępie sam świat, bez wskaźników */
+      if (state !== 'koniec') drawHUD();
+      drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
+      drawLvMsg();
+    }
+    drawModeMsg(dt);
     if (paused && !panelOpen) {
       ctx.fillStyle = 'rgba(13,18,36,0.6)'; ctx.fillRect(0, 0, W, H);
       ctx.textAlign = 'center'; ctx.fillStyle = rgba(LINE, 0.95); ctx.font = '600 30px ' + FONT; ctx.fillText('Pauza', W / 2, H * 0.42);
       ctx.font = '400 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.7); ctx.fillText('Dotknij ekranu albo naciśnij P', W / 2, H * 0.42 + 30); ctx.textAlign = 'left';
     }
+    drawIntro(dt);   /* Z5: welon i zdania wstępu; po wstępie krótkie rozjaśnienie */
   }
 
   function frame(now) {
     var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j, tf0 = performance.now(); last = now; frames++;
     dts.push(dt); if (dts.length > DTN) dts.shift();
+    if (introOn) introStep(dt);   /* Z5: wstęp (czas, ptaszek, prąd), potem zwykła symulacja świata */
     if (!paused) {
       t += dt;
       var dtg = dt * tempo, n = Math.max(1, Math.ceil(dtg / 0.034));
       for (k = 0; k < n; k++) sim(dtg / n);
     }
     render(dt);
+    dzwiekKlatka();   /* Z5: prędkość i nurkowanie do dźwięku, tanio, raz na klatkę */
     if (TEST) { k = performance.now() - tf0; ftAll.push(k); if (ftAll.length > 600) ftAll.shift(); if (kurt && !kurt.scena) { kurtFt.push(k); if (kurtFt.length > 2000) kurtFt.shift(); } }   /* Z10: czas pracy klatki (ogółem i przy bramie) */
 
     /* adaptacyjna jakość: tylko w dół, nigdy w górę; w trybie ?test wyłączona, żeby pomiar był uczciwy */
@@ -2826,7 +2918,7 @@ na chmurce.</p>
   /* ---------- zapis okruszek.zapis v1 (localStorage, każdy odczyt i zapis w try/catch; gra działa bez zapisu) ----------
      Zapis tylko w trzech chwilach: przelot bramy, koniec biegu, zmiana ustawień. Nigdy w pętli klatek. Uszkodzony JSON -> kopia w okruszek.zapis.zly, czysty start. */
   var ZKEY = 'okruszek.zapis', ZKEY_ZLY = 'okruszek.zapis.zly', zapisow = 0;
-  function nowyZapis() { return { v: 1, bramy: [1], najdalej: 0, najdluzszy: 0, krainy: {}, krotkie: 0, dzien: { d: '', n: 0 } }; }
+  function nowyZapis() { return { v: 1, bramy: [1], najdalej: 0, najdluzszy: 0, krainy: {}, krotkie: 0, dzien: { d: '', n: 0 }, intro: 0, dz: { m: 1, e: 1 } }; }   /* Z5: intro = wstęp obejrzany (0/1), dz = dźwięk: m muzyka, e efekty (1 wł., 0 wył.) */
   function zapisPoprawny(o) { return !!o && typeof o === 'object' && o.v === 1 && Array.isArray(o.bramy) && typeof o.krainy === 'object' && o.krainy !== null; }
   function zapisNormalizuj(o) {
     var z = nowyZapis(), k, e;
@@ -2836,6 +2928,8 @@ na chmurce.</p>
     z.najdalej = Math.max(0, +o.najdalej || 0); z.najdluzszy = Math.max(0, +o.najdluzszy || 0); z.krotkie = Math.max(0, o.krotkie | 0);
     for (k in o.krainy) { e = o.krainy[k]; if (e && (k | 0) >= 1 && (k | 0) <= KRAINY.length) z.krainy[k | 0] = { m: Math.max(0, +e.m || 0), loty: Math.max(0, e.loty | 0) }; }
     if (o.dzien && typeof o.dzien.d === 'string') z.dzien = { d: o.dzien.d, n: Math.max(0, o.dzien.n | 0) };
+    z.intro = o.intro ? 1 : 0;   /* Z5: starsze zapisy bez tych pól czytają się jako: wstęp jeszcze nieobejrzany, dźwięk włączony */
+    z.dz = { m: o.dz && o.dz.m === 0 ? 0 : 1, e: o.dz && o.dz.e === 0 ? 0 : 1 };
     return z;
   }
   function zapisWczytaj() {
@@ -2859,6 +2953,177 @@ na chmurce.</p>
   function kr(n) { if (!ZAP.krainy[n]) ZAP.krainy[n] = { m: 0, loty: 0 }; return ZAP.krainy[n]; }
   function dzisiaj() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function hashZiarna(str) { var x = 2166136261, i; for (i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return (x % 2147483646) + 1; }
+
+  /* =====================================================================================================================
+     Z5: dźwięk (moduł dzwiek.js = window.OkruszekDzwiek, synteza własna), wstęp „Gdzie śpi słońce”, prywatność i regulamin, service worker.
+     Dźwięk nigdy nie jest jedynym kanałem zapowiedzi zagrożeń (jastrząb i sowa mają cień, sygnał i łuk na ekranie). W ?test bez ?dzwiek=1 moduł nie jest wołany,
+     ale wywołania są liczone (hak dzwiekLicznik), żeby testy były deterministyczne.
+     ===================================================================================================================== */
+  var DZ = window.OkruszekDzwiek || null, DZ_ON = !!DZ && (!TEST || Q.get('dzwiek') === '1'), dzOk = false;
+  var dzN = { start: 0, muzyka: 0, dzwiek: 0, predkosc: 0, prad: 0, nurkowanie: 0, cwir: 0, och: 0, ladowanie: 0, pauza: 0 };
+  var dzLast = { start: null, muzyka: null, dzwiek: null, predkosc: 0, prad: null, nurkowanie: null, cwir: null, och: null, ladowanie: null, pauza: null };
+  function snd(nazwa, a) {
+    dzN[nazwa]++; dzLast[nazwa] = a === undefined ? true : a;
+    if (!DZ_ON) return undefined;
+    try { return DZ[nazwa](a); } catch (_) { return undefined; }
+  }
+  /* pierwszy gest (dotyk, klik, klawisz) odblokowuje dźwięk w przeglądarce; ponawiany, aż się uda */
+  function dzGest() {
+    var p;
+    if (dzOk) return Promise.resolve(true);
+    p = snd('start');
+    if (!DZ_ON) { dzOk = true; return Promise.resolve(false); }
+    if (p && p.then) return p.then(function (r) { if (r) dzOk = true; return r; }, function () { return false; });
+    return Promise.resolve(false);
+  }
+  ['pointerup', 'click', 'keydown', 'touchend'].forEach(function (n) { window.addEventListener(n, function () { if (!dzOk) dzGest(); }, true); });
+  function startBiegu() { dzGest().then(function () { snd('cwir'); }); }
+  function syncPauza() { var v = (paused && !panelOpen) || document.hidden; if (v !== dzLast.pauza) snd('pauza', v); }
+  function dzwiekKlatka() {
+    var dv = isHold() && state === 'gra' && !paused && !panelOpen && !introOn;
+    if (dv !== dzLast.nurkowanie) snd('nurkowanie', dv);
+    snd('predkosc', s);
+    syncPauza();
+  }
+  /* przełączniki: M efekty, N muzyka (klawisze i przyciski w panelu sterowania), wybór w zapisie (ZAP.dz) */
+  var efOn = ZAP.dz.e !== 0, muzOn = ZAP.dz.m !== 0;
+  var elSndE = document.getElementById('snd-e'), elSndM = document.getElementById('snd-m'), elSndES = document.getElementById('snd-e-s'), elSndMS = document.getElementById('snd-m-s');
+  function syncSnd() {
+    elSndE.setAttribute('aria-pressed', efOn ? 'true' : 'false'); elSndES.textContent = efOn ? 'włączone' : 'wyłączone';
+    elSndM.setAttribute('aria-pressed', muzOn ? 'true' : 'false'); elSndMS.textContent = muzOn ? 'włączona' : 'wyłączona';
+  }
+  function przelEfekty(msg) {
+    efOn = !efOn; ZAP.dz.e = efOn ? 1 : 0; snd('dzwiek', efOn); syncSnd(); zapisz();
+    if (msg) modeMsg = { t: 0, raw: true, txt: 'Efekty: ' + (efOn ? 'włączone' : 'wyłączone') };
+    if (efOn) snd('cwir');
+  }
+  function przelMuzyka(msg) {
+    muzOn = !muzOn; ZAP.dz.m = muzOn ? 1 : 0; snd('muzyka', muzOn); syncSnd(); zapisz();
+    if (msg) modeMsg = { t: 0, raw: true, txt: 'Muzyka: ' + (muzOn ? 'włączona' : 'wyłączona') };
+  }
+  elSndE.addEventListener('click', function () { przelEfekty(false); });
+  elSndM.addEventListener('click', function () { przelMuzyka(false); });
+  snd('dzwiek', efOn); snd('muzyka', muzOn); syncSnd();
+
+  /* ---------- prywatność i regulamin; „Usuń zapis” z potwierdzeniem ---------- */
+  var elPriv = document.getElementById('priv'), elPrivPyt = document.getElementById('priv-pyt'), elPrivBar = document.getElementById('priv-bar1'), elPrivInfo = document.getElementById('priv-info'), privWidoczny = false;
+  function privOtworz() {
+    privWidoczny = true; elPriv.classList.add('pokaz'); elPriv.setAttribute('aria-hidden', 'false'); elPrivPyt.hidden = true; elPrivBar.hidden = false; elPrivInfo.textContent = ''; elPriv.scrollTop = 0;
+    setTimeout(function () { try { if (privWidoczny) document.getElementById('priv-wroc').focus({ preventScroll: true, focusVisible: false }); } catch (_) { } }, 60);
+  }
+  function privZamknij() {
+    var was = document.activeElement;
+    privWidoczny = false; elPriv.classList.remove('pokaz'); elPriv.setAttribute('aria-hidden', 'true');
+    if (was && elPriv.contains(was)) { try { was.blur(); } catch (_) { } }
+    try { document.getElementById('ster-priv').focus({ preventScroll: true, focusVisible: false }); } catch (_) { }
+  }
+  function wyczyscZapis() {
+    try { localStorage.removeItem(LSKEY); } catch (_) { }
+    try { localStorage.removeItem(ZKEY); } catch (_) { }
+    try { localStorage.removeItem(ZKEY_ZLY); } catch (_) { }
+    ZAP = nowyZapis(); ctrlMode = 1; sens = 1; efOn = true; muzOn = true; snd('dzwiek', true); snd('muzyka', true); syncSnd(); syncUi();
+    elPrivPyt.hidden = true; elPrivBar.hidden = false; elPrivInfo.textContent = 'Zapis usunięty.' + (TEST ? '' : ' Gra wczyta się od nowa.');
+    if (!TEST) setTimeout(function () { try { location.reload(); } catch (_) { } }, 900);   /* w ?test bez przeładowania, żeby test mógł sprawdzić stan */
+  }
+  document.getElementById('ster-priv').addEventListener('click', privOtworz);
+  document.getElementById('priv-wroc').addEventListener('click', privZamknij);
+  document.getElementById('priv-usun').addEventListener('click', function () { elPrivInfo.textContent = ''; elPrivBar.hidden = true; elPrivPyt.hidden = false; try { document.getElementById('priv-nie').focus({ preventScroll: true }); } catch (_) { } });
+  document.getElementById('priv-nie').addEventListener('click', function () { elPrivPyt.hidden = true; elPrivBar.hidden = false; try { document.getElementById('priv-usun').focus({ preventScroll: true, focusVisible: false }); } catch (_) { } });
+  document.getElementById('priv-tak').addEventListener('click', wyczyscZapis);
+
+  /* ---------- wstęp „Gdzie śpi słońce”: cisza, sam kontur, trzy zdania, Okruszek wlatuje w kadr, kolor budzi się z pierwszym prądem ----------
+     Świat jest prawdziwy (te same kulisy co w grze, s = 0 = same kreski), przykryty granatowym welonem; prąd jest prawdziwy i trafia idealnie,
+     więc kolor budzi się z energii E (Z3c) i prędkości, nie z nagrania. Po wstępie reset() zaczyna czysty bieg, a ekran startu (Z2b) pokazuje wybór sterowania.
+     Flaga „wstęp obejrzany” (ZAP.intro) zapisuje się przy końcu albo pominięciu. Dotknięcie lub klawisz pomija. W ?test wstęp tylko z ?intro=1 (respektuje flagę) albo ?intro=pokaz (zawsze). */
+  var zapBezLicz = false, introZap = '', introOn = false, intro = null, introY = 0, introS = 1, introHide = false, introVeil = 0, introVeilT = 0, introSaved = null;
+  var IT = { zd: [0.9, 3.4, 5.9], dl: 2.3, wlot: 7.9, lot: 1.5, prad: 7.6, hit: 9.7, koniec: 12.6, welon: 0.74 };
+  var elIntroSr = document.getElementById('intro-sr');
+  function introZdania() { return (TX.intro && TX.intro.zdania) || []; }
+  function introChce() {
+    var q = Q.get('intro');
+    if (PASMO) return false;
+    if (q === 'pokaz') return true;
+    if (TEST && q !== '1') return false;
+    return !ZAP.intro;
+  }
+  function introStart() {
+    introOn = true; intro = { t: 0, zd: -1, prad: false };
+    introSaved = { noPrady: noPrady, noObst: noObst }; noPrady = true; noObst = true; introZap = JSON.stringify(ZAP);   /* migawka postępu: wstęp nie zmienia metrów, lotów ani dnia */
+    introHide = true; introY = 320; introS = 1.35;
+    document.body.classList.add('intro');
+    releaseAll(); mouseX = null;
+  }
+  function introStep(dt) {
+    var it, u, e, k, zd = -1;
+    if (document.hidden) return;
+    intro.t += dt; it = intro.t;
+    h = Math.max(h, 0.7); bx = 0; vx = 0; camX = 0; mouseX = null;   /* ptaszek stoi pośrodku, nie opada do morza chmur */
+    for (k = 0; k < IT.zd.length; k++) if (it >= IT.zd[k] && it < IT.zd[k] + IT.dl) zd = k;
+    if (zd !== intro.zd) { intro.zd = zd; elIntroSr.textContent = zd >= 0 ? (introZdania()[zd] || '') : ''; }
+    u = cl((it - IT.wlot) / IT.lot);
+    if (reduce) { introHide = it < IT.wlot; introY = 0; introS = 1; }
+    else { e = 1 - Math.pow(1 - u, 3); introHide = u <= 0; introY = (1 - e) * 320; introS = 1 + (1 - e) * 0.35; }
+    if (!intro.prad && it >= IT.prad) { spawnPrad(0, G.ZB + 0.32 * (IT.hit - IT.prad)); intro.prad = true; }   /* przy s = 0 świat sunie 0,32 na sekundę: prąd dociera w chwili IT.hit */
+    if (it >= IT.koniec) introEnd(false);
+  }
+  function introEnd(skip) {
+    if (!introOn) return;
+    introOn = false; document.body.classList.remove('intro');
+    noPrady = introSaved.noPrady; noObst = introSaved.noObst;
+    introY = 0; introS = 1; introHide = false; introVeil = 1; introVeilT = 0; elIntroSr.textContent = '';
+    try { var dz0 = ZAP.dz; ZAP = zapisNormalizuj(JSON.parse(introZap)); ZAP.dz = dz0; } catch (_) { }   /* przywróć postęp sprzed wstępu (świat we wstępie jest prawdziwy, więc naliczył metry) */
+    ZAP.intro = 1; zapisz();
+    zapBezLicz = true; reset(); zapBezLicz = false;   /* lot z wstępu już policzony przy starcie strony */
+    if (firstRun) openPanel(true); else startBiegu();
+  }
+  function wrapTekst(txt, maxW) {
+    var w = txt.split(' '), lines = [], cur = '', k, t2;
+    for (k = 0; k < w.length; k++) { t2 = cur ? cur + ' ' + w[k] : w[k]; if (cur && ctx.measureText(t2).width > maxW) { lines.push(cur); cur = w[k]; } else cur = t2; }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function drawIntro(dt) {
+    var a, it, zd = introZdania(), k, loc, env, lines, y0, j, p;
+    if (!introOn) {
+      if (introVeil > 0.002) {   /* po wstępie: granat rozjaśnia się za ekranem startu */
+        introVeilT += dt; a = 1 - sm(introVeilT / 0.5);
+        if (a <= 0.002) introVeil = 0; else { ctx.fillStyle = rgba(NAVY, a); ctx.fillRect(0, 0, W, H); }
+      }
+      return;
+    }
+    it = intro.t;
+    a = it < 0.9 ? lerp(1, IT.welon, sm(it / 0.9)) : (it < IT.wlot ? IT.welon : lerp(IT.welon, 0, sm((it - IT.wlot) / IT.lot)));
+    if (it > IT.koniec - 0.6) a = Math.max(a, sm((it - (IT.koniec - 0.6)) / 0.6));
+    ctx.fillStyle = rgba(NAVY, a); ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    for (k = 0; k < IT.zd.length; k++) {
+      loc = it - IT.zd[k]; if (loc < 0 || loc > IT.dl || !zd[k]) continue;
+      env = sm(loc / 0.6) * sm((IT.dl - loc) / 0.6);
+      ctx.font = '400 24px Georgia, "Times New Roman", serif'; ctx.fillStyle = rgba(LINE, env); ctx.shadowColor = 'rgba(13,18,36,0.9)'; ctx.shadowBlur = 10;
+      lines = wrapTekst(zd[k], W - 110); y0 = H * 0.36 - (lines.length - 1) * 16;
+      for (j = 0; j < lines.length; j++) ctx.fillText(lines[j], W / 2, y0 + j * 33 + (1 - env) * 6);
+    }
+    ctx.shadowBlur = 0;
+    if (it > 1.4 && it < IT.koniec - 0.8) {
+      p = (TX.intro && TX.intro.pomin) || '';
+      ctx.font = '400 12px ' + FONT; ctx.fillStyle = rgba(LINE, 0.5 * sm((it - 1.4) / 0.6)); ctx.fillText(p, W / 2, H - 34);
+    }
+    ctx.restore();
+  }
+
+  /* ---------- service worker (sw.js, wzorzec z Kociłapek): tylko poza ?test i tylko na https albo localhost ---------- */
+  var swNowa = false, swReg = null;
+  (function swInit() {
+    var host = location.hostname, ok = location.protocol === 'https:' || host === 'localhost' || host === '127.0.0.1' || host === '[::1]', mialKontroler;
+    if (TEST || !ok || !('serviceWorker' in navigator)) return;
+    mialKontroler = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (mialKontroler) swNowa = true; mialKontroler = true; });
+    function rejestruj() { navigator.serviceWorker.register('sw.js').then(function (r) { swReg = r; }).catch(function () { }); }
+    if (document.readyState === 'complete') rejestruj(); else window.addEventListener('load', rejestruj);
+    function szukaj() { if (swReg) { try { swReg.update().catch(function () { }); } catch (_) { } } }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) szukaj(); });   /* powrót na ekran */
+    setInterval(function () { if (!document.hidden) szukaj(); }, 600000);   /* co 10 minut */
+  })();
 
   /* ---------- bieżąca kraina, przenikanie 300 m przed bramą ---------- */
   function kTeraz() { return KRAINY[kIdx]; }
@@ -3085,13 +3350,13 @@ na chmurce.</p>
     b = Math.max(1, Math.min(KRAINY.length, startBrama | 0)); startBrama = b;
     kIdx = b - 1; K = kTeraz(); drogaStart = K.od; drogaM = drogaStart;
     if (!poraLock) { phi = K.pora; palAt(phi, PAL); akcentKrainy(PAL); nightK = PAL.nightW; forceTint = true; }
-    d = dzisiaj(); if (ZAP.dzien.d !== d) ZAP.dzien = { d: d, n: 0 }; ZAP.dzien.n++;
+    d = dzisiaj(); if (ZAP.dzien.d !== d) ZAP.dzien = { d: d, n: 0 }; if (!zapBezLicz) ZAP.dzien.n++;
     rs = TEST ? 104729 + (ziarnoTest || (+Q.get('seed') || 23)) * 131 : hashZiarna(ZAP.dzien.d + '#' + ZAP.dzien.n);
     pomocBieg = TEST ? pomocTest : ZAP.krotkie >= Z.KROTKIE_N;
     calmUntil = Z.START_CISZA; nextObsT = Z.START_CISZA;
     nextPredT = (b === 1 ? Z.DRAP_GNIAZDO : Z.DRAP_BRAMA) + (pomocBieg ? Z.POMOC_DRAP : 0);
     G.SINK = K.sink; sSm = 0;
-    kr(K.id).loty++;
+    if (!zapBezLicz) kr(K.id).loty++; else kr(K.id);   /* Z5: reset po wstępie nie liczy się jako kolejny lot */
     nTeraz = napiecieCalc(0);
     if (b > 1) napiszDodaj(tekst('krainy', K.id, 'nazwa'));
     if (scenaF) { napiszDodaj(tekst('szepty', 'fiuk')); kurt = { z: 2.6, gx: bx, brama: b, scena: true, open: 0 }; pulaKrainy(b); }
@@ -3538,9 +3803,18 @@ na chmurce.</p>
     })();
   }
 
+  if (TEST) {
+    window.__okruszek.dzwiekLicznik = function () { return { aktywny: DZ_ON, zaladowany: !!DZ, otwarty: dzOk, n: JSON.parse(JSON.stringify(dzN)), ostatni: JSON.parse(JSON.stringify(dzLast)), efekty: efOn, muzyka: muzOn }; };
+    window.__okruszek.intro = function () { return { aktywny: introOn, t: intro ? intro.t : 0, zdanie: intro ? intro.zd : -1, prad: intro ? intro.prad : false, ptakY: introY, ptakUkryty: introHide, welon: introVeil, E: eNow(), s: s, zapisane: ZAP.intro, koniec: IT.koniec }; };
+    window.__okruszek.introPomin = function () { introEnd(true); return !introOn; };
+    window.__okruszek.introCzas = function (x) { if (introOn) intro.t = Math.max(0, +x || 0); return introOn ? intro.t : -1; };
+    window.__okruszek.zapisPodglad = function () { return JSON.parse(JSON.stringify(ZAP)); };
+    window.__okruszek.prywatnosc = function (v) { if (v === undefined ? !privWidoczny : v) privOtworz(); else privZamknij(); return privWidoczny; };
+    window.__okruszek.rysujPtaka = function (c, x, y, k, s2, tilt, tt) { var old = ctx, ot = t; ctx = c; if (tt !== undefined) t = tt; try { c.save(); c.translate(x, y); c.scale(k, k); drawBird(0, 0, s2, tilt || 0, 0, 0, 0, 1); c.restore(); } finally { ctx = old; t = ot; } return true; };   /* ikony PWA: rysunek ptaszka Z4 na innym canvasie */
+  }
   buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); initBloom(); resize(); bramyUi();
   window.addEventListener('resize', resize);
-  if (firstRun) openPanel(true);   /* pierwsze uruchomienie bez zapisanego wyboru i bez ?sterowanie=: ekran "Wybierz sterowanie" */
+  if (introChce()) introStart(); else if (firstRun) openPanel(true);   /* Z5: pierwsze uruchomienie = wstęp, potem ekran startu; kolejne = od razu ekran startu (Leć) */
   requestAnimationFrame(function (n) { last = n; frame(n); });
 })();
 </script>

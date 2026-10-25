@@ -1,0 +1,17 @@
+{
+  "name": "Crumbi",
+  "short_name": "Crumbi",
+  "description": "Malutki ptaszek leci za zachodem słońca przez kulisy chmur. Im szybciej, tym więcej koloru.",
+  "lang": "pl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1224",
+  "theme_color": "#0d1224",
+  "icons": [
+    { "src": "ikona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "ikona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "ikona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
