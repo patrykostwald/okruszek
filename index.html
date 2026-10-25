@@ -220,7 +220,7 @@ na chmurce.</p>
   function cAll(se) { return 0.2 * sg(se) + 0.2 * sp_(se) + 0.25 * sw_(se) + 0.35 * sf(se); }
   function streakC(sv) { return Math.pow(sm((sv - 0.6) / 0.4), 1.4); }
   var OFF_NIEBO = 0.02, OFF_FAR = 0.01, OFF_NEAR = -0.01;
-  function offAt(tt) { return lerp(OFF_NEAR, OFF_FAR, tt); }
+  function offAt(tt) { return lerp(OFF_NEAR, OFF_FAR, tt) + bloomLag(tt); }   /* Z3c: w rozkwicie dalekie warstwy wyprzedzają bliskie (fala od tyłu do przodu) */
   function levelOf(sv) { return sv < LV_LO[1] ? 0 : (sv < LV_LO[2] ? 1 : (sv < LV_LO[3] ? 2 : (sv < LV_LO[4] ? 3 : (sv < LV_LO[5] ? 4 : 5)))); }
   /* kolor ptaszka i drapieżników (stara krzywa e = ((s-próg)/(1-próg))^1,6) */
   var K_KOLOR = 1.6;
@@ -236,17 +236,26 @@ na chmurce.</p>
      Prędkość (Z3b): s = min(1, sHold + boost). sHold = nurkowanie, rośnie powoli do DIVE_TOP (samo nurkowanie to najwyżej L2-L3).
      boost = skok z prądów: PRAD_S * (1 + CH_STEP * (n-1)), n = liczba prądów złapanych kolejno w oknie CHAIN_W s (x1, x1,5, x2...).
      Zanik boostu rośnie z jego wysokością (DECAY_HI), chyba że trwa łańcuch >= MOM_CHAIN (rozpęd; przy >= 5 prądach prawie zamrożony). Bez 4 prądów w 12 s s <= CAP4, bez 5 prądów s <= CAP5.
-     L5 (hiper): s >= HY_S przez HY_HOLD s (przy łańcuchu >= GATE5), potem trwa HY_LEN s i wygasa. */
-  var G = { H0: 0.8, SINK: 0.04, DIVE: 0.2, ZOOM: 0.12, PRAD_H: 0.26,
-            PRAD_S: 0.24, CH_STEP: 0.5, CHAIN_W: 3.0, BOOSTMAX: 0.7, TAU: 2.2, DECAY_HI: 1.5, DECAY_FROM: 0.1, DECAY_W: 0.5,
-            DIVE_TOP: 0.5, DIVE_UP: 0.5, DIVE_DOWN: 0.9, MOM_CHAIN: 4, MOM_K: 0.3, MOM_K5: 0.05, GATE4: 4, CAP4: 0.79, GATE5: 5, CAP5: 0.93, HY_S: 0.95, HY_HOLD: 2, HY_LEN: 6,
+     L5 (hiper): s >= HY_S przez HY_HOLD s (przy łańcuchu >= GATE5), potem trwa HY_LEN s i wygasa.
+     Z3c: ilość koloru steruje energia E (sekcja "Z3c: energia koloru" niżej), nie sama prędkość; łańcuch liczy się tylko przy idealnym wejściu w środek prądu (HIT_IDEAL),
+     okno CHAIN_W 2,2 s, GATE4 = 3; prąd minięty bez wejścia zrywa łańcuch. Bilans wysokości: serie są krótsze (po 3 prądy, co 20. seria 5) i łańcuch ścisły, więc PRAD_H podniesione z 0,26 do 0,55,
+     a PAUZA_K (mnożnik przerwy między seriami) = 0,5 - bot "70%" nadal dolatuje do kolejnej bramy (gra_test_z10.cjs). Stałe Z3c (do strojenia po teście właściciela): E_POJEDYNCZY / E_DWA / E_TRZY = energia po 1 / 2 / 3 idealnych wejściach z rzędu; E_NURK = najwyżej tyle daje samo nurkowanie;
+     HIT_IDEAL = pół-szerokość idealnego wejścia w jednostkach świata (HIT = 72 to cały prąd), HIT_IDEAL_UCZ = to samo w pierwszych UCZ_DO s i dla prądu ratunkowego; EDGE_K = jaki ułamek skoku prędkości i wysokości daje wejście na brzegu;
+     GRACE_E = łaska (s), przez którą E trzyma osiągnięty cel; FALL_E = opadanie E na sekundę po łasce; E_UP = tempo domykania E od 0,9 do 1 po rozkwicie (na s); BLOOM_T = czas rozkwitu (s);
+     BLOOM_LAG = o ile (w skali koloru) dalekie warstwy wyprzedzają, a bliskie spóźniają się w rozkwicie (fala od tyłu do przodu); ZIG / ZIG_V = zygzak prądów w serii w osi x (ułamek PRAD_DX, zmienność). */
+  var G = { H0: 0.8, SINK: 0.04, DIVE: 0.2, ZOOM: 0.12, PRAD_H: 0.55,
+            PRAD_S: 0.24, CH_STEP: 0.5, CHAIN_W: 2.2, BOOSTMAX: 0.7, TAU: 2.2, DECAY_HI: 1.5, DECAY_FROM: 0.1, DECAY_W: 0.5,
+            DIVE_TOP: 0.5, DIVE_UP: 0.5, DIVE_DOWN: 0.9, MOM_CHAIN: 4, MOM_K: 0.3, MOM_K5: 0.05, GATE4: 3, CAP4: 0.79, GATE5: 5, CAP5: 0.93, HY_S: 0.95, HY_HOLD: 2, HY_LEN: 6,
             VX: 250, ZB: 0.7, HIT: 72, HW: 60, PRAD_Y: 40, PRAD_HY: 260, M0: 10, M1: 22,
             HITB: 30, HITY: 34, ZW: 0.1, HITR: 95, ZWR: 0.12, WET: 5, SPIN: 1.0, IMM: 1.3,
             HAW_WARN: 2, HAW_CHASE: 10, HAW_FIRST: 120, HAW_EVERY: 90, HAW_S: 0.7, OBS_FROM: 20,
+            /* Z3c: energia koloru E (sekcja 14 PROJEKT.md), wszystkie do strojenia po teście właściciela */
+            E_POJEDYNCZY: 0.30, E_DWA: 0.62, E_TRZY: 1.0, E_NURK: 0.40, HIT_IDEAL: 34, HIT_IDEAL_UCZ: 54, EDGE_K: 0.5, GRACE_E: 1.3, FALL_E: 0.35, E_UP: 3.0, BLOOM_T: 1.2, BLOOM_LAG: 0.14, ZIG: 0.16, ZIG_V: 0.35, PAUZA_K: 0.5, RATUNEK_H: 0.26,
             WARN: 2.0, WIND_V: 165, WIND_LEN: 4, HAIL_LEN: 2.2, HAIL_H: 0.12, FOG_LEN: 3.5, STUMBLE: 0.9, SZ_STADO: 30, DY_STADO: 17 };
   /* prąd: na starcie (UCZ_DO s) co UCZ_GAP s z listy PLAN; potem serie (łańcuchy) CPLAN po CL_GAP s, przerwa PAUZY, w L4-L5 przerwy dłuższe (prądy rzadsze) */
   var PLAN = [[0.5, 5.2], [-0.7, 4.4], [0.25, 6.3], [-0.45, 4.8], [0.8, 5.9], [-0.2, 4.1], [0.6, 6.7], [-0.9, 5.0], [0.35, 4.6], [-0.55, 6.1]];
-  var CPLAN = [3, 4, 5, 3, 5, 6, 4, 6, 6, 5], PAUZY = [2.6, 3.0, 2.8, 3.2, 2.7, 3.4], CL_DZ = 1.8;
+  var CPLAN = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],   /* Z3c: serie krótsze i częściej po 3 prądy (pełny kolor = cała trójka); długie (5-6) zostają dla L5 */
+       PAUZY = [2.6, 3.0, 2.8, 3.2, 2.7, 3.4], CL_DZ = 1.6;
   var UCZ_DO = 20, UCZ_GAP = 3.0, PRAD_DX = 300;
   function resize() {
     var iw = window.innerWidth, ih = window.innerHeight;
@@ -892,6 +901,8 @@ na chmurce.</p>
   var wetT = 0, spinT = 0, immT = 0, kolizji = 0, wetCount = 0, noObst = false, zlapT = 0, dropT = 0;
   var spawnN = {}, endKind = '', nextBird = 0, nextRain = 0, nextHawk = 0, lastObsT = -99, firstObsT = -1, hawkLog = { uciekl: 0, zgubil: 0, zlapany: 0 }, starsA = 0;
   /* Z3b: łańcuch, poziomy, hiper, doba, nowe efekty */
+  /* Z3c: energia koloru (sekcja "Z3c: energia koloru" niżej) */
+  var Ec = 0, Egoal = 0, eReachT = -99, bloomOn = false, bloomT = 0, bloomE0 = 0, bloomN = 0, bloomLog = [], lockE = null, zPrevRaw = 0, eFullT = 0, eFullRun = 0, eFullMax = 0, seriaLog = [], wlotIdeal = 0, wlotBrzeg = 0, sparkPulse = 0;
   var lvlFirst = [-1, -1, -1, -1, -1, -1], chainN = 0, lastHitT = -99, hitLog = [], cI = 0, inC = 0, lvl = 0, lvlMax = 0, lvlTime = [0, 0, 0, 0, 0, 0], l5bez = 0, l5czas = 0, hiperRazy = 0, hiperTrwa = [], lvMsg = null;
   var hyLeft = 0, hyHold = 0, hyCool = false, hyK = 0, hyForce = false, hyFlash = 0, hyRun = 0, hyLog = [];
   var PHI0 = 0.75, phi = PHI0, poraLock = false, dayRate = 1 / 240;
@@ -914,6 +925,7 @@ na chmurce.</p>
     state = 'gra'; paused = false; h = G.H0; dist = 0; bx = 0; vx = 0; camX = 0; steer = 0; gameT = 0; sHold = 0; boost = 0; s = 0; sk = 0; sRaw = 0; ladT = 0;
     planI = 0; nextSpawn = 0.4; wlotow = 0; tint = 0; diveV = 0; minH = 1; prady.length = 0; cI = 0; inC = 0;
     obst.length = 0; haw = null; plumki.length = 0; kropl.length = 0; wetT = 0; spinT = 0; immT = 0; kolizji = 0; wetCount = 0; zlapT = 0; dropT = 0;
+    Ec = 0; Egoal = 0; eReachT = -99; bloomOn = false; bloomT = 0; bloomE0 = 0; bloomN = 0; bloomLog = []; lockE = null; zPrevRaw = 0; eFullT = 0; eFullRun = 0; eFullMax = 0; seriaLog = []; wlotIdeal = 0; wlotBrzeg = 0; sparkPulse = 0;   /* Z3c */
     chainN = 0; lastHitT = -99; hitLog.length = 0; lvl = 0; lvlMax = 0; lvlFirst = [-1, -1, -1, -1, -1, -1]; lvlTime = [0, 0, 0, 0, 0, 0]; l5bez = 0; l5czas = 0; hiperRazy = 0; hiperTrwa = []; lvMsg = null;
     hyLeft = 0; hyHold = 0; hyCool = false; hyK = 0; hyForce = false; hyFlash = 0; hyRun = 0; hyLog = []; dayRate = 1 / 240;
     stumbleT = 0; fogT = 0; windDX = 0; gradHit = 0; mglaHit = 0; burzaHit = 0; latHit = 0; stadoHit = 0; flashK = 0; boltT = 0; predLog = { jastrzab: [], sowa: [] };
@@ -1106,14 +1118,52 @@ na chmurce.</p>
   function fogK() { return fogT <= 0 ? 0 : sm((G.FOG_LEN - fogT) / 0.4) * sm(fogT / 0.8); }
   function hitsN(win) { var n = 0, k; for (k = hitLog.length - 1; k >= 0; k--) { if (gameT - hitLog[k] <= win) n++; else break; } return n; }
   function chainNow() { return (chainN > 0 && gameT - lastHitT <= G.CHAIN_W) ? chainN : 0; }
+  /* ---------- Z3c: energia koloru E (0..1), sekcja 14 PROJEKT.md ----------
+     Kolor świata NIE idzie już wprost z prędkości, tylko z energii E. E rośnie wyłącznie z łańcucha prądów złapanych w IDEALNYM wejściu (środek prądu, |dx| < HIT_IDEAL):
+     1 prąd -> E do E_POJEDYNCZY (0,30), 2 z rzędu w oknie CHAIN_W -> E_DWA (0,62), 3 z rzędu -> E_TRZY (1,0) = pełna paleta i pełna akwarela (rozkwit trwa BLOOM_T s).
+     Nurkowanie samo daje najwyżej E_NURK (0,40). Wejście na brzegu prądu (HIT_IDEAL..HIT) daje mały skok prędkości (EDGE_K), ale nie przedłuża łańcucha i nie daje energii.
+     Po osiągnięciu celu E trzyma GRACE_E s (łaska), potem opada FALL_E na sekundę; każdy kolejny idealny prąd odnawia łaskę.
+     Nagły spadek prędkości (kolizja, burza, mgła) zabiera tyle samo energii (prędkość = kolor w odczuciu). E -> sk (kolor warstw) przez krzywą E_SK. */
+  var E_SK = [[0, 0], [0.3, 0.5], [0.62, 0.7], [1, 1]];
+  function skMap(e) {
+    var k, a, b;
+    if (e <= 0) return 0;
+    for (k = 1; k < E_SK.length; k++) { b = E_SK[k]; if (e <= b[0]) { a = E_SK[k - 1]; return a[1] + (b[1] - a[1]) * (e - a[0]) / (b[0] - a[0]); } }
+    return 1;
+  }
+  function skInv(v) {
+    var k, a, b;
+    if (v <= 0) return 0;
+    for (k = 1; k < E_SK.length; k++) { b = E_SK[k]; if (v <= b[1]) { a = E_SK[k - 1]; return a[0] + (b[0] - a[0]) * (v - a[1]) / (b[1] - a[1]); } }
+    return 1;
+  }
+  function diveE() { return G.E_NURK * cl(sHold / G.DIVE_TOP); }
+  function eNow() { return lockE !== null ? lockE : ((hyLeft > 0 || hyForce) ? 1 : Math.max(Ec, diveE())); }
+  function eByChain(n) { return n >= 3 ? G.E_TRZY : (n === 2 ? G.E_DWA : (n === 1 ? G.E_POJEDYNCZY : 0)); }
+  function eHit(n) { var g = eByChain(n); if (!bloomOn) Egoal = g; if (g < 1 && Ec < g) Ec = g; eReachT = gameT; }   /* cele poniżej 1 osiągane od razu (kolor skacze w chwili wlotu, jak prędkość); cel 1 = rozkwit */
+  function bloomLag(tt) { return bloomOn ? Math.sin(Math.PI * cl(bloomT / G.BLOOM_T)) * G.BLOOM_LAG * (2 * tt - 1) : 0; }
+  function eStep(dt) {
+    var e;
+    if (lockE !== null) return;
+    if (bloomOn) {
+      bloomT += dt; Ec = Math.max(Ec, bloomE0 + (1 - bloomE0) * sm(bloomT / G.BLOOM_T));
+      if (bloomT >= G.BLOOM_T) { Ec = 1; bloomOn = false; eReachT = gameT; bloomLog[bloomLog.length - 1].dur = bloomT; }
+    } else if (Egoal > Ec + 1e-4) {
+      if (Egoal >= 1 && Ec < 0.9) { bloomOn = true; bloomT = 0; bloomE0 = Ec; bloomN++; bloomLog.push({ t: gameT, e0: Ec, dur: 0 }); }
+      else { Ec = Math.min(Egoal, Ec + G.E_UP * dt); eReachT = gameT; }
+    } else if (Ec > 0 && gameT - eReachT >= G.GRACE_E) { Ec = Math.max(0, Ec - G.FALL_E * dt); Egoal = Math.min(Egoal, Ec); }
+    if (lockS === null) { e = eNow(); if (e >= 0.98) { eFullT += dt; eFullRun += dt; if (eFullRun > eFullMax) eFullMax = eFullRun; } else eFullRun = 0; }
+  }
   function updSpeed() {
     var raw = Math.min(1, sHold + boost), w = wetK(), fk = fogK(), h12 = hitsN(12);
+    if (zPrevRaw > 0.05 && raw < zPrevRaw * 0.85) Ec *= raw / zPrevRaw;   /* Z3c: nagły spadek prędkości zabiera tyle samo koloru */
+    zPrevRaw = raw;
     if (h12 < G.GATE5) raw = Math.min(raw, G.CAP5);
     if (h12 < G.GATE4) raw = Math.min(raw, G.CAP4);
     sRaw = raw;
     if (hyLeft > 0 || hyForce) raw = Math.max(raw, 0.96);
     if (lockS !== null) { s = lockS; sk = lockS; }
-    else { s = raw * (1 - 0.35 * w); sk = s * (1 - 0.45 * w) * (1 - 0.6 * fk); }
+    else { s = raw * (1 - 0.35 * w); sk = skMap(eNow()) * (1 - 0.45 * w) * (1 - 0.6 * fk); }   /* Z3c: kolor z energii E, nie z s */
   }
   /* spadek o poziom: prędkość schodzi na środek poziomu niżej (burza, mgła) */
   function dropLevel() {
@@ -1131,20 +1181,31 @@ na chmurce.</p>
     prady.push(p); return p;
   }
   function wlot(p) {
-    p.hit = true; p.flash = 1; wlotow++; tint = 1;
+    var ideal = Math.abs(p.x - bx) < ((p.ratunek || gameT < UCZ_DO) ? G.HIT_IDEAL_UCZ : G.HIT_IDEAL), S;   /* Z3c: nauka na starcie i prąd ratunkowy mają szersze "idealne wejście" */
+    p.hit = true; wlotow++;
+    if (!ideal) {   /* Z3c: brzeg prądu: mały skok, bez łańcucha, bez energii koloru */
+      p.flash = 0.45; tint = 0.4; wlotBrzeg++;
+      boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * G.EDGE_K); updSpeed(); h = Math.min(1, h + G.PRAD_H * G.EDGE_K);
+      return;
+    }
+    p.flash = 1; tint = 1; wlotIdeal++;
     chainN = (gameT - lastHitT <= G.CHAIN_W) ? chainN + 1 : 1; lastHitT = gameT; hitLog.push(gameT);
+    eHit(chainN); sparkPulse = 1;
+    S = p.seria !== undefined ? seriaLog[p.seria] : null; if (S) { S.ideal++; if (chainN > S.maxChain) S.maxChain = chainN; if (chainN >= 3 && S.tTrojka < 0) S.tTrojka = gameT; }
     while (hitLog.length && gameT - hitLog[0] > 12.5) hitLog.shift();
     boost = Math.min(G.BOOSTMAX, boost + G.PRAD_S * (1 + G.CH_STEP * (chainN - 1)));
     updSpeed();   /* prędkość i kolor skaczą w tej samej chwili co wlot, nie dopiero w następnym kroku */
-    h = Math.min(1, h + G.PRAD_H);
+    h = Math.min(1, h + (p.ratunek ? G.RATUNEK_H : G.PRAD_H));   /* Z3c: prąd ratunkowy (Z10) daje wysokość jak przed zmianą PRAD_H */
   }
   /* harmonogram prądów: nauka (co 3 s czasu), potem SERIE (łańcuchy) rozstawione w świecie co CL_DZ w głąb: im szybszy lot, tym krócej między prądami,
      więc łańcuch (okno 3 s) da się zebrać tylko z prędkością; kolejna seria dopiero po przelocie poprzedniej i pauzie; w L4-L5 pauzy dłuższe (prądy rzadsze) */
   function spawnCluster() {
     var size = CPLAN[cI % CPLAN.length], side = (cI % 2) ? -1 : 1, i2, dx, z0 = 2.4 + 2.6 * s, p;
+    seriaLog[cI] = { id: cI, n: size, ideal: 0, maxChain: 0, tTrojka: -1, t0: gameT };
     for (i2 = 0; i2 < size; i2++) {
-      dx = side * (0.38 + 0.22 * Math.abs(Math.sin((i2 + cI * 2.3) * 1.7)));
-      p = spawnPrad(dx, z0 + i2 * CL_DZ); p.last = (i2 === size - 1);
+      /* Z3c: prądy serii na przemian po dwóch stronach osi (zygzak), odstęp w x ok. 2 * ZIG * PRAD_DX: trzeba skręcać, nie da się lecieć prosto */
+      dx = side * (0.3 + G.ZIG * (1 + G.ZIG_V) + ((i2 % 2) ? -1 : 1) * G.ZIG * (1 + G.ZIG_V * Math.sin((i2 + cI * 2.3) * 1.7)));   /* nigdy bliżej osi niż 0,3 PRAD_DX: bierny ptaszek nie łapie prądów serii przypadkiem */
+      p = spawnPrad(dx, z0 + i2 * CL_DZ); p.last = (i2 === size - 1); p.seria = cI;
     }
     nextSpawn = 1e9; cI++;
   }
@@ -1443,7 +1504,7 @@ na chmurce.</p>
     tickFx(dt);
     if (state !== 'gra') {
       /* lądowanie, złapanie i ekran wyniku: prędkość wygasa, świat sunie powoli, ptaszek odpoczywa (albo odlatuje w szponach) */
-      ladT += dt; sHold *= Math.exp(-dt * 2.2); boost *= Math.exp(-dt * 2.2); hyLeft = 0; updSpeed(); updLevel(0);
+      ladT += dt; sHold *= Math.exp(-dt * 2.2); boost *= Math.exp(-dt * 2.2); hyLeft = 0; if (lockE === null) { Ec *= Math.exp(-dt * 2.2); Egoal = 0; bloomOn = false; } sparkPulse = 0; updSpeed(); updLevel(0);
       vx *= Math.exp(-dt * 4); bx += vx * dt; camX += (bx - camX) * Math.min(1, dt * 7); steer = vx / G.VX;
       speed = 0.2 + s * 1.9;
       for (k = 0; k < flats.length; k++) { flats[k].z -= dt * speed; if (flats[k].z < NEAR) flats[k] = makeFlat(flats[k].z + (FAR - NEAR), bx); }
@@ -1466,6 +1527,7 @@ na chmurce.</p>
     dec = (1 / G.TAU) * (1 + G.DECAY_HI * sm((boost - G.DECAY_FROM) / G.DECAY_W));   /* zanik zależy od skoku z prądów (nurkowanie go nie przyspiesza) */
     if (chainN >= G.MOM_CHAIN && gameT - lastHitT < G.CHAIN_W) dec *= (chainN >= 5 ? G.MOM_K5 : G.MOM_K);   /* rozpęd łańcucha */
     boost *= Math.exp(-dt * dec);
+    eStep(dt); sparkPulse = Math.max(0, sparkPulse - dt * 2.5);
     updSpeed(); updHyper(dt); updSpeed(); updLevel(dt);
     /* wysokość jako zasób (przy zablokowanej prędkości z haka testu wysokość stoi) */
     if (lockS === null) {
@@ -1484,7 +1546,8 @@ na chmurce.</p>
     for (k = prady.length - 1; k >= 0; k--) {
       p = prady[k]; pz = p.z; p.z -= dt * speed; p.flash = Math.max(0, p.flash - dt * 1.8);
       if (!p.hit && pz > G.ZB && p.z <= G.ZB && Math.abs(p.x - bx) < G.HIT) wlot(p);
-      if (p.last && pz > G.ZB && p.z <= G.ZB) nextSpawn = gameT + pauzaPradow(PAUZY[(cI + 5) % PAUZY.length] * (1 + 0.6 * sm((s - 0.75) / 0.2)));   /* seria przeleciała: pauza do następnej */
+      else if (!p.hit && pz > G.ZB && p.z <= G.ZB) chainN = 0;   /* Z3c: prąd minięty bez wejścia zrywa łańcuch ("z rzędu" znaczy kolejne prądy serii) */
+      if (p.last && pz > G.ZB && p.z <= G.ZB) nextSpawn = gameT + pauzaPradow(PAUZY[(cI + 5) % PAUZY.length] * G.PAUZA_K * (1 + 0.6 * sm((s - 0.75) / 0.2)));   /* seria przeleciała: pauza do następnej */
       if (p.z < 0.12) prady.splice(k, 1);
     }
     stepObst(dt, speed, true);
@@ -1500,9 +1563,11 @@ na chmurce.</p>
 
   /* ---------- kolor: etapy, odcienie, paleta światła ---------- */
   /* kolor etapu: baza (kontur/granat) -> szarość/błękit -> pastel -> ciepło pory -> pełnia; warstwy nakładają się (etapy rozciągnięte) */
+  var PASTEL_WARM = 0.2, PASTEL_SAT = 1.55;
+  function satc(c, k) { var l = lumOf(c); return [Math.max(0, Math.min(255, l + (c[0] - l) * k)), Math.max(0, Math.min(255, l + (c[1] - l) * k)), Math.max(0, Math.min(255, l + (c[2] - l) * k))]; }
   function stageCol(base, F, warm, hz, ww) {
     var l = lumOf(F), Gc = [l * 0.9, l * 0.98, Math.min(255, l * 1.1 + 6)], Pc = mixc(mixc(F, [238, 232, 252], 0.42), [196, 210, 248], 0.18), Wc = mixc(F, warm, ww === undefined ? 0.5 : ww), c;
-    if (hz) Pc = mixc(Pc, warm, hz);
+    Pc = satc(mixc(Pc, warm, PASTEL_WARM + (hz || 0)), PASTEL_SAT);   /* Z3c: pastel jest ciepły i baśniowy, nie szaro-lawendowy (zrzut żywego podglądu przy poziomie Kolor) */
     c = mixc(base, Gc, ST.g); c = mixc(c, Pc, ST.p); c = mixc(c, Wc, ST.w); return mixc(c, F, ST.f);
   }
   /* Z4: odcień chmury: chłodne (zielone, turkus, błękit) pochylamy ku barwie pory słabiej, żeby nie robiło się khaki */
@@ -1845,6 +1910,12 @@ na chmurce.</p>
     if (p.flash > 0.05) { ctx.globalAlpha = 0.28 * p.flash; ctx.lineWidth = lw * 3.2; ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.setLineDash([dash, dash * 0.5]); ctx.lineDashOffset = reduce ? 0 : -t * 60; ctx.lineWidth = lw; ctx.stroke();
     ctx.setLineDash([]); ctx.lineDashOffset = 0;
+    /* Z3c: oś idealnego wejścia (środek prądu): ledwo widoczna, rozjaśnia się, gdy ptaszek jest w idealnym pasie tuż przed prądem */
+    if (!p.hit && z < 4.2) {
+      var zn = Math.abs(p.x - bx) < ((p.ratunek || gameT < UCZ_DO) ? G.HIT_IDEAL_UCZ : G.HIT_IDEAL) ? 1 : 0, ga = (0.1 + 0.55 * zn) * fade * sm((4.2 - z) / 1.2);
+      ctx.beginPath(); ctx.moveTo(X0 + (reduce ? 0 : Math.sin(G.PRAD_HY * 0.014 + t * 2.2 + p.ph) * 4) * sc, Y0 - hy * 0.7); ctx.lineTo(X0, Y0 + hy * 0.7);
+      ctx.strokeStyle = rgba(mixc(col, [255, 244, 214], zn * 0.6), ga); ctx.lineWidth = 1 + zn * 1.2; ctx.stroke();
+    }
   }
 
   /* ---------- rysowanie przeszkód ---------- */
@@ -2149,6 +2220,21 @@ na chmurce.</p>
     }
     ctx.restore();
   }
+  /* Z3c: rozkwit (E -> 1, ok. BLOOM_T s): ciepła poświata od horyzontu i miękka fala światła przesuwająca się od tyłu (horyzont) do przodu (dół ekranu), w parze z opóźnieniem warstw w offAt */
+  function drawRozkwit() {
+    var u, k, y, gr, col;
+    if (!bloomOn) return;
+    u = cl(bloomT / G.BLOOM_T); k = Math.sin(Math.PI * u); col = mixc(PAL.acc, [255, 244, 226], 0.55);
+    ctx.save(); ctx.globalCompositeOperation = 'screen';
+    gr = ctx.createRadialGradient(W / 2, HORIZON - 20, 10, W / 2, HORIZON - 20, H * 0.62); gr.addColorStop(0, rgba(col, 0.34 * k)); gr.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    y = HORIZON - 70 + sm(u) * (H - HORIZON + 150);
+    if (!reduce) {   /* fala światła tylko bez ograniczenia ruchu */
+    gr = ctx.createLinearGradient(0, y - 90, 0, y + 90); gr.addColorStop(0, rgba(col, 0)); gr.addColorStop(0.5, rgba(col, 0.2 * k)); gr.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, y - 90, W, 180);
+    }
+    ctx.restore();
+  }
   function drawEdgeGlow() {
     var eg = Math.max(ST.f * 0.7, hyK), gr;
     if (eg < 0.05) return;
@@ -2200,7 +2286,37 @@ na chmurce.</p>
     ctx.fillText(nm, xt, y + 7);
     if (cn >= 2) { tw = ctx.measureText(nm).width; if (ls) ctx.letterSpacing = '0px'; ctx.fillStyle = rgba(LINE, 0.75); ctx.font = '600 10px ' + FONT; ctx.fillText('×' + (1 + G.CH_STEP * (cn - 1)).toFixed(1).replace('.', ','), xt + tw + 8, y + 7); }
     if (ls) ctx.letterSpacing = '0px';
-    lvlBox = { x: x0, y: y - 2, w: xt - x0 + (nm.length * 8.5) + (cn >= 2 ? 44 : 0), h: 14 };
+    lvlBox = { x: x0, y: y - 2, w: xt - x0 + (nm.length * 8.5) + (cn >= 2 ? 44 : 0), h: 30 };   /* Z3c: wysokość obejmuje też iskierki (y do 89) */
+    ctx.restore();
+    drawSparks();
+  }
+  /* Z3c: trzy iskierki-kropki przy wskaźniku poziomu: wypełniają się po kolei (1, 2, 3 prądy w łańcuchu), bez liczb. Cztery ostrza z wklęsłych łuków (nie okręgi),
+     stała strefa pod paskiem poziomu (x 18..70, y 75..89), nie dotyka przycisku "sterowanie" ani wskaźnika. Pełna trójka pulsuje, gdy trwa pełny kolor. */
+  var SPARKC = [[170, 196, 255], [255, 214, 130], [255, 132, 172]];
+  function sparkFill() {
+    var e, a = G.E_POJEDYNCZY, b = G.E_DWA;
+    if (hyLeft > 0 || hyForce) return [1, 1, 1];
+    e = lockE !== null ? lockE : (lockS !== null ? skInv(lockS) : Ec);
+    return [cl(e / a), cl((e - a) / (b - a)), cl((e - b) / (G.E_TRZY - b))];
+  }
+  function sparkPath(cx, cy, r) {
+    var c = r * 0.17;
+    ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.quadraticCurveTo(cx + c, cy - c, cx + r, cy); ctx.quadraticCurveTo(cx + c, cy + c, cx, cy + r);
+    ctx.quadraticCurveTo(cx - c, cy + c, cx - r, cy); ctx.quadraticCurveTo(cx - c, cy - c, cx, cy - r); ctx.closePath();
+  }
+  function drawSparks() {
+    var f = sparkFill(), x0 = 18, y = 82, r = 6.6, gp = 17, k, cx, p, full = f[2] >= 0.999, cn = Math.min(3, chainNow()), pu, rr, ph = reduce ? 0 : Math.sin(t * 5);
+    ctx.save(); ctx.lineJoin = 'round';
+    for (k = 0; k < 3; k++) {
+      cx = x0 + 7 + k * gp; p = f[k]; pu = (k === cn - 1 ? sparkPulse : 0);
+      sparkPath(cx, y, r); ctx.strokeStyle = 'rgba(13,18,36,0.55)'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.strokeStyle = rgba(LINE, 0.42 + 0.2 * p); ctx.lineWidth = 1; ctx.stroke();
+      if (p > 0.01) {
+        rr = r * (0.4 + 0.6 * p) * (1 + 0.3 * pu + (full ? 0.06 * ph : 0));
+        if (p > 0.99) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rgba(SPARKC[k], 0.22 + 0.2 * pu + (full ? 0.08 : 0)); sparkPath(cx, y, r * 1.9); ctx.fill(); ctx.restore(); }
+        sparkPath(cx, y, rr); ctx.fillStyle = rgba(SPARKC[k], 0.55 + 0.45 * p); ctx.fill();
+      }
+    }
     ctx.restore();
   }
   function drawLvMsg() {
@@ -2444,7 +2560,7 @@ na chmurce.</p>
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
   }
-  function bloomAmt(cSky, f4) { return lekki ? 0 : Math.max(SUNP.a * sm((cSky - 0.25) / 0.5) * 0.55 * (1 - 0.6 * PAL.nightW), f4 * 0.55, hyK * 0.8); }
+  function bloomAmt(cSky, f4) { return lekki ? 0 : Math.max(SUNP.a * sm((cSky - 0.25) / 0.5) * 0.55 * (1 - 0.6 * PAL.nightW), f4 * 0.55, hyK * 0.8, bloomOn ? 0.5 * Math.sin(Math.PI * cl(bloomT / G.BLOOM_T)) : 0); }   /* Z3c: lekki bloom w rozkwicie */
   function drawBloom(amt) {
     var x, gl = BL.gl, P;
     BL.amt = amt;
@@ -2487,7 +2603,7 @@ na chmurce.</p>
     updStage(); updLight(); if (!DBG.tint) updTint();
     if (!paused) seaD += dt * tempo * curSpeed * 0.55;   /* Z4: droga morza chmur (czysto wizualna); morze leży nisko pod ptaszkiem, więc płynie wolniej niż kulisy (paralaksa) */
     updSeaRows();
-    var cSky = cAll(sk + OFF_NIEBO), aStr = streakC(sk);
+    var cSky = cAll(sk + OFF_NIEBO + bloomLag(1.15)), aStr = streakC(sk + bloomLag(0));   /* smugi są najbliżej: w rozkwicie wchodzą jako ostatnie */
     var lad = (state === 'gra' || state === 'zlapany' || isPred(endKind)) ? 0 : sm(ladT / 0.9);
     var seaDY = -sm((0.4 - h) / 0.4) * 28, warmP = PAL.warm;
     var fovZ = reduce ? 1 : 1 - 0.03 * f4 - 0.02 * hy;
@@ -2616,7 +2732,7 @@ na chmurce.</p>
     }
     if (darkK > 0.01) { ctx.fillStyle = 'rgba(4,6,18,' + (0.5 * darkK).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'wiatr') drawWiatr(obst[k]);
-    drawEdgeGlow(); drawHyper();
+    drawEdgeGlow(); drawHyper(); drawRozkwit();
     if (flashK > 0.02 && !reduce) { ctx.fillStyle = 'rgba(232,238,255,' + (0.55 * Math.min(1, flashK)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
     if (!DBG.bloom) drawBloom(bloomAmt(cSky, f4));
     cpuMs.push(performance.now() - c0z); if (cpuMs.length > DTN) cpuMs.shift();   /* Z4: faktura papieru i poświata (bloom) */
@@ -3229,7 +3345,7 @@ na chmurce.</p>
     window.__okruszek = {
       /* Z1 */
       ustaw: function (v) { lockS = cl(v); s = lockS; sk = lockS; },
-      odblokuj: function () { lockS = null; hyForce = false; },
+      odblokuj: function () { lockS = null; lockE = null; hyForce = false; },
       przesun: function (x01) { mouseX = x01 === null ? null : x01 * W; },
       zerujFps: function () { dts.length = 0; },
       fps: fpsStat,
@@ -3238,7 +3354,7 @@ na chmurce.</p>
         return { s: s, czas: t, klatki: frames, camX: camX, warstw: flats.length, pula: POOL.length, jakosc: quality, W: W, H: H, SC: SC, seed: Q.get('seed') || 23,
           tryb: state, pauza: paused, h: h, minH: minH, dystans: dist, graCzas: gameT, bx: bx, vx: vx, nurkuje: isHold(), palce: nptr, mysz: mouseDown, wloty: wlotow, boost: boost, sHold: sHold, tempo: tempo, prady: prady.length,
           /* Z3 */
-          sk: sk, sSuche: sRaw, mokro: wetT > 0, mokroT: wetT, mokroK: wetK(), spawny: spawnN, wirowanie: spinT > 0, wirowanieT: spinT, odpornosc: immT > 0, kolizje: kolizji, mokrych: wetCount, noc: nightK, gwiazdy: starsA,
+          sk: sk, skSuche: skMap(eNow()), energia: eNow(), sSuche: sRaw, mokro: wetT > 0, mokroT: wetT, mokroK: wetK(), spawny: spawnN, wirowanie: spinT > 0, wirowanieT: spinT, odpornosc: immT > 0, kolizje: kolizji, mokrych: wetCount, noc: nightK, gwiazdy: starsA,
           przeszkod: obst.length, pierwszaPrzeszkoda: firstObsT, jastrzabLog: hawkLog, sygnal: !!(haw && haw.faza === 'zapowiedz'),
           jastrzab: haw ? { faza: haw.faza, t: haw.t, g: haw.g, rodzaj: haw.kind, pozostalo: haw.faza === 'zapowiedz' ? G.HAW_WARN - haw.t : (haw.faza === 'poscig' ? G.HAW_CHASE - haw.t : 0), powod: haw.reason, rozmiar: hg ? hg.sz : 0 } : null,
           /* Z3b */
@@ -3250,7 +3366,7 @@ na chmurce.</p>
           sterowanie: ctrlMode, czulosc: sens, skrzL: wfL, skrzP: wfR, palceL: sides().l, palceP: sides().r, razem: bothT, machniec: flapN, ladunek: flapCharge, panel: panelOpen,
           drazek: { jest: stick !== null, widocznosc: stickA, bx: stickG.bx, by: stickG.by, kx: stickG.kx, ky: stickG.ky, wychylenie: stick ? (stick.kx - stick.bx) / STICK_R : 0, promien: STICK_R, srednica: STICK_R * 2 } };
       },
-      kolory: function () { return { niebo: r6(cAll(sk + OFF_NIEBO)), daleko: r6(cAll(sk + OFF_FAR)), blisko: r6(cAll(sk + OFF_NEAR)), smugi: r6(streakC(sk)), noc: nightK, pora: phi }; },
+      kolory: function () { return { niebo: r6(cAll(sk + OFF_NIEBO + bloomLag(1.15))), daleko: r6(cAll(sk + OFF_FAR + bloomLag(1))), blisko: r6(cAll(sk + OFF_NEAR + bloomLag(0))), smugi: r6(streakC(sk + bloomLag(0))), noc: nightK, pora: phi }; },
       warstwy: function () { return dbgL.map(function (d) { return { z: d.z, c: r6(d.c), a: r6(d.a) }; }); },
       /* Z2 + Z3 */
       zdarzenie: function (nazwa, opt) {
@@ -3294,9 +3410,9 @@ na chmurce.</p>
       tempo: function (m) { tempo = Math.max(0.1, Math.min(8, m || 1)); },
       nurkuj: function (v) { testHold = !!v; },
       pauza: function (v) { setPause(v === undefined ? !paused : !!v); },
-      prady: function () { return prady.map(function (p) { return { id: p.id, x: p.x, z: p.z, hit: p.hit, n: p.n }; }); },
+      prady: function () { return prady.map(function (p) { return { id: p.id, x: p.x, z: p.z, hit: p.hit, n: p.n, seria: p.seria, ratunek: !!p.ratunek }; }); },
       ptak: function () { return { x: bx, z: G.ZB, hit: G.HIT }; },
-      stale: function () { return { SINK: G.SINK, DIVE: G.DIVE, ZOOM: G.ZOOM, PRAD_H: G.PRAD_H, PRAD_S: G.PRAD_S, CH_STEP: G.CH_STEP, CHAIN_W: G.CHAIN_W, DIVE_TOP: G.DIVE_TOP, GATE4: G.GATE4, CAP4: G.CAP4, GATE5: G.GATE5, CAP5: G.CAP5, HY_S: G.HY_S, HY_HOLD: G.HY_HOLD, HY_LEN: G.HY_LEN, H0: G.H0, ZB: G.ZB, HIT: G.HIT, HITB: G.HITB, HITR: G.HITR, WET: G.WET, SPIN: G.SPIN, HAW_WARN: G.HAW_WARN, HAW_CHASE: G.HAW_CHASE, HAW_FIRST: G.HAW_FIRST, HAW_S: G.HAW_S, OBS_FROM: G.OBS_FROM, WARN: G.WARN, WIND_LEN: G.WIND_LEN, HAIL_LEN: G.HAIL_LEN, HAIL_H: G.HAIL_H, FOG_LEN: G.FOG_LEN }; },
+      stale: function () { return { SINK: G.SINK, DIVE: G.DIVE, ZOOM: G.ZOOM, PRAD_H: G.PRAD_H, PRAD_S: G.PRAD_S, CH_STEP: G.CH_STEP, CHAIN_W: G.CHAIN_W, DIVE_TOP: G.DIVE_TOP, GATE4: G.GATE4, CAP4: G.CAP4, GATE5: G.GATE5, CAP5: G.CAP5, HY_S: G.HY_S, HY_HOLD: G.HY_HOLD, HY_LEN: G.HY_LEN, H0: G.H0, ZB: G.ZB, HIT: G.HIT, HITB: G.HITB, HITR: G.HITR, WET: G.WET, SPIN: G.SPIN, HAW_WARN: G.HAW_WARN, HAW_CHASE: G.HAW_CHASE, HAW_FIRST: G.HAW_FIRST, HAW_S: G.HAW_S, OBS_FROM: G.OBS_FROM, WARN: G.WARN, WIND_LEN: G.WIND_LEN, HAIL_LEN: G.HAIL_LEN, HAIL_H: G.HAIL_H, FOG_LEN: G.FOG_LEN, E_POJEDYNCZY: G.E_POJEDYNCZY, E_DWA: G.E_DWA, E_TRZY: G.E_TRZY, E_NURK: G.E_NURK, HIT_IDEAL: G.HIT_IDEAL, HIT_IDEAL_UCZ: G.HIT_IDEAL_UCZ, EDGE_K: G.EDGE_K, GRACE_E: G.GRACE_E, FALL_E: G.FALL_E, E_UP: G.E_UP, BLOOM_T: G.BLOOM_T, ZIG: G.ZIG, E_SK: E_SK }; },
       /* symulacja palców przez prawdziwe zdarzenia wskaźnika: akcja 'dol' | 'ruch' | 'gora' | 'anuluj', id palca (1 = palec główny), x w 0..1, y w 0..1 (domyślnie 0,7);
          lewy kciuk = x < 0,5, prawy kciuk = x >= 0,5 (Z2b) */
       dotyk: function (akcja, id, x01, y01) {
@@ -3319,6 +3435,15 @@ na chmurce.</p>
         n = Math.max(0, Math.min(5, Math.round(n))); var mid = [0.04, 0.25, 0.47, 0.70, 0.88, 1.0][n];
         lockS = mid; s = mid; sk = mid; hyForce = n === 5; if (hyForce) { hyK = 1; } forceTint = true;
       },
+      /* Z3c: energia koloru. energia() = E teraz (0..1), lancuchE() = stan łańcucha idealnych wejść i iskierek HUD, ustawEnergie(x) blokuje E (zrzuty, pomiary; null/brak = zwolnij),
+         rozkwit() = faza rozkwitu (trwa BLOOM_T s przy wejściu w E = 1), pelnyKolor() = czas w E >= 0,98, serie() = dziennik serii prądów (ile idealnych wejść, najdłuższy łańcuch) */
+      energia: function () { return lockE !== null ? lockE : (lockS !== null ? skInv(lockS) : eNow()); },
+      lancuchE: function () { var f = sparkFill(); return { n: chainNow(), idealnych: wlotIdeal, brzegowych: wlotBrzeg, okno: G.CHAIN_W, Ec: Ec, cel: Egoal, iskierki: f, wypelnione: f.filter(function (x) { return x >= 0.999; }).length, lacznie: f[0] + f[1] + f[2], laska: Math.max(0, G.GRACE_E - (gameT - eReachT)), sk: sk }; },
+      ustawEnergie: function (x) { if (x === undefined || x === null) { lockE = null; return null; } lockE = cl(x); bloomOn = false; Ec = lockE; Egoal = lockE; forceTint = true; updSpeed(); return lockE; },
+      rozkwit: function () { return { trwa: bloomOn, t: bloomT, k: bloomOn ? Math.sin(Math.PI * cl(bloomT / G.BLOOM_T)) : 0, razy: bloomN, dziennik: bloomLog.slice() }; },
+      pelnyKolor: function () { return { lacznie: eFullT, maxCiagly: eFullMax, ciagly: eFullRun }; },
+      serie: function () { return seriaLog.slice(); },
+      stala: function (k, v) { if (v !== undefined && Object.prototype.hasOwnProperty.call(G, k)) G[k] = v; return G[k]; },   /* Z3c: odczyt i zmiana stałej G (tylko ?test, do strojenia i testów) */
       lancuch: function () { return { n: chainNow(), mnoznik: chainNow() ? 1 + G.CH_STEP * (chainNow() - 1) : 1, w12: hitsN(12), okno: G.CHAIN_W }; },
       trafPrad: function () { var p = spawnPrad(0, 2); wlot(p); return { n: chainN, w12: hitsN(12) }; },
       pora: function () { return phi; },

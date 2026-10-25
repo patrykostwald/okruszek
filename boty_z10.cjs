@@ -71,4 +71,4 @@ const losowy = `(function () {
     return { u: u, hold: d };
   };
 })()`;
-module.exports = { idealny, idealny121, siedemdziesiat, losowy };
+module.exports = { idealny, idealny121, siedemdziesiat, losowy, wspolne };

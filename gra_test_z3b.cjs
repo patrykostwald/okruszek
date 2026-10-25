@@ -134,21 +134,21 @@ const FAST = !!process.env.FAST;   /* FAST=1: krótsze biegi botów (do prób); 
     await ev(() => { __okruszek.nurkuj(false); });
     return { log, fin: await st() };
   }
-  const c6 = await chainRun(6, 2.3, 3);
+  const c6 = await chainRun(6, 2.0, 3);
   const hy0 = c6.log.find(x => x.hy), maxS6 = Math.max(...c6.log.map(x => x.s));
   console.log('  info łańcuch 6: maks. s ' + f2(maxS6) + ', hiper razy ' + c6.fin.hiperRazy + ', czasy ' + JSON.stringify(c6.fin.hiperTrwa.map(f2)));
   chk(c6.fin.hiperRazy === 1 && hy0 && hy0.l12 >= 5, 'łańcuch 6 prądów + nurkowanie: wchodzi L5 (przy ' + (hy0 ? hy0.l12 : '?') + ' prądach w 12 s, s=' + (hy0 ? f2(hy0.s) : '?') + ')', 'łańcuch 6: ' + JSON.stringify({ razy: c6.fin.hiperRazy, hy0 }));
   chk(c6.fin.hiperTrwa.length === 1 && c6.fin.hiperTrwa[0] > 5.4 && c6.fin.hiperTrwa[0] < 6.6, 'L5 trwa ' + (c6.fin.hiperTrwa[0] !== undefined ? f2(c6.fin.hiperTrwa[0]) : '?') + ' s (cel ok. 6) i wygasa', 'czas L5: ' + JSON.stringify(c6.fin.hiperTrwa));
   const last6 = c6.log[c6.log.length - 1];
   chk(!last6.hy && last6.p <= 4, 'po wygaśnięciu poziom wraca poniżej L5 (L' + last6.p + ')');
-  const c4 = await chainRun(4, 2.3, 3);
+  const c4 = await chainRun(4, 2.0, 3);
   const maxS4 = Math.max(...c4.log.map(x => x.s)), maxP4 = Math.max(...c4.log.map(x => x.p));
   console.log('  info łańcuch 4: maks. s ' + f2(maxS4) + ', maks. poziom ' + maxP4 + ', hiper razy ' + c4.fin.hiperRazy);
   chk(c4.fin.hiperRazy === 0 && maxP4 <= 4 && maxS4 <= K.CAP5 + 1e-6, 'łańcuch tylko 4 prądów + nurkowanie: brak L5 (maks. s ' + f2(maxS4) + ' <= ' + K.CAP5 + ')', 'łańcuch 4: ' + JSON.stringify({ razy: c4.fin.hiperRazy, maxS4, maxP4 }));
-  const cb = await chainRun(6, 3.6, 3);   /* odstęp > okna 3 s: łańcuch się zrywa */
+  const cb = await chainRun(6, 3.6, 3);   /* odstęp > okna CHAIN_W (Z3c: 2,2 s; w Z3b było 3 s, więc odstęp łańcucha zmieniono z 2,3 na 2,0 s): łańcuch się zrywa */
   const maxPb = Math.max(...cb.log.map(x => x.p)), maxLb = Math.max(...cb.log.map(x => x.l12));
   console.log('  info 6 prądów co 3,6 s (zerwany łańcuch): maks. poziom ' + maxPb + ', maks. prądów w 12 s ' + maxLb + ', hiper ' + cb.fin.hiperRazy);
-  chk(cb.fin.hiperRazy === 0 && maxPb <= 3, 'te same 6 prądów, ale poza oknem łańcucha (3,6 s): brak L5 i brak L4 (szczyt L' + maxPb + ')', 'zerwany łańcuch: ' + JSON.stringify({ razy: cb.fin.hiperRazy, maxPb }));
+  chk(cb.fin.hiperRazy === 0 && maxPb <= 3, 'te same 6 prądów, ale poza oknem łańcucha (3,6 s > 2,2 s): brak L5 i brak L4 (szczyt L' + maxPb + ')', 'zerwany łańcuch: ' + JSON.stringify({ razy: cb.fin.hiperRazy, maxPb }));
 
   /* ---------- (d) kolor ---------- */
   console.log('(d) kolor: kolejność, odcienie, etapy');

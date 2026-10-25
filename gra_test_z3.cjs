@@ -132,7 +132,7 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
       if (!spawned && s.sHold > 0.45) { spawned = true; pre = { s: s.s, raw: s.sSuche, sk: s.sk }; o.zdarzenie('deszcz', { z: 1.0, dx: 0 }); }
       if (spawned && w0 === null && s.mokro) w0 = s.graCzas;
       if (w0 !== null) maxK = Math.max(maxK, s.mokroK);
-      if (w0 !== null && w1 === null && s.graCzas - w0 > 1.2 && !peak) peak = { s: s.s, raw: s.sSuche, sk: s.sk, k: s.mokroK };
+      if (w0 !== null && w1 === null && s.graCzas - w0 > 1.2 && !peak) peak = { s: s.s, raw: s.sSuche, sk: s.sk, skSuche: s.skSuche, k: s.mokroK };
       if (w0 !== null && w1 === null && !s.mokro) w1 = s.graCzas;
       if (w1 !== null && s.graCzas - w1 > 0.9) { after = { s: s.s, raw: s.sSuche, sk: s.sk, k: s.mokroK, wet: s.mokrych }; o.nurkuj(false); res({ pre, w0, w1, peak, after, maxK }); return; }
       if (s.graCzas > 40) { o.nurkuj(false); res({ pre, w0, w1, peak, after, maxK, timeout: true }); return; }
@@ -143,7 +143,7 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
   if (D.w0 !== null && D.w1 !== null) {
     chk(D.w1 - D.w0 > 4.8 && D.w1 - D.w0 < 5.3, 'mokro trwa ' + f2(D.w1 - D.w0) + ' s czasu gry (cel 5)', 'mokro ' + f2(D.w1 - D.w0) + ' s');
     chk(D.peak && D.peak.s < D.peak.raw * 0.75, 'mokro: ptaszek wolniejszy (s ' + f2(D.peak.s) + ' przy bazowym ' + f2(D.peak.raw) + ')', 'mokro nie spowalnia: ' + JSON.stringify(D.peak));
-    chk(D.peak && D.peak.sk < D.peak.s * 0.7, 'mokro: kolor gaśnie szybciej niż prędkość (sk ' + f2(D.peak.sk) + ' < 0,7 * ' + f2(D.peak.s) + ')', 'kolor nie gaśnie: ' + JSON.stringify(D.peak));
+    chk(D.peak && D.peak.sk < D.peak.skSuche * 0.7, 'mokro: kolor gaśnie mocniej niż suchy kolor tej samej energii (Z3c: kolor z E, nie z s; sk ' + f2(D.peak.sk) + ' < 0,7 * ' + f2(D.peak.skSuche) + ')', 'kolor nie gaśnie: ' + JSON.stringify(D.peak));
     chk(D.maxK > 0.95, 'mokro: pełny mokry wygląd ptaszka (parametr rysowania ' + f2(D.maxK) + '; wygląd oceniony na zrzutach)');
     chk(D.after && D.after.s > D.after.raw * 0.97 && D.after.sk > D.after.s * 0.97 && D.after.k === 0, 'po 5 s powrót: s=' + f2(D.after.s) + ' (bazowo ' + f2(D.after.raw) + '), kolor wrócił, wygląd suchy', 'brak powrotu: ' + JSON.stringify(D.after));
     chk(D.pre && D.pre.s > 0.4, 'przed deszczem prędkość była podniesiona nurkowaniem (' + f2(D.pre.s) + '; Z3b: samo nurkowanie daje najwyżej ok. 0,5), więc spadek jest od deszczu');
