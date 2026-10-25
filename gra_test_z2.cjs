@@ -107,7 +107,8 @@ const TEMPO = +process.env.TEMPO || 4;
   /* ---------- (d) kolejność koloru ---------- */
   console.log('(d) kolejność koloru z Z1');
   chk(colorSamples.n > 20 && colorSamples.bad === 0, 'kolejność koloru zachowana w ' + colorSamples.n + ' próbkach biegu bota (s od ' + colorSamples.minS.toFixed(2) + ' do ' + colorSamples.maxS.toFixed(2) + ')', 'kolejność koloru złamana w ' + colorSamples.bad + ' z ' + colorSamples.n + ' próbek');
-  await ev(() => { __okruszek.nowyBieg(); __okruszek.bezPradow(true); __okruszek.tempo(1); });
+  await page.mouse.move(rect.l + rect.w / 2, rect.t + rect.h * 0.5);   /* po biegu bota mysz stoi z boku: wracamy na środek, żeby wymuszony prąd był na torze */
+  await ev(() => { __okruszek.przesun(null); __okruszek.nowyBieg(); __okruszek.bezPradow(true); __okruszek.tempo(1); });
   await sleep(200);
   const dz = await sample();
   chk(dz.s < 0.02 && dz.k.niebo === 0 && dz.k.smugi === 0, 's=0 na starcie: zero koloru (s=' + dz.s.toFixed(3) + ')');
@@ -118,9 +119,9 @@ const TEMPO = +process.env.TEMPO || 4;
   chk(wl !== null, 'wymuszony prąd na torze: wlot zaliczony');
   if (wl) {
     const k = await ev(() => __okruszek.kolory());
-    chk(wl.s - dz.s > 0.4, 'wlot: skok prędkości ' + dz.s.toFixed(2) + ' -> ' + wl.s.toFixed(2));
+    chk(wl.s - dz.s > 0.15, 'wlot: mały skok prędkości (Z3b: PRAD_S, bez łańcucha) ' + dz.s.toFixed(2) + ' -> ' + wl.s.toFixed(2));
     chk(wl.h >= Math.min(1, hBefore + K.PRAD_H) - 0.06, 'wlot: skok wysokości (z ograniczeniem do 1) ' + hBefore.toFixed(2) + ' -> ' + wl.h.toFixed(2));
-    chk(k.niebo > 0.1 && ordered(k), 'wlot: kolor skoczył i kolejność zachowana ' + JSON.stringify(k));
+    chk(k.niebo > 0.05 && ordered(k), 'wlot: kolor skoczył (Z3b: mały skok, więc próg 0,05) i kolejność zachowana ' + JSON.stringify(k));
     await sleep(6000);
     const s2 = await sample();
     chk(s2.s < 0.15 && ordered(s2.k), 'po wlocie prędkość i kolor wracają do podstawowych (s=' + s2.s.toFixed(2) + ')');

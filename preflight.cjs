@@ -4,7 +4,9 @@
    Z2: hak sterowania i fizyki, a potem pełny test bota gra_test_z2.cjs (60 s lotu, lądowanie po ok. 20 s, dwa palce,
    kolejność koloru). SKIP_Z2=1 pomija długi test bota (ok. 50 s).
    Z3: hak przeszkód (zdarzenie ptak / deszcz / jastrzab / prad, gdzie, noc, bezPrzeszkod), a potem pełny test gra_test_z3.cjs
-   (harmonogram 125 s, kolizje, deszcz, jastrząb, biom nocny). SKIP_Z3=1 pomija go (ok. 60 s). Musi skończyć się PRE-FLIGHT OK. */
+   (harmonogram 125 s, kolizje, deszcz, jastrząb, noc). SKIP_Z3=1 pomija go (ok. 3 min).
+   Z3b: hak poziomów i doby (poziom, ustawPoziom, lancuch, pora, ustawPore, tempoDoby, nowe zdarzenia), pomiar klatek przy L5, potem pełny test
+   gra_test_z3b.cjs (poziomy, boty, L5, kolor i 14 odcieni, doba, nowe przeszkadzajki, harmonogram). SKIP_Z3B=1 pomija go (ok. 4 min). Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
 const file = path.resolve(process.argv[2] || path.join(__dirname, 'index.html'));
@@ -52,9 +54,9 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     }
     const k0 = kolory[0], k5 = kolory[0.5], k1 = kolory[1];
     (k0.niebo === 0 && k0.daleko === 0 && k0.blisko === 0 && k0.smugi === 0) ? ok('s=0: zero koloru (same kreski)') : bad('s=0 ma kolor: ' + JSON.stringify(k0));
-    (k5.niebo > k5.daleko && k5.daleko > k5.blisko && k5.blisko === 0 && k5.smugi === 0) ? ok('s=0,5: kolor od tyłu do przodu (niebo > daleko > blisko, smugi 0) ' + JSON.stringify(k5)) : bad('s=0,5 złe progi: ' + JSON.stringify(k5));
-    (k1.niebo === 1 && k1.daleko === 1 && k1.blisko === 1 && k1.smugi === 1) ? ok('s=1: pełny kolor wszędzie') : bad('s=1 nie jest pełnią: ' + JSON.stringify(k1));
-    (k5.niebo < 0.5 && k5.daleko < 0.5) ? ok('s=0,5: pełnia jeszcze nie osiągnięta') : bad('pełnia za wcześnie przy s=0,5');
+    (k5.niebo > k5.daleko && k5.daleko > k5.blisko && k5.blisko > 0 && k5.smugi === 0) ? ok('s=0,5 (L2): kolor od tyłu do przodu (niebo > daleko > blisko > 0, smugi dopiero od L3) ' + JSON.stringify(k5)) : bad('s=0,5 złe progi: ' + JSON.stringify(k5));
+    (k1.niebo > 0.9999 && k1.daleko > 0.9999 && k1.blisko > 0.9999 && k1.smugi > 0.9999) ? ok('s=1: pełny kolor wszędzie') : bad('s=1 nie jest pełnią: ' + JSON.stringify(k1));
+    (k5.niebo < 0.5 && k5.daleko < 0.5) ? ok('s=0,5: pełnia jeszcze nie osiągnięta (pełny kolor dopiero w L4-L5)') : bad('pełnia za wcześnie przy s=0,5');
 
     /* pętla żyje i pomiar klatek przy pełnej prędkości (najcięższy stan) */
     await page.evaluate(() => { window.__okruszek.ustaw(1); window.__okruszek.zerujFps(); });
@@ -66,6 +68,14 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     console.log('  info fps przy s=1, 390x844 @2x (SC=1,5), headless bez GPU: ' + JSON.stringify(fps));
     (fps.avg >= MIN_FPS) ? ok('średnio ' + fps.avg + ' kl/s >= ' + MIN_FPS) : bad('średnio ' + fps.avg + ' kl/s < ' + MIN_FPS);
 
+    /* Z3b: najcięższy stan = L5 (hiperprzestrzeń: smugi, rozbłysk, poświata, zmiana kolorów); pomiar klatek headless, to NIE jest pomiar telefonu */
+    await page.evaluate(() => { window.__okruszek.ustawPoziom(5); window.__okruszek.zerujFps(); });
+    await page.waitForTimeout(4000);
+    const fps5 = await page.evaluate(() => window.__okruszek.fps());
+    console.log('  info fps przy L5 (hiperprzestrzeń), 390x844 @2x (SC=1,5), headless bez GPU (to NIE jest pomiar telefonu): ' + JSON.stringify(fps5));
+    (fps5.avg >= MIN_FPS) ? ok('L5: średnio ' + fps5.avg + ' kl/s >= ' + MIN_FPS) : bad('L5: średnio ' + fps5.avg + ' kl/s < ' + MIN_FPS);
+    await page.evaluate(() => { window.__okruszek.odblokuj(); window.__okruszek.ustaw(1); });
+
     /* skręt przesuwa kulisy */
     await page.evaluate(() => window.__okruszek.przesun(0.9));
     await page.waitForTimeout(1500);
@@ -74,9 +84,9 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     await page.evaluate(() => window.__okruszek.przesun(null));
 
     /* Z2: hak sterowania i fizyki lotu */
-    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory'];
+    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory', 'poziom', 'ustawPoziom', 'lancuch', 'pora', 'ustawPore', 'tempoDoby', 'warstwy', 'odcienie'];
     const miss = await page.evaluate(n => n.filter(k => typeof window.__okruszek[k] !== 'function'), need);
-    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z2 i Z3 kompletny (' + need.length + ' funkcji)');
+    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z1-Z3b kompletny (' + need.length + ' funkcji)');
     const z2 = await page.evaluate(() => { const o = window.__okruszek; o.odblokuj(); o.bezPradow(true); o.nowyBieg(); return { h: o.wysokosc(), k: o.koniec(), d: o.dystans() }; });
     (z2.h > 0.7 && z2.k === false) ? ok('nowy bieg: wysokość ' + z2.h + ', gra trwa') : bad('nowy bieg nie resetuje stanu: ' + JSON.stringify(z2));
     const ds = await page.evaluate(() => { const o = window.__okruszek; o.dotyk('dol', 1, 0.3); o.dotyk('dol', 2, 0.6); o.dotyk('gora', 1); const m = o.stan().palce; o.dotyk('gora', 2); return [m, o.stan().palce, o.stan().nurkuje]; });
@@ -118,6 +128,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z3|BŁĄD|^\(/.test(l));
       lines.forEach(l => console.log('  z3> ' + l.trim()));
       code === 0 && /TEST Z3 OK/.test(out) ? ok('test Z3 (gra_test_z3.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z3 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z3b: pełny test w osobnym procesie */
+  if (process.env.SKIP_Z3B) console.log('  info pominięto test Z3b (SKIP_Z3B)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z3b.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z3b.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 590000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z3b|BŁĄD|^\(| info /.test(l));
+      lines.forEach(l => console.log('  z3b> ' + l.trim()));
+      code === 0 && /TEST Z3b OK/.test(out) ? ok('test Z3b (gra_test_z3b.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z3b nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

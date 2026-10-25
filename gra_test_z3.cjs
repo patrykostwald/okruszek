@@ -5,7 +5,7 @@
    (c) kolizja z ptakiem: spada prędkość, wirowanie 1 s, bieg trwa dalej; hitbox mniejszy niż rysunek; inna warstwa z / inny tor = brak kolizji
    (d) deszcz: 5 s "mokro" (wolniej, kolor osłabiony), potem powrót
    (e) jastrząb: zapowiedź 2 s, pościg; ucieczka prędkością; złapanie = koniec biegu z tekstem; ucieczka w gęstą chmurę
-   (f) kolejność koloru z Z1 także w biomie nocnym; przy s=0 w nocy tylko kontur (brak nasyconych pikseli poza szalikiem); gwiazdy w nocy nie gasną; płynne przejście 150 m
+   (f) kolejność koloru z Z1 także w nocy (hak noc() = pora doby noc); przy s=0 w nocy tylko kontur (brak nasyconych pikseli poza szalikiem); gwiazdy w nocy nie gasną (przejście nocy po 1000 m zastąpiła doba: Z3b)
    Czas gry jest przyspieszany hakiem tempo() (tylko ?test). Kończy się kodem 0 tylko gdy wszystko przeszło. */
 const path = require('path');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -99,7 +99,7 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
     const log = []; let spawned = false, t0 = 0, before = 0;
     (function tick(now) {
       const s = o.stan(); o.ustawWysokosc(Math.max(s.h, 0.5));
-      if (!spawned && (!nu || s.sHold > 0.85)) { spawned = true; before = s.s; t0 = now; o.zdarzenie('ptak', { z: zz, dx: dxx, v: 0 }); }
+      if (!spawned && (!nu || s.sHold > 0.45)) { spawned = true; before = s.s; t0 = now; o.zdarzenie('ptak', { z: zz, dx: dxx, v: 0 }); }
       if (spawned) log.push({ t: now - t0, s: s.s, wir: s.wirowanie, kol: s.kolizje, tryb: s.tryb, odp: s.odpornosc });
       if (spawned && now - t0 > 1900) { o.nurkuj(false); res({ before, log }); return; }
       requestAnimationFrame(tick);
@@ -129,7 +129,7 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
     let spawned = false, w0 = null, w1 = null, peak = null, after = null, pre = null, g0 = 0, maxK = 0;
     (function tick() {
       const s = o.stan(); o.ustawWysokosc(1);
-      if (!spawned && s.sHold > 0.85) { spawned = true; pre = { s: s.s, raw: s.sSuche, sk: s.sk }; o.zdarzenie('deszcz', { z: 1.0, dx: 0 }); }
+      if (!spawned && s.sHold > 0.45) { spawned = true; pre = { s: s.s, raw: s.sSuche, sk: s.sk }; o.zdarzenie('deszcz', { z: 1.0, dx: 0 }); }
       if (spawned && w0 === null && s.mokro) w0 = s.graCzas;
       if (w0 !== null) maxK = Math.max(maxK, s.mokroK);
       if (w0 !== null && w1 === null && s.graCzas - w0 > 1.2 && !peak) peak = { s: s.s, raw: s.sSuche, sk: s.sk, k: s.mokroK };
@@ -146,7 +146,7 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
     chk(D.peak && D.peak.sk < D.peak.s * 0.7, 'mokro: kolor gaśnie szybciej niż prędkość (sk ' + f2(D.peak.sk) + ' < 0,7 * ' + f2(D.peak.s) + ')', 'kolor nie gaśnie: ' + JSON.stringify(D.peak));
     chk(D.maxK > 0.95, 'mokro: pełny mokry wygląd ptaszka (parametr rysowania ' + f2(D.maxK) + '; wygląd oceniony na zrzutach)');
     chk(D.after && D.after.s > D.after.raw * 0.97 && D.after.sk > D.after.s * 0.97 && D.after.k === 0, 'po 5 s powrót: s=' + f2(D.after.s) + ' (bazowo ' + f2(D.after.raw) + '), kolor wrócił, wygląd suchy', 'brak powrotu: ' + JSON.stringify(D.after));
-    chk(D.pre && D.pre.s > 0.7, 'przed deszczem prędkość była wysoka (' + f2(D.pre.s) + '), więc spadek jest od deszczu');
+    chk(D.pre && D.pre.s > 0.4, 'przed deszczem prędkość była podniesiona nurkowaniem (' + f2(D.pre.s) + '; Z3b: samo nurkowanie daje najwyżej ok. 0,5), więc spadek jest od deszczu');
   }
 
   /* ---------- (e) jastrząb ---------- */
@@ -206,11 +206,11 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
   chk(E4.log.some(x => x.mokro), 'schowanie się w chmurze kosztuje: ptaszek jest mokry');
 
   /* ---------- (f) biom nocny i kolejność koloru ---------- */
-  console.log('(f) biom nocny i kolejność koloru');
+  console.log('(f) noc (pora doby) i kolejność koloru');
   const ordered = (k) => k.niebo >= k.daleko - 1e-9 && k.daleko >= k.blisko - 1e-9 && k.blisko >= k.smugi - 1e-9 && k.smugi >= 0 && k.niebo <= 1 + 1e-9;
   const sat = () => ev(() => { const c = document.getElementById('g'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0);
-    const d = x.getImageData(0, 0, t.width, t.height).data, sc = c.width / 390, bw = 90 * sc, bh = 90 * sc, bcx = c.width / 2, bcy = 0.76 * c.height; let n = 0, tot = 0;
-    for (let y = 0; y < t.height; y += 2) for (let xx = 0; xx < t.width; xx += 2) { if (Math.abs(xx - bcx) < bw && Math.abs(y - bcy) < bh) continue; const i = (y * t.width + xx) * 4, mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); tot++; if (mx - mn > 60) n++; } return { n, tot }; });
+    const d = x.getImageData(0, 0, t.width, t.height).data, sc = c.width / 390, bw = 90 * sc, bh = 90 * sc, bcx = c.width / 2, bcy = 0.76 * c.height; let n = 0, tot = 0, n30 = 0;
+    for (let y = 0; y < t.height; y += 2) for (let xx = 0; xx < t.width; xx += 2) { if (Math.abs(xx - bcx) < bw && Math.abs(y - bcy) < bh) continue; const i = (y * t.width + xx) * 4, mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); tot++; if (mx - mn > 60) n++; if (mx - mn > 30) n30++; } return { n, tot, n30 }; });
   const col = {}, satN = {}, star = {};
   for (const noc of [false, true]) {
     for (const v of [0, 0.5, 1]) {
@@ -227,16 +227,9 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
   chk(n1.niebo === 1 && n1.daleko === 1 && n1.blisko === 1 && n1.smugi === 1, 'noc s=1: pełny kolor');
   chk(['niebo', 'daleko', 'blisko', 'smugi'].every(k => col['n0.5'][k] === col['d0.5'][k] && col.n1[k] === col.d1[k]), 'reguła kolor z prędkością identyczna w dzień i w nocy');
   chk(satN.n0.n / satN.n0.tot < 0.002, 'noc s=0: tylko kontur, brak nasyconych pikseli poza ptaszkiem (' + satN.n0.n + ' z ' + satN.n0.tot + ')', 'noc s=0 ma kolor: ' + JSON.stringify(satN.n0));
-  chk(satN.n1.n / satN.n1.tot > 0.2, 'noc s=1: kolor wypełnia obraz (nasycone ' + (100 * satN.n1.n / satN.n1.tot).toFixed(0) + '% pikseli)', 'noc s=1 bez koloru: ' + JSON.stringify(satN.n1));
+  chk(satN.n1.n30 / satN.n1.tot > 0.4, 'noc s=1: kolor wypełnia obraz (Z3b: paleta pastelowa, więc próg chroma > 30: ' + (100 * satN.n1.n30 / satN.n1.tot).toFixed(0) + '% pikseli)', 'noc s=1 bez koloru: ' + JSON.stringify(satN.n1));
   chk(star.n1 > 0.9 && star['n0.5'] > 0.9 && star.d1 < 0.05, 'gwiazdy: w nocy nie gasną z kolorem (s=1: ' + f2(star.n1) + '), w dzień przy s=1 gasną (' + f2(star.d1) + ')', 'gwiazdy ' + JSON.stringify(star));
-  /* przejście 150 m po ok. 1000 m: płynne */
-  await ev(() => { const o = __okruszek; o.noc(false); o.nowyBieg(); o.ustaw(0.3); o.tempo(0.1); });
-  const tr = [];   /* tempo 0,1: dystans prawie stoi, więc odczyt dotyczy ustawionego metra (dryf < 0,2 m) */
-  for (let m = 980; m <= 1170; m += 5) { await ev((x) => __okruszek.ustawDystans(x), m); await sleep(60); tr.push([m, (await st()).noc]); }
-  const at = (m) => tr.find(x => x[0] === m)[1];
-  let maxStep = 0; for (let i = 1; i < tr.length; i++) maxStep = Math.max(maxStep, Math.abs(tr[i][1] - tr[i - 1][1]));
-  chk(at(980) === 0 && at(1000) < 0.01 && at(1075) > 0.35 && at(1075) < 0.65 && at(1150) > 0.99 && at(1170) === 1, 'przejście nocy: 1000 m -> ' + f2(at(1000)) + ', 1075 m -> ' + f2(at(1075)) + ', 1150 m -> ' + f2(at(1150)), 'przejście: ' + JSON.stringify(tr.filter((x, i) => i % 5 === 0)));
-  chk(maxStep < 0.1, 'przejście płynne (największy skok między 5 m = ' + maxStep.toFixed(3) + ')');
+  /* Z3b: biom nocny po 1000 m zastąpiła doba w tle (noc jest jedną z pór); płynność doby i jej tempo sprawdza gra_test_z3b.cjs */
   await ev(() => { __okruszek.tempo(1); __okruszek.nowyBieg(); });
 
   /* ---------- błędy konsoli ---------- */
