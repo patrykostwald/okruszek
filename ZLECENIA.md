@@ -17,7 +17,10 @@ Opus 5.5 (high) tam, gdzie liczy się oko (ptaszek, audyt); Fable tylko na końc
 | Z8 | Audyt: panel recenzentów (UX, laik x3, dostępność, Strażnik, Prawnik, Analityk), Seba, drążyciel → lista P0/P1/P2 i poprawki | Opus high | Z7 | lista P0 pusta po poprawkach; zrzuty 1440 i 390; `odstepy.js` bez ZLE na ekranach z boksami (start, koniec, panel) |
 | Z9 | Werdykt końcowy, wdrożenie podglądu zbudujmi.com/podglad/okruszek-<id>/ (noindex), pełna komenda dla właściciela | Fable (jedno zadanie) | Z8 | właściciel gra 5 minut i chce lecieć dalej (pytanie Seby); Prawnik bez uwag |
 
-Kolejność: Z1 → Z2 → (Z3 ∥ Z4 ∥ Z6) → Z5 → Z7 → Z8 → Z9. Z4 może ruszyć od razu po Z1 w osobnej sesji.
+| Z3b | Poziomy prędkości L0-L5 i trudność (PROJEKT.md 12.1), etapy koloru (12.2), doba w tle z tempem zależnym od prędkości (12.3), nowe przeszkadzajki (12.4: stado, wiatr boczny, grad, burza, sznur latawca, mgła, sowa nocą), wskaźnik poziomu | Sonnet high | Z3 | testy z 12.1 (bot idealny L4 w 60 s, losowy nigdy L4, L5 tylko z łańcuchem >=5); doba przechodzi płynnie, tempo zmienia się z poziomem; każda nowa przeszkoda wymuszalna hakiem; kolejność koloru zachowana na każdym poziomie i o każdej porze doby; zrzuty L0-L5 i 4 pory doby |
+| Z2b | Drugi tryb sterowania: dwa kciuki jak skrzydła (PROJEKT.md sekcja 5a); przełącznik ?sterowanie=2 i klawisz T; skrzydła ptaszka animowane zgodnie z kciukami | Sonnet high | Z3 | testy dwóch palców: lewy = skręt w lewo, prawy = w prawo, oba = nurkowanie, puszczenie jednego nie zostawia ducha; bot lata w trybie 2 przez 60 s; tryb jednego kciuka bez zmian (testy Z2 zielone); zrzuty z oboma skrzydłami |
+
+Kolejność w praktyce (pliki zależne, jedno zlecenie do index.html naraz): Z2 → Z3 → Z3b → Z2b → Z4 (Opus: piękniejsze chmury i ptaszek, PROJEKT.md 12.5) → Z5 (z wklejeniem Z6) → Z7 → Z8 → Z9. Z4 może ruszyć od razu po Z1 w osobnej sesji.
 Reguła zakresu (Seba): dodajesz jedno, wyrzucasz jedno; żadnych dodatków z listy v2 przed Z9.
 
 ## Jak zlecać (szablon dla sesji Sonnet/Codex)
