@@ -302,6 +302,7 @@
   function wlot(p) {
     p.hit = true; p.flash = 1; wlotow++; tint = 1;
     boost = Math.min(0.8, boost + G.PRAD_S);
+    if (lockS === null) s = Math.min(1, sHold + boost);   /* prędkość i kolor skaczą w tej samej chwili co wlot, nie dopiero w następnym kroku */
     h = Math.min(1, h + G.PRAD_H);
   }
 
