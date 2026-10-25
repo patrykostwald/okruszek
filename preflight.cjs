@@ -6,7 +6,9 @@
    Z3: hak przeszkód (zdarzenie ptak / deszcz / jastrzab / prad, gdzie, noc, bezPrzeszkod), a potem pełny test gra_test_z3.cjs
    (harmonogram 125 s, kolizje, deszcz, jastrząb, noc). SKIP_Z3=1 pomija go (ok. 3 min).
    Z3b: hak poziomów i doby (poziom, ustawPoziom, lancuch, pora, ustawPore, tempoDoby, nowe zdarzenia), pomiar klatek przy L5, potem pełny test
-   gra_test_z3b.cjs (poziomy, boty, L5, kolor i 14 odcieni, doba, nowe przeszkadzajki, harmonogram). SKIP_Z3B=1 pomija go (ok. 4 min). Musi skończyć się PRE-FLIGHT OK. */
+   gra_test_z3b.cjs (poziomy, boty, L5, kolor i 14 odcieni, doba, nowe przeszkadzajki, harmonogram). SKIP_Z3B=1 pomija go (ok. 4 min).
+   Z2b: hak sterowania (sterowanie, tryb, czulosc, panel, wskaznik), kontrola zapisu w przeglądarce (tylko localStorage, klucz okruszek-sterowanie, try/catch),
+   potem pełny test gra_test_z2b.cjs (3 tryby, boty 60 s, pamięć wyboru, przycisk 46 px). SKIP_Z2B=1 pomija go (ok. 2,5 min). Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
 const file = path.resolve(process.argv[2] || path.join(__dirname, 'index.html'));
@@ -26,7 +28,10 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     catch (e) { bad('składnia skryptu ' + (i + 1) + ': ' + String(e.stderr || e).split('\n').slice(0, 3).join(' | ')); }
   });
   if (/PROTOTYP/.test(html)) bad('w pliku jest napis PROTOTYP');
-  if (/localStorage\.setItem|document\.cookie/.test(html)) bad('Z1 nie powinien zapisywać nic w przeglądarce (stan: Z5)');
+  /* Z2b: jedyna rzecz zapisywana w przeglądarce w tej fazie to wybór sterowania (klucz okruszek-sterowanie, w try/catch); żadnych ciasteczek ani innych kluczy */
+  if (/document\.cookie|sessionStorage|indexedDB/.test(html)) bad('w pliku jest zapis w przeglądarce poza wyborem sterowania (ciasteczka / sessionStorage / indexedDB)');
+  { const keys = [...html.matchAll(/localStorage\.(?:setItem|removeItem|clear)\(([^,)]*)/g)].map(m => m[1].trim()); if (keys.some(k => k !== 'LSKEY') || /localStorage\[/.test(html)) bad('zapis do localStorage poza kluczem LSKEY (okruszek-sterowanie): ' + keys.join(',')); else ok('jedyny zapis w przeglądarce: localStorage, klucz okruszek-sterowanie (' + keys.length + ' wywołanie)'); }
+  if (!/LSKEY = 'okruszek-sterowanie'/.test(html) || !/try \{ localStorage\.setItem\(LSKEY[\s\S]{0,120}?\} catch/.test(html)) bad('zapis wyboru sterowania nie jest w try/catch albo klucz inny niż okruszek-sterowanie');
 
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Users/User/AppData/Local/ms-playwright/chromium-1134/chrome-win/chrome.exe', args: ['--window-position=-32000,-32000', '--window-size=1,1'] });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
@@ -84,9 +89,9 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     await page.evaluate(() => window.__okruszek.przesun(null));
 
     /* Z2: hak sterowania i fizyki lotu */
-    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory', 'poziom', 'ustawPoziom', 'lancuch', 'pora', 'ustawPore', 'tempoDoby', 'warstwy', 'odcienie'];
+    const need = ['bezPrzeszkod', 'gdzie', 'noc', 'zdarzenie', 'wysokosc', 'dystans', 'koniec', 'nowyBieg', 'dotyk', 'tempo', 'prady', 'ptak', 'ustaw', 'odblokuj', 'przesun', 'fps', 'stan', 'kolory', 'poziom', 'ustawPoziom', 'lancuch', 'pora', 'ustawPore', 'tempoDoby', 'warstwy', 'odcienie', 'sterowanie', 'tryb', 'czulosc', 'panel', 'wskaznik'];
     const miss = await page.evaluate(n => n.filter(k => typeof window.__okruszek[k] !== 'function'), need);
-    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z1-Z3b kompletny (' + need.length + ' funkcji)');
+    miss.length ? bad('w haku brakuje: ' + miss.join(', ')) : ok('hak Z1-Z3b i Z2b kompletny (' + need.length + ' funkcji)');
     const z2 = await page.evaluate(() => { const o = window.__okruszek; o.odblokuj(); o.bezPradow(true); o.nowyBieg(); return { h: o.wysokosc(), k: o.koniec(), d: o.dystans() }; });
     (z2.h > 0.7 && z2.k === false) ? ok('nowy bieg: wysokość ' + z2.h + ', gra trwa') : bad('nowy bieg nie resetuje stanu: ' + JSON.stringify(z2));
     const ds = await page.evaluate(() => { const o = window.__okruszek; o.dotyk('dol', 1, 0.3); o.dotyk('dol', 2, 0.6); o.dotyk('gora', 1); const m = o.stan().palce; o.dotyk('gora', 2); return [m, o.stan().palce, o.stan().nurkuje]; });
@@ -142,6 +147,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z3b|BŁĄD|^\(| info /.test(l));
       lines.forEach(l => console.log('  z3b> ' + l.trim()));
       code === 0 && /TEST Z3b OK/.test(out) ? ok('test Z3b (gra_test_z3b.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z3b nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z2b: trzy tryby sterowania, pełny test w osobnym procesie */
+  if (process.env.SKIP_Z2B) console.log('  info pominięto test Z2b (SKIP_Z2B)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z2b.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z2b.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 590000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z2b|BŁĄD|^\(| info (różnica|środek|tryb|opisy)/.test(l));
+      lines.forEach(l => console.log('  z2b> ' + l.trim()));
+      code === 0 && /TEST Z2b OK/.test(out) ? ok('test Z2b (gra_test_z2b.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z2b nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

@@ -11,7 +11,7 @@
   body { display:flex; align-items:center; justify-content:center; }
   canvas { display:block; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
   #scena { position:relative; }
-  #wynik { position:absolute; inset:0; display:flex; justify-content:center; padding-top:26%; box-sizing:border-box; background:rgba(13,18,36,.80);
+  #wynik { position:absolute; inset:0; display:flex; justify-content:center; padding-top:max(26%,122px); box-sizing:border-box; background:rgba(13,18,36,.80);
            color:#ecf0f8; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; text-align:center; opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
   #wynik.pokaz { opacity:1; visibility:visible; transition:opacity .6s ease; }
   #wynik .karta { width:min(80%,300px); }
@@ -25,6 +25,39 @@
   @media (hover:hover) { #wynik button:hover { background:#ecf0f8; color:#0d1224; } }
   #wynik button:focus-visible { outline:2px solid #ecf0f8; outline-offset:4px; }
   #wynik button:active { background:#ecf0f8; color:#0d1224; }
+  /* Z2b: przycisk "sterowanie" w stałej strefie (prawy górny róg, pod paskiem wysokości, nad ekranem wyniku) i panel wyboru sterowania */
+  #sterb { position:absolute; z-index:6; min-width:46px; min-height:46px; box-sizing:border-box; padding:0 14px; display:flex; align-items:center; justify-content:center; gap:7px;
+           font:600 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.08em; color:#ecf0f8; background:rgba(13,18,36,.5); border:1px solid rgba(236,240,248,.45);
+           border-radius:14px 17px 15px 18px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #sterb b { display:inline-block; min-width:9px; text-align:center; font:600 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; opacity:.75; }
+  #sterb:focus-visible { outline:2px solid #ecf0f8; outline-offset:3px; }
+  @media (hover:hover) { #sterb:hover { background:rgba(236,240,248,.16); } }
+  #ster { position:absolute; inset:0; z-index:7; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box; padding:max(14px,env(safe-area-inset-top)) 16px 14px; overflow-y:auto;
+          background:rgba(13,18,36,.93); color:#ecf0f8; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s linear .25s; }
+  #ster.pokaz { opacity:1; visibility:visible; transition:opacity .25s ease; }
+  #ster .pan { width:min(100%,340px); margin:auto 0; }
+  #ster h2 { margin:0; font:400 26px/32px Georgia,"Times New Roman",serif; text-align:center; height:32px; }
+  #ster .pod { margin:4px 0 12px; font-size:13px; line-height:18px; height:18px; text-align:center; opacity:.65; }
+  #ster .tryb { display:grid; grid-template-columns:84px 1fr; column-gap:12px; align-items:center; width:100%; height:92px; box-sizing:border-box; margin:0 0 10px; padding:8px 14px 8px 8px; text-align:left;
+                font:inherit; color:#ecf0f8; background:rgba(236,240,248,.05); border:1px solid rgba(236,240,248,.28); border-radius:16px 20px 17px 21px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #ster .tryb svg { width:84px; height:76px; display:block; }
+  #ster .tryb .nz { display:block; font-size:15px; line-height:20px; font-weight:600; height:20px; white-space:nowrap; }
+  #ster .tryb .op { display:block; margin-top:3px; font-size:12.5px; line-height:17px; height:51px; overflow:hidden; opacity:.8; }
+  #ster .tryb[aria-pressed="true"] { background:rgba(236,240,248,.14); border-color:#ecf0f8; border-width:1.5px; padding:7.5px 13.5px 7.5px 7.5px; }
+  #ster .tryb:focus-visible { outline:2px solid #ecf0f8; outline-offset:3px; }
+  #ster .czul { margin:6px 0 0; padding:0 4px; }
+  #ster .czul label { display:flex; justify-content:space-between; font-size:13px; line-height:18px; height:18px; opacity:.85; }
+  #ster input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:46px; margin:2px 0 0; background:transparent; cursor:pointer; touch-action:manipulation; }
+  #ster input[type=range]::-webkit-slider-runnable-track { height:2px; background:rgba(236,240,248,.55); border-radius:2px; }
+  #ster input[type=range]::-moz-range-track { height:2px; background:rgba(236,240,248,.55); border-radius:2px; }
+  #ster input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:26px; height:26px; margin-top:-12px; background:#ecf0f8; border:0; border-radius:48% 52% 46% 54% / 54% 46% 52% 48%; }
+  #ster input[type=range]::-moz-range-thumb { width:26px; height:26px; background:#ecf0f8; border:0; border-radius:48% 52% 46% 54% / 54% 46% 52% 48%; }
+  #ster input[type=range]:focus-visible { outline:2px solid #ecf0f8; outline-offset:2px; }
+  #ster .ok { display:block; margin:12px auto 0; min-width:200px; height:52px; padding:0 28px; font:600 17px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#ecf0f8; background:transparent;
+              border:1.5px solid #ecf0f8; border-radius:26px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  @media (hover:hover) { #ster .ok:hover { background:#ecf0f8; color:#0d1224; } }
+  #ster .ok:active { background:#ecf0f8; color:#0d1224; }
+  #ster .ok:focus-visible { outline:2px solid #ecf0f8; outline-offset:4px; }
 </style>
 </head>
 <body>
@@ -40,6 +73,49 @@ na chmurce.</p>
     <button id="jeszcze" type="button" tabindex="-1">Jeszcze raz</button>
   </div>
 </div>
+<button id="sterb" type="button" aria-label="Sterowanie: zmień tryb i czułość skrętu"><span>sterowanie</span><b id="sterb-n">1</b></button>
+<div id="ster" role="dialog" aria-modal="true" aria-labelledby="ster-t" aria-hidden="true">
+  <div class="pan">
+    <h2 id="ster-t">Sterowanie</h2>
+    <p class="pod" id="ster-pod">Wybierz, jak lecisz.</p>
+    <button type="button" class="tryb" data-tryb="1" aria-pressed="true">
+      <svg viewBox="0 0 84 76" fill="none" stroke="#ecf0f8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="20" y="3" width="44" height="70" rx="7"/>
+        <path d="M37 66 C36 58 37 50 42 49 C47 50 48 58 47 66"/><path d="M39.5 54 C41 52.5 43 52.5 44.5 54"/>
+        <path d="M31 43 L25 43 M28 40 L25 43 L28 46"/><path d="M53 43 L59 43 M56 40 L59 43 L56 46"/>
+        <path d="M30 24 C36 20 40 28 46 24 C50 21 52 24 54 22" stroke-opacity=".55"/>
+      </svg>
+      <span><span class="nz">1. Jeden kciuk</span><span class="op">Przesuń kciuk w bok, żeby skręcić. Przytrzymaj, żeby nurkować.</span></span>
+    </button>
+    <button type="button" class="tryb" data-tryb="2" aria-pressed="false">
+      <svg viewBox="0 0 84 76" fill="none" stroke="#ecf0f8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="20" y="3" width="44" height="70" rx="7"/>
+        <g transform="translate(30 63) rotate(-10)"><path d="M-5 8 C-6 0 -5 -8 0 -9 C5 -8 6 0 5 8"/><path d="M-2.5 -4 C-1 -5.5 1 -5.5 2.5 -4"/></g>
+        <g transform="translate(54 63) rotate(10)"><path d="M-5 8 C-6 0 -5 -8 0 -9 C5 -8 6 0 5 8"/><path d="M-2.5 -4 C-1 -5.5 1 -5.5 2.5 -4"/></g>
+        <path d="M42 22 C46 22 48 27 46 31 C44 34 40 34 38 31 C36 27 38 22 42 22 Z"/>
+        <path d="M38 27 C34 27 31 30 30 34"/><path d="M46 27 C50 25 54 24 57 21"/>
+        <path d="M42 41 L42 47" stroke-opacity=".45" stroke-dasharray="1 4"/>
+      </svg>
+      <span><span class="nz">2. Dwa kciuki jak skrzydła</span><span class="op">Lewy kciuk skręca w lewo, prawy w prawo, oba naraz nurkują. Stukanie na zmianę podnosi lot.</span></span>
+    </button>
+    <button type="button" class="tryb" data-tryb="3" aria-pressed="false">
+      <svg viewBox="0 0 84 76" fill="none" stroke="#ecf0f8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="20" y="3" width="44" height="70" rx="7"/>
+        <path d="M23 52 C22 44 31 40 37 43 C43 46 45 56 40 61 C35 66 24 62 23 52 Z" stroke-opacity=".6" stroke-dasharray="3 3"/>
+        <g transform="translate(34 63) rotate(10)"><path d="M-5 8 C-6 0 -5 -8 0 -9 C5 -8 6 0 5 8"/><path d="M-2.5 -4 C-1 -5.5 1 -5.5 2.5 -4"/></g>
+        <path d="M27 54 L32 49" stroke-opacity=".45"/>
+        <g transform="translate(54 63) rotate(10)"><path d="M-5 8 C-6 0 -5 -8 0 -9 C5 -8 6 0 5 8"/><path d="M-2.5 -4 C-1 -5.5 1 -5.5 2.5 -4"/></g>
+        <path d="M54 44 L54 51 M51 48.5 L54 51.5 L57 48.5"/>
+      </svg>
+      <span><span class="nz">3. Drążek</span><span class="op">Dotknij lewej połowy i przesuń kciuk: im dalej, tym ostrzejszy skręt. Prawy kciuk nurkuje.</span></span>
+    </button>
+    <div class="czul">
+      <label for="ster-c"><span>Czułość skrętu</span><span id="ster-cv">1,0</span></label>
+      <input type="range" id="ster-c" min="0.5" max="1.5" step="0.05" value="1">
+    </div>
+    <button type="button" class="ok" id="ster-ok">Leć</button>
+  </div>
+</div>
 </div>
 <script>
 /* Okruszek, Z1: silnik widoku (kulisy chmur zza pleców). Canvas 2D, jeden plik.
@@ -50,6 +126,7 @@ na chmurce.</p>
    etapy koloru (kolor dochodzi stopniowo: 14 odcieni baśniowej palety wchodzi jeden po drugim w całym zakresie L1-L4, w L0 sam kontur),
    doba w tle (noc > świt > dzień > zachód, tempo zależy od prędkości), nowe przeszkadzajki (stado, wiatr, grad, burza, sznur latawca, mgła, sowa nocą).
    Architektura koloru: kolorowy sprite chmury (tint) jest OSOBNO od sprite'ów konturu (mono, ol) i nie musi pokrywać obrysu (miejsce na akwarelę w Z4).
+   Z2b: trzy tryby sterowania (1 jeden kciuk, 2 dwa kciuki jak skrzydła, 3 drążek), wybór w grze (przycisk w rogu, klawisz T, ?sterowanie=n), czułość skrętu, zapis w localStorage.
    Finalny ptaszek i akwarela to Z4; intro, pauza z historią, PWA to Z5; dźwięk to Z6. */
 (function () {
   'use strict';
@@ -170,6 +247,8 @@ na chmurce.</p>
     SC = Math.max(0.9, Math.min(window.devicePixelRatio || 1, 1.5) * quality);
     cv.width = Math.round(W * SC); cv.height = Math.round(H * SC);
     ctx.setTransform(SC, 0, 0, SC, 0, 0);
+    var kk = CSSW / W;   /* przycisk sterowania: prawy górny róg pod paskiem wysokości, minimum 44 px (CSS) */
+    elSterb.style.right = Math.round(18 * kk) + 'px'; elSterb.style.top = Math.round(57 * kk) + 'px'; elSterb.style.minHeight = Math.max(46, Math.round(46 * kk)) + 'px';
   }
 
   /* ---------- geometria chmury: kumulus z płatów ---------- */
@@ -367,7 +446,7 @@ na chmurce.</p>
 
   function reset() {
     var k;
-    releaseAll(); testHold = false; lockS = null;
+    releaseAll(); testHold = false; lockS = null; flapCharge = 1; flapReq = 0; flapN = 0; wfL = 0; wfR = 0;
     state = 'gra'; paused = false; h = G.H0; dist = 0; bx = 0; vx = 0; camX = 0; steer = 0; gameT = 0; sHold = 0; boost = 0; s = 0; sk = 0; sRaw = 0; ladT = 0;
     planI = 0; nextSpawn = 0.4; wlotow = 0; tint = 0; diveV = 0; minH = 1; prady.length = 0; cI = 0; inC = 0;
     obst.length = 0; haw = null; plumki.length = 0; kropl.length = 0; wetT = 0; spinT = 0; immT = 0; kolizji = 0; wetCount = 0; zlapT = 0; dropT = 0;
@@ -388,47 +467,137 @@ na chmurce.</p>
   }
 
   /* ---------- wejście ----------
-     Dotyk: skręt = przesunięcie palca względem miejsca dotknięcia (dowolne miejsce ekranu), przytrzymanie = nurkowanie.
-     Wiele palców: steruje najstarszy, nurkuje każdy; puszczenie jednego nie zostawia ducha. Mysz: położenie = skręt, LPM = nurkowanie. */
+     Trzy tryby sterowania (Z2b), wybierane w grze (przycisk w rogu, klawisz T, ?sterowanie=1|2|3), zapamiętane w localStorage:
+       1. jeden kciuk (domyślny): skręt = przesunięcie palca względem miejsca dotknięcia, przytrzymanie = nurkowanie; steruje najstarszy palec, nurkuje każdy;
+       2. dwa kciuki jak skrzydła: lewa połowa ekranu = lewe skrzydło (skręt w lewo), prawa = prawe (skręt w prawo), oba naraz dłużej niż TWIN_T = nurkowanie;
+          stukanie na zmianę lewy-prawy daje krótki, wygaszany przyrost wysokości;
+       3. drążek: pierwszy palec w lewej połowie to drążek (baza idzie za kciukiem, skręt proporcjonalny do wychylenia), palec w prawej połowie = nurkowanie.
+     Wspólne zasady (lekcja "duch palca"): każdy palec setPointerCapture; pointerup / pointercancel / lostpointercapture / touchend / blur / visibilitychange czyszczą stan;
+     przełączenie trybu w trakcie dotyku też czyści stan. Mysz (położenie = skręt, LPM = nurkowanie) i klawiatura działają tak samo we wszystkich trybach.
+     Czułość skrętu (0,5-1,5) mnoży docelową prędkość boczną we wszystkich trybach. */
   var ptr = {}, nptr = 0, seqn = 0, mouseX = null, mouseDown = false, keyL = false, keyR = false, keyHold = false;
+  var STICK_R = 70, TWIN_T = 0.1, FLAP_H = 0.03, FLAP_DROP = 0.34, FLAP_REC = 0.3, FLAP_WIN = 0.4, LSKEY = 'okruszek-sterowanie';
+  var ctrlMode = 1, sens = 1, panelOpen = false, panelPrev = false, firstRun = false, stick = null, stickA = 0, stickG = { bx: 0, by: 0, kx: 0, ky: 0, ph: 0 };
+  var bothT = 0, flapCharge = 1, flapReq = 0, flapN = 0, lastTapSide = 0, lastTapT = -9, wfL = 0, wfR = 0, modeMsg = null, lvlBox = { x: 18, y: 60, w: 100, h: 12 };
+  var elSterb = document.getElementById('sterb'), elSter = document.getElementById('ster'), elSterN = document.getElementById('sterb-n');
+  var elSterC = document.getElementById('ster-c'), elSterCV = document.getElementById('ster-cv'), elSterOk = document.getElementById('ster-ok');
+  var elSterT = document.getElementById('ster-t'), elSterPod = document.getElementById('ster-pod'), elCards = elSter.querySelectorAll('.tryb');
+  var MODE_NAMES = ['', 'Jeden kciuk', 'Dwa kciuki jak skrzydła', 'Drążek'];
   function lx(e) { var r = cv.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; }
+  function ly(e) { var r = cv.getBoundingClientRect(); return (e.clientY - r.top) / r.height * H; }
   function countPtr() { var n = 0, k; for (k in ptr) n++; nptr = n; }
-  function releaseAll() { ptr = {}; nptr = 0; mouseDown = false; keyL = keyR = keyHold = false; }
-  function isHold() { return nptr > 0 || mouseDown || keyHold || testHold; }
+  function clearTouch() { ptr = {}; nptr = 0; stick = null; bothT = 0; }
+  function releaseAll() { clearTouch(); mouseDown = false; keyL = keyR = keyHold = false; flapReq = 0; lastTapSide = 0; }
+  function sides() { var l = 0, r = 0, k; for (k in ptr) { if (ptr[k].side < 0) l++; else r++; } return { l: l, r: r }; }
+  function fingerHold() {
+    var q;
+    if (ctrlMode === 1) return nptr > 0;
+    q = sides();
+    return ctrlMode === 2 ? (q.l > 0 && q.r > 0 && bothT >= TWIN_T) : q.r > 0;
+  }
+  function isHold() { return fingerHold() || mouseDown || keyHold || testHold; }
   function steerInput() {
-    var u = 0, k, b = null, p;
-    for (k in ptr) { p = ptr[k]; if (b === null || p.n < b.n) b = p; }
-    if (b) { u = (b.x - b.x0) / 80; if (Math.abs(u) < 0.08) u = 0; }
-    else if (keyL || keyR) u = (keyR ? 1 : 0) - (keyL ? 1 : 0);
-    else if (mouseX !== null) { u = (mouseX - W / 2) / (W / 2) * 1.25; if (Math.abs(u) < 0.06) u = 0; }
+    var u = 0, k, b = null, p, q, act = false;
+    if (ctrlMode === 1) {
+      for (k in ptr) { p = ptr[k]; if (b === null || p.n < b.n) b = p; }
+      if (b) { act = true; u = (b.x - b.x0) / 80; if (Math.abs(u) < 0.08) u = 0; }
+    } else if (ctrlMode === 2) {
+      q = sides();
+      if (q.l || q.r) { act = true; u = (q.r ? 1 : 0) - (q.l ? 1 : 0); }
+    } else if (stick) { act = true; u = (stick.kx - stick.bx) / STICK_R; if (Math.abs(u) < 0.06) u = 0; }
+    if (!act) {
+      if (keyL || keyR) u = (keyR ? 1 : 0) - (keyL ? 1 : 0);
+      else if (mouseX !== null) { u = (mouseX - W / 2) / (W / 2) * 1.25; if (Math.abs(u) < 0.06) u = 0; }
+    }
     return u > 1 ? 1 : (u < -1 ? -1 : u);
+  }
+  /* drążek: baza idzie za kciukiem (zostaje w odległości najwyżej STICK_R), gałka stoi pod kciukiem */
+  function stickMove(x, y) {
+    var dx = x - stick.bx, dy = y - stick.by, d = Math.sqrt(dx * dx + dy * dy), f;
+    if (d > STICK_R) { f = (d - STICK_R) / d; stick.bx += dx * f; stick.by += dy * f; dx = x - stick.bx; dy = y - stick.by; }
+    stick.kx = stick.bx + dx; stick.ky = stick.by + dy;
+  }
+  function noteTap(side) {
+    var now = performance.now() / 1000;
+    if (lastTapSide && side !== lastTapSide && now - lastTapT < FLAP_WIN && flapReq < 2) flapReq++;
+    lastTapSide = side; lastTapT = now;
   }
   function setPause(v) { paused = v; releaseAll(); last = performance.now(); }
   function togglePause() { if (state === 'gra') setPause(!paused); }
+
+  /* zapis wyboru (jedyna rzecz zapisywana w przeglądarce w tej fazie): tryb i czułość, try/catch, gra działa bez zapisu */
+  function lsLoad() {
+    try { var o = JSON.parse(localStorage.getItem(LSKEY) || 'null'); if (o && o.m >= 1 && o.m <= 3) return { m: o.m | 0, c: o.c >= 0.5 && o.c <= 1.5 ? +o.c : 1 }; } catch (_) { }
+    return null;
+  }
+  function lsSave() { try { localStorage.setItem(LSKEY, JSON.stringify({ m: ctrlMode, c: sens })); } catch (_) { } }
+  function fmtC(c) { return c.toFixed(2).replace(/0$/, '').replace('.', ','); }
+  function syncUi() {
+    var k;
+    for (k = 0; k < elCards.length; k++) elCards[k].setAttribute('aria-pressed', (k + 1) === ctrlMode ? 'true' : 'false');
+    elSterN.textContent = String(ctrlMode); elSterC.value = String(sens); elSterCV.textContent = fmtC(sens);
+  }
+  function setMode(m, persist) {
+    m = Math.max(1, Math.min(3, Math.round(+m) || 1));
+    if (m !== ctrlMode) { releaseAll(); ctrlMode = m; wfL = wfR = 0; }
+    syncUi(); if (persist) lsSave();
+  }
+  function setSens(c, persist) { sens = Math.max(0.5, Math.min(1.5, Math.round((+c || 1) * 20) / 20)); syncUi(); if (persist) lsSave(); }
+  function cycleMode() { setMode(ctrlMode % 3 + 1, true); modeMsg = { t: 0, txt: ctrlMode + '. ' + MODE_NAMES[ctrlMode] }; }
+  function openPanel(first) {
+    if (panelOpen) return;
+    panelOpen = true; panelPrev = paused; firstRun = !!first;
+    releaseAll(); if (state !== 'koniec') { paused = true; last = performance.now(); }
+    elSterT.textContent = first ? 'Wybierz sterowanie' : 'Sterowanie';
+    elSterPod.textContent = first ? 'Zmienisz to w każdej chwili.' : 'Zmiana działa od razu.';
+    elSterOk.textContent = first ? 'Leć' : (state === 'koniec' ? 'Gotowe' : 'Wróć do lotu');
+    elSter.classList.add('pokaz'); elSter.setAttribute('aria-hidden', 'false');
+    setTimeout(function () { try { var c = elCards[ctrlMode - 1]; if (panelOpen && c) c.focus({ preventScroll: true, focusVisible: false }); } catch (_) { } }, 60);
+  }
+  function closePanel() {
+    if (!panelOpen) return;
+    var was = document.activeElement;
+    panelOpen = false; firstRun = false; elSter.classList.remove('pokaz'); elSter.setAttribute('aria-hidden', 'true');
+    if (was && elSter.contains(was)) { try { was.blur(); } catch (_) { } }
+    if (state !== 'koniec' && !panelPrev) setPause(false); else last = performance.now();
+    if (state === 'koniec') { try { elJeszcze.focus({ preventScroll: true }); } catch (_) { } }
+  }
   function onDown(e) {
+    var x, y, side;
     if (e.cancelable) e.preventDefault();
+    if (panelOpen) return;
     if (paused) { setPause(false); return; }
     if (state !== 'gra') return;
     if (e.pointerType === 'mouse') { if (e.button === 0) { mouseDown = true; mouseX = lx(e); } }
     else {
-      if (e.isPrimary) { ptr = {}; nptr = 0; }   /* nowy gest zaczyna się od palca głównego: poprzednie palce na pewno zniknęły */
-      ptr[e.pointerId] = { x0: lx(e), x: lx(e), n: ++seqn }; countPtr();
+      if (e.isPrimary) clearTouch();   /* nowy gest zaczyna się od palca głównego: poprzednie palce na pewno zniknęły */
+      x = lx(e); y = ly(e); side = x < W / 2 ? -1 : 1;
+      ptr[e.pointerId] = { x0: x, y0: y, x: x, y: y, n: ++seqn, side: side };
+      if (ctrlMode === 3 && side < 0 && !stick) {
+        stick = { id: e.pointerId, bx: Math.max(STICK_R * 0.8, Math.min(W - STICK_R * 0.8, x)), by: Math.max(STICK_R * 0.8, Math.min(H - STICK_R * 0.8, y)), kx: x, ky: y };
+        stickMove(x, y); stickG.ph = rndV() * 6.28;
+      }
+      if (ctrlMode === 2) noteTap(side);
+      countPtr();
     }
     try { cv.setPointerCapture(e.pointerId); } catch (_) { }
   }
   function onMove(e) {
+    var p;
     if (e.pointerType === 'mouse') { mouseX = lx(e); if (mouseDown && e.buttons === 0) mouseDown = false; }
-    else if (ptr[e.pointerId]) ptr[e.pointerId].x = lx(e);
+    else if ((p = ptr[e.pointerId])) { p.x = lx(e); p.y = ly(e); if (stick && stick.id === e.pointerId) stickMove(p.x, p.y); }
   }
   function onUp(e) {
     if (e.pointerType === 'mouse') { mouseDown = false; return; }
     if (ptr[e.pointerId]) { delete ptr[e.pointerId]; countPtr(); }
+    if (stick && stick.id === e.pointerId) stick = null;
+    if (ctrlMode === 2) bothT = 0;
   }
   cv.addEventListener('pointerdown', onDown);
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   window.addEventListener('pointermove', onMove);
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (n) { cv.addEventListener(n, onUp); window.addEventListener(n, onUp); });
-  ['touchend', 'touchcancel'].forEach(function (n) { window.addEventListener(n, function (e) { if (!e.touches.length) { ptr = {}; nptr = 0; } }, { passive: true }); });
+  ['touchend', 'touchcancel'].forEach(function (n) { window.addEventListener(n, function (e) { if (!e.touches.length) clearTouch(); }, { passive: true }); });
   document.documentElement.addEventListener('mouseleave', function () { mouseX = null; mouseDown = false; });
   window.addEventListener('blur', releaseAll);
   document.addEventListener('visibilitychange', function () {
@@ -437,6 +606,11 @@ na chmurce.</p>
   });
   window.addEventListener('keydown', function (e) {
     var k = e.key;
+    if (panelOpen) {   /* panel sterowania: Esc zamyka, T przełącza tryb, reszta (Tab, Enter, spacja, strzałki w suwaku) działa natywnie */
+      if (k === 'Escape') { closePanel(); e.preventDefault(); } else if ((k === 't' || k === 'T') && !e.repeat) cycleMode();
+      return;
+    }
+    if (k === 't' || k === 'T') { if (!e.repeat) cycleMode(); return; }
     if (k === 'p' || k === 'P' || k === 'Escape') { if (!e.repeat) togglePause(); return; }
     if (state !== 'gra') return;
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyL = true; e.preventDefault(); }
@@ -450,6 +624,17 @@ na chmurce.</p>
     else if (k === ' ') keyHold = false;
   });
   elJeszcze.addEventListener('click', function () { reset(); });
+  elSterb.addEventListener('click', function () { if (panelOpen) closePanel(); else openPanel(false); });
+  elSterOk.addEventListener('click', closePanel);
+  elSterC.addEventListener('input', function () { setSens(elSterC.value, true); });
+  Array.prototype.forEach.call(elCards, function (c, i) { c.addEventListener('click', function () { setMode(i + 1, true); }); });
+  (function initSter() {
+    var sv = lsLoad(), qm = parseInt(Q.get('sterowanie'), 10), has = qm >= 1 && qm <= 3;
+    if (sv) { ctrlMode = sv.m; sens = sv.c; }
+    if (has) ctrlMode = qm;
+    syncUi();
+    firstRun = !sv && !has && (!TEST || Q.has('pierwszy'));
+  })();
 
   /* ---------- prędkość: s (ruch), sk (kolor); mokre piórka, mgła i bramki łańcucha ograniczają ---------- */
   function wetK() { return wetT <= 0 ? 0 : sm((G.WET - wetT) / 0.35) * sm(wetT / 0.8); }
@@ -786,7 +971,7 @@ na chmurce.</p>
     setTimeout(function () { if (state === 'koniec') { try { elJeszcze.focus({ preventScroll: true }); } catch (_) { } } }, 80);
   }
   function sim(dt) {
-    var k, p, hold, inp, speed, pz, dec, e;
+    var k, p, hold, inp, speed, pz, dec, e, qs;
     tickFx(dt);
     if (state !== 'gra') {
       /* lądowanie, złapanie i ekran wyniku: prędkość wygasa, świat sunie powoli, ptaszek odpoczywa (albo odlatuje w szponach) */
@@ -802,6 +987,10 @@ na chmurce.</p>
       return;
     }
     gameT += dt;
+    /* Z2b: tryb 2: oba kciuki razem dłużej niż TWIN_T = nurkowanie; stukanie na zmianę daje krótkie, wygaszane machnięcie wysokości */
+    if (ctrlMode === 2) { qs = sides(); if (qs.l > 0 && qs.r > 0) bothT += dt; else bothT = 0; } else bothT = 0;
+    flapCharge = Math.min(1, flapCharge + dt * FLAP_REC);
+    while (flapReq > 0) { flapReq--; if (lockS === null) { h = Math.min(1, h + FLAP_H * flapCharge); flapCharge = Math.max(0, flapCharge - FLAP_DROP); flapN++; } }
     hold = isHold();
     /* prędkość: nurkowanie ciągnie sHold powoli ku DIVE_TOP, puszczenie opuszcza ku 0; prąd daje boost (mały skok x mnożnik łańcucha),
        który zanika szybciej na wysokich poziomach (chyba że trwa łańcuch >= MOM_CHAIN). Podczas wirowania odbudowa wolniejsza. */
@@ -818,7 +1007,7 @@ na chmurce.</p>
     }
     /* skręt: ptaszek naprawdę zmienia x w świecie, kamera idzie za nim */
     inp = steerInput();
-    vx += (inp * G.VX - vx) * Math.min(1, dt * 6);
+    vx += (inp * G.VX * sens - vx) * Math.min(1, dt * 6);
     bx += vx * dt; camX += (bx - camX) * Math.min(1, dt * 7); steer = vx / G.VX;
     /* ruch w głąb */
     speed = 0.32 + s * 1.9;
@@ -939,13 +1128,15 @@ na chmurce.</p>
   }
   /* ptaszek roboczy (finalny rysunek: Z4). Jedyny stały kolor przy s=0: czerwony szalik.
      wet 0..1: mokre piórka (kudłate, ciemniejsze, skrzydła mniejsze i opadnięte); spinA: kąt wirowania; bs: skala (porwanie) */
-  function drawBird(x, y, s2, tilt, dive, wet, spinA, bs) {
-    var e = ilosc(s2, 0.3), flap = (reduce ? 0.3 : Math.sin(t * (9 + s2 * 8))) * (1 - 0.85 * dive) * (1 - 0.55 * wet), look = Math.sin(t * 0.7) * 3, side, wr = 1 - 0.2 * wet;
+  /* Z2b, tryb 2: dl, dr = złożenie lewego i prawego skrzydła 0..1 zgodnie z kciukami (bez nich oba skrzydła idą za dive) */
+  function drawBird(x, y, s2, tilt, dive, wet, spinA, bs, dl, dr) {
+    var e = ilosc(s2, 0.3), flap0 = (reduce ? 0.3 : Math.sin(t * (9 + s2 * 8))), flap = flap0 * (1 - 0.85 * dive) * (1 - 0.55 * wet), dv, fw, look = Math.sin(t * 0.7) * 3, side, wr = 1 - 0.2 * wet;
     var body = mixc(mixc(mixc(NAVY, [52, 60, 92], 0.8), BODY, e), mixc([40, 52, 84], [64, 88, 128], e), wet * 0.55), dark = mixc(mixc(mixc(NAVY, [40, 46, 74], 0.8), BODY_D, e), mixc([30, 40, 70], [44, 66, 104], e), wet * 0.55), ink = mixc(LINE, [34, 34, 56], e);
     ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * 0.3 + (spinA || 0)); ctx.scale(0.85 * (1 - 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1), 0.85 * (1 + 0.1 * dive) * (1 - 0.05 * wet) * (bs || 1));
     ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
     for (side = -1; side <= 1; side += 2) {
-      ctx.save(); ctx.translate(side * 13, -4); ctx.rotate(side * (-0.75 * (1 - dive) + 1.05 * dive + flap * 0.85 + wet * 0.95 * (1 - dive)));
+      dv = dl === undefined ? dive : (side < 0 ? dl : dr); fw = dl === undefined ? flap : flap0 * (1 - 0.85 * dv) * (1 - 0.55 * wet);
+      ctx.save(); ctx.translate(side * 13, -4); ctx.rotate(side * (-0.75 * (1 - dv) + 1.05 * dv + fw * 0.85 + wet * 0.95 * (1 - dv)));
       ctx.beginPath(); ctx.ellipse(side * 17 * wr, 0, 19 * wr, 7.5 * (1 - 0.1 * wet), 0, 0, Math.PI * 2); ctx.fillStyle = rgba(dark, 1); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(side * 6, -2); ctx.lineTo(side * 30 * wr, -1); ctx.moveTo(side * 8, 2); ctx.lineTo(side * 28 * wr, 3); ctx.strokeStyle = rgba(ink, 0.35); ctx.stroke(); ctx.strokeStyle = rgba(ink, 0.9); ctx.restore();
     }
@@ -1307,6 +1498,7 @@ na chmurce.</p>
     ctx.fillText(nm, xt, y + 7);
     if (cn >= 2) { tw = ctx.measureText(nm).width; if (ls) ctx.letterSpacing = '0px'; ctx.fillStyle = rgba(LINE, 0.75); ctx.font = '600 10px ' + FONT; ctx.fillText('×' + (1 + G.CH_STEP * (cn - 1)).toFixed(1).replace('.', ','), xt + tw + 8, y + 7); }
     if (ls) ctx.letterSpacing = '0px';
+    lvlBox = { x: x0, y: y - 2, w: xt - x0 + (nm.length * 8.5) + (cn >= 2 ? 44 : 0), h: 14 };
     ctx.restore();
   }
   function drawLvMsg() {
@@ -1315,12 +1507,49 @@ na chmurce.</p>
     env = sm(m.t / 0.18) * sm((1.7 - m.t) / 0.5); if (env < 0.01) return;
     txt = LV_MSG[m.lv].toUpperCase(); col = m.lv === 5 ? hsla(hueFlow() + 40, 90, 74, 1).replace(/,[\d.]+\)$/, ',' + env.toFixed(3) + ')') : rgba(mixc(LINE, LVCOL[m.lv], 0.6), env);
     ctx.save(); ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(13,18,36,0.8)'; ctx.shadowBlur = 8; if (ls) ctx.letterSpacing = '3px';
-    ctx.font = '600 19px ' + FONT; ctx.fillStyle = col; ctx.fillText(txt, W / 2, 124);
+    ctx.font = '600 19px ' + FONT; ctx.fillStyle = col; ctx.fillText(txt, W / 2, 142);
     if (ls) ctx.letterSpacing = '0px';
-    ctx.shadowBlur = 0; ctx.strokeStyle = rgba(LINE, 0.5 * env); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2 - 24, 134); ctx.lineTo(W / 2 + 24, 134); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.strokeStyle = rgba(LINE, 0.5 * env); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2 - 24, 152); ctx.lineTo(W / 2 + 24, 152); ctx.stroke();
     ctx.restore();
   }
 
+  /* drążek (tryb 3): miękki, nierówny kontur (nie okrąg), baza idzie za kciukiem, gałka pod kciukiem; znika po puszczeniu */
+  function blobPath(cx, cy, r, ph, amp) {
+    var a, n = 40, ang, rr;
+    ctx.beginPath();
+    for (a = 0; a <= n; a++) {
+      ang = a / n * Math.PI * 2; rr = r * (1 + amp * (0.6 * Math.sin(ang * 3 + ph) + 0.4 * Math.sin(ang * 5 + ph * 1.7 + 1)) + 0.05 * Math.sin(ang * 2 + ph * 0.6));
+      if (a) ctx.lineTo(cx + Math.cos(ang) * rr * 1.04, cy + Math.sin(ang) * rr * 0.96); else ctx.moveTo(cx + Math.cos(ang) * rr * 1.04, cy + Math.sin(ang) * rr * 0.96);
+    }
+    ctx.closePath();
+  }
+  function drawStick(dt) {
+    var on = stick !== null && state === 'gra' && !paused, ph, A, g = stickG;
+    stickA += ((on ? 1 : 0) - stickA) * Math.min(1, dt * (on ? 16 : 11));
+    if (stick) { g.bx = stick.bx; g.by = stick.by; g.kx = stick.kx; g.ky = stick.ky; }
+    if (stickA < 0.02) return;
+    A = stickA; ph = g.ph + (reduce ? 0 : t * 0.5);
+    ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    blobPath(g.bx, g.by, STICK_R, ph, 0.045); ctx.fillStyle = rgba(LINE, 0.06 * A); ctx.fill();
+    ctx.strokeStyle = 'rgba(13,18,36,' + (0.32 * A).toFixed(3) + ')'; ctx.lineWidth = 3.4; ctx.stroke();
+    ctx.strokeStyle = rgba(LINE, 0.42 * A); ctx.lineWidth = 1.3; ctx.stroke();
+    blobPath(g.bx, g.by, STICK_R * 0.52, ph + 2, 0.06); ctx.strokeStyle = rgba(LINE, 0.14 * A); ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(g.bx, g.by); ctx.lineTo(g.kx, g.ky); ctx.strokeStyle = 'rgba(13,18,36,' + (0.25 * A).toFixed(3) + ')'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = rgba(LINE, 0.3 * A); ctx.lineWidth = 3; ctx.stroke();
+    blobPath(g.kx, g.ky, 23, ph * 1.3 + 4, 0.07); ctx.fillStyle = rgba(LINE, 0.2 * A); ctx.fill();
+    ctx.strokeStyle = 'rgba(13,18,36,' + (0.4 * A).toFixed(3) + ')'; ctx.lineWidth = 3.4; ctx.stroke();
+    ctx.strokeStyle = rgba(LINE, 0.85 * A); ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.restore();
+  }
+  function drawModeMsg(dt) {
+    var env, ls = 'letterSpacing' in ctx;
+    if (!modeMsg) return;
+    modeMsg.t += dt; if (modeMsg.t > 2) { modeMsg = null; return; }
+    env = sm(modeMsg.t / 0.15) * sm((2 - modeMsg.t) / 0.5);
+    ctx.save(); ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(13,18,36,0.85)'; ctx.shadowBlur = 8; if (ls) ctx.letterSpacing = '0.5px';
+    ctx.font = '600 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.95 * env); ctx.fillText('Sterowanie ' + modeMsg.txt, W / 2, 190);
+    ctx.restore();
+  }
   function seaPath(pts, y0, drift, amp) {
     var j; ctx.beginPath(); ctx.moveTo(pts[0][0] + drift, y0 + pts[0][1] * amp);
     for (j = 1; j < pts.length; j++) ctx.lineTo(pts[j][0] + drift, y0 + pts[j][1] * amp);
@@ -1351,13 +1580,15 @@ na chmurce.</p>
   }
   var items = [];
   function render(dt) {
-    var k, j, hold = isHold() && state === 'gra', nk = nightK, hy = hyK, f4 = sm((sk - 0.78) / 0.15);
+    var qd, k, j, hold = isHold() && state === 'gra', nk = nightK, hy = hyK, f4 = sm((sk - 0.78) / 0.15);
     updStage(); updTint();
     var cSky = cAll(sk + OFF_NIEBO), aStr = streakC(sk);
     var lad = (state === 'gra' || state === 'zlapany' || isPred(endKind)) ? 0 : sm(ladT / 0.9);
     var seaDY = -sm((0.4 - h) / 0.4) * 28, warmP = PAL.warm;
     var fovZ = reduce ? 1 : 1 - 0.03 * f4 - 0.02 * hy;
     diveV += ((hold ? 1 : 0) - diveV) * Math.min(1, dt * 8);
+    qd = (ctrlMode === 2 && state === 'gra' && !paused) ? sides() : { l: 0, r: 0 };   /* Z2b: skrzydło składa się, gdy jego kciuk (albo nurkowanie) jest w dół */
+    wfL += (((hold || qd.l > 0) ? 1 : 0) - wfL) * Math.min(1, dt * 14); wfR += (((hold || qd.r > 0) ? 1 : 0) - wfR) * Math.min(1, dt * 14);
 
     ctx.globalAlpha = 1; ctx.fillStyle = rgba(PAL.bg, 1); ctx.fillRect(0, 0, W, H);
     ctx.save();
@@ -1449,7 +1680,7 @@ na chmurce.</p>
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; gr = ctx.createRadialGradient(bxs, BIRDY + bob, 4, bxs, BIRDY + bob, 78);
         gr.addColorStop(0, hsla(hueFlow() + 30, 90, 70, 0.55 * gl)); gr.addColorStop(1, hsla(hueFlow() + 30, 90, 70, 0)); ctx.fillStyle = gr; ctx.fillRect(bxs - 80, BIRDY + bob - 80, 160, 160); ctx.restore();
       }
-      drawBird(bxs, BIRDY + bob + dip, sk, steer, diveV, wk, spinA, bsc);
+      drawBird(bxs, BIRDY + bob + dip, sk, steer, diveV, wk, spinA, bsc, ctrlMode === 2 ? wfL : undefined, ctrlMode === 2 ? wfR : undefined);
     }
 
     /* przeszkody, które już minęły płaszczyznę ptaszka: przelatują tuż przed kamerą; grad i wiatr w płaszczyźnie ptaszka */
@@ -1490,9 +1721,10 @@ na chmurce.</p>
     drawEdgeGlow(); drawHyper();
     if (flashK > 0.02 && !reduce) { ctx.fillStyle = 'rgba(232,238,255,' + (0.55 * Math.min(1, flashK)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
+    drawStick(dt);
     if (state !== 'koniec') drawHUD();
-    drawLvMsg();
-    if (paused) {
+    drawLvMsg(); drawModeMsg(dt);
+    if (paused && !panelOpen) {
       ctx.fillStyle = 'rgba(13,18,36,0.6)'; ctx.fillRect(0, 0, W, H);
       ctx.textAlign = 'center'; ctx.fillStyle = rgba(LINE, 0.95); ctx.font = '600 30px ' + FONT; ctx.fillText('Pauza', W / 2, H * 0.42);
       ctx.font = '400 14px ' + FONT; ctx.fillStyle = rgba(LINE, 0.7); ctx.fillText('Dotknij ekranu albo naciśnij P', W / 2, H * 0.42 + 30); ctx.textAlign = 'left';
@@ -1554,7 +1786,10 @@ na chmurce.</p>
           terminy: { ptak: nextBird, deszcz: nextRain, drapieznik: nextHawk, nowe: nextEv, ostatnia: lastObsT }, poziom: lvl, hudSegmenty: hudSeg(), poziomMax: lvlMax, poziomT: lvlFirst.slice(), komunikat: lvMsg ? LV_MSG[lvMsg.lv] : '', czasPoziom: lvlTime.slice(), lancuch: chainNow(), lancuch12: hitsN(12), mnoznik: chainNow() ? 1 + G.CH_STEP * (chainNow() - 1) : 1,
           hiper: hyLeft > 0 || hyForce, hiperK: hyK, hiperRazy: hiperRazy, hiperTrwa: hiperTrwa.slice(), hiperPozostalo: hyLeft, hiperWejscia: hyLog.slice(), l5bezLancucha: l5bez + hyLog.filter(function (x) { return x.w12 < G.GATE5; }).length, l5czas: l5czas,
           pora: phi, poraNazwa: PNAMES[Math.floor(phi * 4) % 4], nocW: PAL.nightW, tempoDoby: periodFor(s, hyK), odcienie: odcieni, odcienieMax: NHUE,
-          potkniecie: stumbleT > 0, mgla: fogT > 0, mglaT: fogT, wiatrDx: windDX, trafienia: { grad: gradHit, mgla: mglaHit, burza: burzaHit, latawiec: latHit, stado: stadoHit }, drapieznikLog: predLog };
+          potkniecie: stumbleT > 0, mgla: fogT > 0, mglaT: fogT, wiatrDx: windDX, trafienia: { grad: gradHit, mgla: mglaHit, burza: burzaHit, latawiec: latHit, stado: stadoHit }, drapieznikLog: predLog,
+          /* Z2b */
+          sterowanie: ctrlMode, czulosc: sens, skrzL: wfL, skrzP: wfR, palceL: sides().l, palceP: sides().r, razem: bothT, machniec: flapN, ladunek: flapCharge, panel: panelOpen,
+          drazek: { jest: stick !== null, widocznosc: stickA, bx: stickG.bx, by: stickG.by, kx: stickG.kx, ky: stickG.ky, wychylenie: stick ? (stick.kx - stick.bx) / STICK_R : 0, promien: STICK_R, srednica: STICK_R * 2 } };
       },
       kolory: function () { return { niebo: r6(cAll(sk + OFF_NIEBO)), daleko: r6(cAll(sk + OFF_FAR)), blisko: r6(cAll(sk + OFF_NEAR)), smugi: r6(streakC(sk)), noc: nightK, pora: phi }; },
       warstwy: function () { return dbgL.map(function (d) { return { z: d.z, c: r6(d.c), a: r6(d.a) }; }); },
@@ -1603,13 +1838,21 @@ na chmurce.</p>
       prady: function () { return prady.map(function (p) { return { id: p.id, x: p.x, z: p.z, hit: p.hit, n: p.n }; }); },
       ptak: function () { return { x: bx, z: G.ZB, hit: G.HIT }; },
       stale: function () { return { SINK: G.SINK, DIVE: G.DIVE, ZOOM: G.ZOOM, PRAD_H: G.PRAD_H, PRAD_S: G.PRAD_S, CH_STEP: G.CH_STEP, CHAIN_W: G.CHAIN_W, DIVE_TOP: G.DIVE_TOP, GATE4: G.GATE4, CAP4: G.CAP4, GATE5: G.GATE5, CAP5: G.CAP5, HY_S: G.HY_S, HY_HOLD: G.HY_HOLD, HY_LEN: G.HY_LEN, H0: G.H0, ZB: G.ZB, HIT: G.HIT, HITB: G.HITB, HITR: G.HITR, WET: G.WET, SPIN: G.SPIN, HAW_WARN: G.HAW_WARN, HAW_CHASE: G.HAW_CHASE, HAW_FIRST: G.HAW_FIRST, HAW_S: G.HAW_S, OBS_FROM: G.OBS_FROM, WARN: G.WARN, WIND_LEN: G.WIND_LEN, HAIL_LEN: G.HAIL_LEN, HAIL_H: G.HAIL_H, FOG_LEN: G.FOG_LEN }; },
-      /* symulacja palców przez prawdziwe zdarzenia wskaźnika: akcja 'dol' | 'ruch' | 'gora' | 'anuluj', id palca, x w 0..1 */
-      dotyk: function (akcja, id, x01) {
+      /* symulacja palców przez prawdziwe zdarzenia wskaźnika: akcja 'dol' | 'ruch' | 'gora' | 'anuluj', id palca (1 = palec główny), x w 0..1, y w 0..1 (domyślnie 0,7);
+         lewy kciuk = x < 0,5, prawy kciuk = x >= 0,5 (Z2b) */
+      dotyk: function (akcja, id, x01, y01) {
         var r = cv.getBoundingClientRect(), typ = { dol: 'pointerdown', ruch: 'pointermove', gora: 'pointerup', anuluj: 'pointercancel' }[akcja];
         if (!typ) return false;
-        var ev = new PointerEvent(typ, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, bubbles: true, cancelable: true, clientX: r.left + (x01 === undefined ? 0.5 : x01) * r.width, clientY: r.top + r.height * 0.7 });
+        var ev = new PointerEvent(typ, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, bubbles: true, cancelable: true, clientX: r.left + (x01 === undefined ? 0.5 : x01) * r.width, clientY: r.top + r.height * (y01 === undefined ? 0.7 : y01) });
         (akcja === 'ruch' ? window : cv).dispatchEvent(ev); return true;
       },
+      /* Z2b: sterowanie. sterowanie(n) ustawia tryb (BEZ zapisu w localStorage), tryb() czyta, czulosc(x) ustawia/czyta suwak, panel(v) otwiera/zamyka wybór,
+         wskaznik() = pole wskaźnika poziomu w jednostkach 390 px (do testu, że przycisk go nie zasłania) */
+      sterowanie: function (n) { setMode(n, false); return ctrlMode; },
+      tryb: function () { return ctrlMode; },
+      czulosc: function (x) { if (x !== undefined) setSens(x, false); return sens; },
+      panel: function (v) { if (v === undefined ? !panelOpen : v) openPanel(false); else closePanel(); return panelOpen; },
+      wskaznik: function () { return { x: lvlBox.x, y: lvlBox.y, w: lvlBox.w, h: lvlBox.h, k: CSSW / W }; },
       /* Z3b: poziomy, łańcuch, doba */
       poziom: function () { return lvl; },
       /* ustawPoziom(n): zablokuj prędkość w środku poziomu n; L5 = dodatkowo wymuszona hiperprzestrzeń (tylko do zrzutów i pomiarów) */
@@ -1632,6 +1875,7 @@ na chmurce.</p>
 
   buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); resize();
   window.addEventListener('resize', resize);
+  if (firstRun) openPanel(true);   /* pierwsze uruchomienie bez zapisanego wyboru i bez ?sterowanie=: ekran "Wybierz sterowanie" */
   requestAnimationFrame(function (n) { last = n; frame(n); });
 })();
 </script>
