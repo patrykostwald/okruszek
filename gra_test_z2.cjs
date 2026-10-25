@@ -30,6 +30,8 @@ const TEMPO = +process.env.TEMPO || 4;
   await page.goto(url);
   await page.waitForTimeout(700);
   await ev(() => { window.__marker = 12345; });
+  /* Z3: test Z2 sprawdza fizykę lotu i prądy, więc przeszkody wyłączone hakiem (harmonogram Z3 ma własny test gra_test_z3.cjs) */
+  await ev(() => { if (typeof __okruszek.bezPrzeszkod === 'function') __okruszek.bezPrzeszkod(true); });
   const K = await ev(() => __okruszek.stale());
   console.log('  info stałe: ' + JSON.stringify(K));
   const ordered = (k) => k.niebo >= k.daleko - 1e-9 && k.daleko >= k.blisko - 1e-9 && k.blisko >= k.smugi - 1e-9 && k.smugi >= 0 && k.niebo <= 1 + 1e-9;
