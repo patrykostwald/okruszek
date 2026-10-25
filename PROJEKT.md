@@ -191,3 +191,6 @@ Decyzje projektowe orkiestratora (do strojenia po teście właściciela):
 
 ### 15.6 Wersjonowanie
 - Rdzeń „Tor” wchodzi jako tryb ?tor=1 obok obecnej rozgrywki (swobodny lot z Z2); po akceptacji właściciela po teście na telefonie staje się domyślny, a stary tryb zostaje jako ?swobodny=1 na czas migracji i testów. Zostają: krainy i bramy (Z10), intro i historia, dźwięk, PWA, prywatność, tryby sterowania (adaptowane), energia koloru i poziomy L0-L5, rysunek Z4 (po Z15).
+
+### 15.7 Zasada koloru chmur (właściciel 26.10)
+Nie przesadzać z zielonymi chmurkami: zielony tylko wtedy, gdy chmura ma funkcję w grze (buff albo nerf), na przykład zielona mglista chmura jako nerf (zatruta mgła: spowalnia i gasi energię koloru) albo zielona chmura-oaza jako buff (np. odnawia wysokość). Pozostałe chmury w paletach pastelowych bez zieleni: róż, brzoskwinia, morela, lawenda, błękit, krem, szarości. Każdy kolor chmury w torze ma znaczenie i jest czytelny (kolor = rodzaj efektu), a dekoracyjne chmury tła są bez zieleni.
