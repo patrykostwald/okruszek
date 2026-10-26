@@ -1,0 +1,66 @@
+[
+ {
+  "eta": 2.5,
+  "sp": 0.85,
+  "skala": 0.48,
+  "szerChmury": 70,
+  "dyOdPtaszka": 123,
+  "odstepKolumn": 56,
+  "chmura": [
+   195,
+   384
+  ],
+  "ptak": [
+   195,
+   507
+  ]
+ },
+ {
+  "eta": 1.5,
+  "sp": 0.85,
+  "skala": 0.61,
+  "szerChmury": 89,
+  "dyOdPtaszka": 93,
+  "odstepKolumn": 71,
+  "chmura": [
+   195,
+   414
+  ],
+  "ptak": [
+   195,
+   507
+  ]
+ },
+ {
+  "eta": 1,
+  "sp": 0.85,
+  "skala": 0.68,
+  "szerChmury": 99,
+  "dyOdPtaszka": 76,
+  "odstepKolumn": 79,
+  "chmura": [
+   195,
+   431
+  ],
+  "ptak": [
+   195,
+   507
+  ]
+ },
+ {
+  "eta": 0.5,
+  "sp": 0.85,
+  "skala": 0.82,
+  "szerChmury": 120,
+  "dyOdPtaszka": 42,
+  "odstepKolumn": 96,
+  "chmura": [
+   195,
+   465
+  ],
+  "ptak": [
+   195,
+   507
+  ]
+ }
+]

@@ -56,7 +56,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
   try { man = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.webmanifest'), 'utf8')); ok('manifest.webmanifest to poprawny JSON'); } catch (e) { bad('manifest: ' + e); }
   if (man) {
     chk(man.name === 'Crumbi' && man.short_name === 'Crumbi' && man.start_url === './' && man.scope === './' && man.display === 'standalone' && man.orientation === 'portrait', 'manifest: name/short_name Crumbi, start_url i scope ./, standalone, portrait');
-    chk(/^#[0-9a-f]{6}$/i.test(man.theme_color) && /^#[0-9a-f]{6}$/i.test(man.background_color) && man.theme_color.toLowerCase() === '#0d1224', 'manifest: kolory z granatu gry (' + man.theme_color + ' / ' + man.background_color + ')');
+    chk(/^#[0-9a-f]{6}$/i.test(man.theme_color) && /^#[0-9a-f]{6}$/i.test(man.background_color) && man.theme_color.toLowerCase() === '#cdd5ee', 'manifest: kolory jasnego nieba gry (Z18, QA P1-7 i 15.8: dawniej granat #0d1224; ' + man.theme_color + ' / ' + man.background_color + ')');
     const ic = man.icons || [], s192 = ic.find(i => i.sizes === '192x192'), s512 = ic.find(i => i.sizes === '512x512');
     chk(!!s192 && !!s512, 'manifest: ikony 192 i 512');
     for (const i of ic) chk(fs.existsSync(path.join(dir, i.src)), 'ikona istnieje: ' + i.src + ' (' + i.sizes + ', ' + i.purpose + ')');
@@ -68,7 +68,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
     chk(sig && ww === w && hh === w, n + ': PNG ' + ww + 'x' + hh + (sig ? '' : ' (zła sygnatura)'));
   }
   chk(/<link rel="manifest" href="manifest\.webmanifest">/.test(html), 'head: <link rel="manifest">');
-  chk(/<meta name="theme-color" content="#0d1224">/.test(html), 'head: theme-color');
+  chk(/<meta name="theme-color" content="#cdd5ee">/.test(html), 'head: theme-color (Z18: jasne niebo zamiast granatu, QA P1-7)');
   chk(/<link rel="apple-touch-icon" href="ikona-180\.png">/.test(html), 'head: apple-touch-icon 180');
   chk(/<meta name="robots" content="noindex">/.test(html), 'head: noindex zostaje');
   chk(/<script src="dzwiek\.js"><\/script>/.test(html) && /<script src="teksty\.js"><\/script>/.test(html), 'dzwiek.js i teksty.js ładowane jako osobne pliki (CSP self)');
@@ -327,7 +327,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
     chk(miss.length === 0, 'pamięć zawiera wszystkie pliki z precache (' + cached.length + ')' + (miss.length ? ', brakuje: ' + miss.join(', ') : ''));
     const man2 = await O(g, () => fetch('manifest.webmanifest').then(r => ({ ok: r.ok, ct: r.headers.get('content-type') })));
     chk(man2.ok && /manifest/.test(man2.ct), 'manifest serwowany (' + man2.ct + ')');
-    chk(await O(g, () => !!document.querySelector('link[rel="manifest"]') && document.querySelector('meta[name="theme-color"]').content === '#0d1224'), 'strona wskazuje manifest i theme-color');
+    chk(await O(g, () => !!document.querySelector('link[rel="manifest"]') && document.querySelector('meta[name="theme-color"]').content === '#cdd5ee'), 'strona wskazuje manifest i theme-color');
     /* najpierw sieć: nowa wersja teksty.js wygrywa z pamięcią i trafia do pamięci */
     teksty2 = true;
     const nowa = await O(g, () => fetch('teksty.js').then(r => r.text()));

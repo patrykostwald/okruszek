@@ -1,6 +1,6 @@
 // Crumbi (Okruszek) jako aplikacja: gra działa też bez internetu; przy sieci zawsze bierze najnowszą wersję (najpierw sieć, potem pamięć).
 // Wzorzec z Kociłapek. Przy każdej zmianie plików gry podbij numer w PAMIEC (crumbi-N): stara pamięć jest usuwana przy aktywacji.
-const PAMIEC = 'crumbi-1';
+const PAMIEC = 'crumbi-2';   // Z18: nowa wersja (logika toru, HUD, jasne panele)
 const PLIKI = ['./', './index.html', './teksty.js', './dzwiek.js', './manifest.webmanifest', './ikona-192.png', './ikona-512.png', './ikona-180.png'];
 self.addEventListener('install', e => {
   // każdy plik osobno i zawsze świeży z sieci (cache: 'reload'); brak jednego pliku nie blokuje instalacji

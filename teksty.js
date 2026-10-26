@@ -65,7 +65,7 @@ window.OKRUSZEK_TEKSTY = {
   tor: {
     tryby: [   /*   = twarda spacja po jednoliterowych słowach (bez pojedynczych liter na końcu linii) */
       'Przesuń kciuk o krok: w bok, w dół albo w górę. Stuknij, żeby machnąć. Przytrzymaj, żeby nurkować.',
-      'Stuknij lewym albo prawym: skrzydło w tę stronę i w górę. Oba naraz: mocno w górę. Przytrzymaj oba: nurkuj.',
+      'Lewym albo prawym: skrzydło w tę stronę i w górę. Oba naraz: mocno w górę. Przytrzymaj oba: nurkuj.',
       'Drążek wskazuje sąsiednią komórkę. Stuknij prawą połową, żeby machnąć. Przytrzymaj prawą, żeby nurkować.'
     ],
     czulosc: 'Czułość gestu',

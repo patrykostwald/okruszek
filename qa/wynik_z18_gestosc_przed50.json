@@ -1,0 +1,149 @@
+{
+ "K1": {
+  "L0": {
+   "czas": 605,
+   "wiatryMin": 18.2,
+   "przeszkodyMin": 15.7,
+   "s2Min": 0.4,
+   "puste": 0,
+   "celW": 8.25,
+   "celP": 4.5
+  },
+  "L1": {
+   "czas": 183.5,
+   "wiatryMin": 41.9,
+   "przeszkodyMin": 13.1,
+   "s2Min": 0.98,
+   "puste": 0,
+   "celW": 12,
+   "celP": 9
+  },
+  "L2": {
+   "czas": 37,
+   "wiatryMin": 61.6,
+   "przeszkodyMin": 6.5,
+   "s2Min": 1.62,
+   "puste": 0,
+   "celW": 16.5,
+   "celP": 15.75
+  }
+ },
+ "K2": {
+  "L0": {
+   "czas": 441.5,
+   "wiatryMin": 18.1,
+   "przeszkodyMin": 16.2,
+   "s2Min": 1.63,
+   "puste": 0,
+   "celW": 9.75,
+   "celP": 6.75
+  },
+  "L1": {
+   "czas": 183,
+   "wiatryMin": 43,
+   "przeszkodyMin": 8.9,
+   "s2Min": 1.31,
+   "puste": 0,
+   "celW": 13.5,
+   "celP": 12.75
+  },
+  "L2": {
+   "czas": 37.5,
+   "wiatryMin": 52.8,
+   "przeszkodyMin": 8,
+   "s2Min": 0,
+   "puste": 0,
+   "celW": 18,
+   "celP": 21
+  }
+ },
+ "K3": {
+  "L0": {
+   "czas": 339.5,
+   "wiatryMin": 16.8,
+   "przeszkodyMin": 18,
+   "s2Min": 1.24,
+   "puste": 0,
+   "celW": 11.25,
+   "celP": 9.75
+  },
+  "L1": {
+   "czas": 147,
+   "wiatryMin": 39.6,
+   "przeszkodyMin": 6.9,
+   "s2Min": 0.41,
+   "puste": 0,
+   "celW": 15.75,
+   "celP": 17.25
+  },
+  "L2": {
+   "czas": 24,
+   "wiatryMin": 65,
+   "przeszkodyMin": 10,
+   "s2Min": 0,
+   "puste": 0,
+   "celW": 20.25,
+   "celP": 27.75
+  }
+ },
+ "K4": {
+  "L0": {
+   "czas": 178,
+   "wiatryMin": 18.2,
+   "przeszkodyMin": 17.5,
+   "s2Min": 1.01,
+   "puste": 0,
+   "celW": 12,
+   "celP": 11.25
+  },
+  "L1": {
+   "czas": 57.5,
+   "wiatryMin": 38.6,
+   "przeszkodyMin": 13.6,
+   "s2Min": 0,
+   "puste": 0,
+   "celW": 16.5,
+   "celP": 19.5
+  }
+ },
+ "K5": {
+  "L0": {
+   "czas": 373,
+   "wiatryMin": 16.9,
+   "przeszkodyMin": 23.5,
+   "s2Min": 2.09,
+   "puste": 0,
+   "celW": 12.75,
+   "celP": 12.75
+  },
+  "L1": {
+   "czas": 93.5,
+   "wiatryMin": 43.6,
+   "przeszkodyMin": 9,
+   "s2Min": 1.93,
+   "puste": 0,
+   "celW": 17.25,
+   "celP": 22.5
+  }
+ },
+ "K6": {
+  "L0": {
+   "czas": 102,
+   "wiatryMin": 14.1,
+   "przeszkodyMin": 27.6,
+   "s2Min": 3.53,
+   "puste": 0,
+   "celW": 13.5,
+   "celP": 15
+  },
+  "L1": {
+   "czas": 35,
+   "wiatryMin": 42.9,
+   "przeszkodyMin": 3.4,
+   "s2Min": 0,
+   "puste": 0,
+   "celW": 17.25,
+   "celP": 25.5
+  }
+ }
+}

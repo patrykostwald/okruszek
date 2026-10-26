@@ -1,0 +1,255 @@
+{
+ "etykieta": "test",
+ "parametry": {
+  "N": 1,
+  "MAXS": 120,
+  "KR": [
+   1,
+   4
+  ]
+ },
+ "boty": {
+  "idealny": [
+   {
+    "t": 81.4,
+    "koniec": "ladowanie",
+    "konce": [
+     "ladowanie"
+    ],
+    "pierwszyPelny": 6.499999999999982,
+    "pelny60": 7.48,
+    "pelnyLacznie": 7.48,
+    "pelnyMax": 2.87,
+    "czasL": [
+     52,
+     16.75,
+     7,
+     5.75,
+     0,
+     0
+    ],
+    "l4": null,
+    "l5": 0,
+    "hiper": 0,
+    "wiersze": [
+     5,
+     59,
+     17.5,
+     0
+    ],
+    "nadch": {
+     "wiatr": 5,
+     "inne": 1
+    },
+    "wejscia": 18,
+    "idealne": 18,
+    "lanMax": 6,
+    "kary": 0,
+    "ataki": [],
+    "m": 1077,
+    "Emax": 1,
+    "poziomMax": 3,
+    "l5bez": 0,
+    "kr": 1,
+    "seed": 1037
+   },
+   {
+    "t": 120.2,
+    "koniec": null,
+    "konce": [],
+    "pierwszyPelny": 6.499999999999982,
+    "pelny60": 8.6,
+    "pelnyLacznie": 21.58,
+    "pelnyMax": 4.08,
+    "czasL": [
+     54.5,
+     33.75,
+     13.5,
+     18.5,
+     0,
+     0
+    ],
+    "l4": null,
+    "l5": 0,
+    "hiper": 0,
+    "wiersze": [
+     34.75,
+     56.5,
+     29,
+     0
+    ],
+    "nadch": {
+     "wiatr": 4,
+     "inne": 9
+    },
+    "wejscia": 44,
+    "idealne": 43,
+    "lanMax": 11,
+    "kary": 0,
+    "ataki": [
+     "pudlo",
+     "pudlo",
+     "pudlo"
+    ],
+    "m": 1826,
+    "Emax": 1,
+    "poziomMax": 3,
+    "l5bez": 0,
+    "kr": 4,
+    "seed": 1148
+   }
+  ],
+  "stukacz": [
+   {
+    "t": 120.2,
+    "koniec": null,
+    "konce": [],
+    "pierwszyPelny": null,
+    "pelny60": 0,
+    "pelnyLacznie": 0,
+    "pelnyMax": 0,
+    "czasL": [
+     111.5,
+     8,
+     0.5,
+     0.25,
+     0,
+     0
+    ],
+    "l4": null,
+    "l5": 0,
+    "hiper": 0,
+    "wiersze": [
+     113.25,
+     7,
+     0,
+     0
+    ],
+    "nadch": {
+     "wiatr": 1,
+     "inne": 3
+    },
+    "wejscia": 6,
+    "idealne": 6,
+    "lanMax": 2,
+    "kary": 2,
+    "ataki": [],
+    "m": 1274,
+    "Emax": 0.62,
+    "poziomMax": 3,
+    "l5bez": 0,
+    "kr": 1,
+    "seed": 1037
+   },
+   {
+    "t": 120.2,
+    "koniec": null,
+    "konce": [],
+    "pierwszyPelny": null,
+    "pelny60": 0,
+    "pelnyLacznie": 0,
+    "pelnyMax": 0,
+    "czasL": [
+     118.75,
+     1.5,
+     0,
+     0,
+     0,
+     0
+    ],
+    "l4": null,
+    "l5": 0,
+    "hiper": 0,
+    "wiersze": [
+     117.5,
+     2.75,
+     0,
+     0
+    ],
+    "nadch": {
+     "wiatr": 0,
+     "inne": 2
+    },
+    "wejscia": 1,
+    "idealne": 1,
+    "lanMax": 1,
+    "kary": 5,
+    "ataki": [
+     "nadchmurze"
+    ],
+    "m": 1216,
+    "Emax": 0.3,
+    "poziomMax": 1,
+    "l5bez": 0,
+    "kr": 4,
+    "seed": 1148
+   }
+  ]
+ },
+ "podsumowanie_idealny": {
+  "biegow": 2,
+  "czasMed": 120.2,
+  "konceDo60": 0,
+  "konceDo180": 1,
+  "konceDo300": 1,
+  "przezyl": 1,
+  "konce": {
+   "ladowanie": 1,
+   "brak": 1
+  },
+  "pelnyDo60": 2,
+  "pelny60max": 8.6,
+  "pelny60ponad2": 2,
+  "pierwszyPelnyMed": 6.499999999999982,
+  "pelnyMaxCiag": 4.08,
+  "l4biegi": 0,
+  "l4do60": 0,
+  "czasL4": 0,
+  "l5s": 0,
+  "hiper": 0,
+  "l5bez": 0,
+  "idealneProc": 98.4,
+  "wejscMin": 18.5,
+  "lanMax": 11,
+  "nadchProc": 19.7,
+  "nadchWejscia": {
+   "wiatr": 9,
+   "inne": 10
+  },
+  "przezyl300": 0,
+  "karyMin": 0
+ },
+ "podsumowanie_stukacz": {
+  "biegow": 2,
+  "czasMed": 120.2,
+  "konceDo60": 0,
+  "konceDo180": 0,
+  "konceDo300": 0,
+  "przezyl": 2,
+  "konce": {
+   "brak": 2
+  },
+  "pelnyDo60": 0,
+  "pelny60max": 0,
+  "pelny60ponad2": 0,
+  "pierwszyPelnyMed": null,
+  "pelnyMaxCiag": 0,
+  "l4biegi": 0,
+  "l4do60": 0,
+  "czasL4": 0,
+  "l5s": 0,
+  "hiper": 0,
+  "l5bez": 0,
+  "idealneProc": 100,
+  "wejscMin": 1.7,
+  "lanMax": 2,
+  "nadchProc": 96,
+  "nadchWejscia": {
+   "wiatr": 1,
+   "inne": 5
+  },
+  "przezyl300": 0,
+  "karyMin": 1.75
+ },
+ "bledy": []
+}
