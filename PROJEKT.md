@@ -194,3 +194,36 @@ Decyzje projektowe orkiestratora (do strojenia po teście właściciela):
 
 ### 15.7 Zasada koloru chmur (właściciel 26.10)
 Nie przesadzać z zielonymi chmurkami: zielony tylko wtedy, gdy chmura ma funkcję w grze (buff albo nerf), na przykład zielona mglista chmura jako nerf (zatruta mgła: spowalnia i gasi energię koloru) albo zielona chmura-oaza jako buff (np. odnawia wysokość). Pozostałe chmury w paletach pastelowych bez zieleni: róż, brzoskwinia, morela, lawenda, błękit, krem, szarości. Każdy kolor chmury w torze ma znaczenie i jest czytelny (kolor = rodzaj efektu), a dekoracyjne chmury tła są bez zieleni.
+
+
+## 16. Tryb poziomy: lot dwoma kciukami jak skrzydłami, strefy wysokości od ziemi po szczyt (właściciel 26.10)
+Cytat: „mechanika lotu powinna wyglądać tak, że użytkownik trzyma telefon horyzontalnie i oboma kciukami tak uderza i rozsuwa jak skrzydłami lot. A jak chce zanurkować, to kciuki nie robią na zewnątrz, tylko do wewnątrz, i wtedy Okruszek składa skrzydła jak jastrząb i nabiera szybkości. Jeśli to możliwe, zrobiłbym najniższy level na ziemi, średni w powietrzu, górny w chmurach, najwyższy do top prędkości. Przy ziemi dołożyłbym jakieś znajdźki i taki piękny widok bajkowy jak z pierwszych wiadomości i źródeł.”
+
+### 16.1 Układ i sterowanie (telefon poziomo)
+- Ekran poziomy (landscape), Okruszek widziany zza pleców w głąb ekranu, jak dotąd. Układ gry (HUD, ekrany, tor) ma wariant poziomy; w pionie gra pokazuje łagodną prośbę „obróć telefon” (iOS nie pozwala zablokować orientacji w przeglądarce, na Androidzie w trybie aplikacji manifest może wymusić landscape: `orientation: landscape` w osobnym manifeście lub po instalacji).
+- Każdy kciuk w swojej strefie chwytu przy dolnych rogach (strefy wcięte min. 48 px od krawędzi ekranu, żeby nie kolidowały z gestami systemu).
+- Ruch kciuków oceniany przez zdarzenia wskaźników (dx na krótkim oknie ok. 100-140 ms):
+  - Oba kciuki NA ZEWNĄTRZ (lewy w lewo, prawy w prawo) = zamach skrzydeł = ciężkie machnięcie w górę; siła zależy od szybkości i amplitudy ruchu; rytm kolejnych zamachów daje lot w górę (ciężko, im wyżej, tym ciężej).
+  - Oba kciuki DO WEWNĄTRZ (do środka) = Okruszek składa skrzydła jak jastrząb: nurkowanie, rośnie prędkość i kolor; przytrzymanie kciuków blisko siebie = utrzymanie nurkowania; rozsunięcie po nurkowaniu = wybicie (darmowy wzlot).
+  - Brak ruchu = szybowanie z powolnym opadaniem.
+  - Asymetria: tylko jeden kciuk zamachem = skręt w tę stronę (lewe skrzydło = w lewo), jak w sekcji 15.2.
+  - Animacja skrzydeł dokładnie odzwierciedla kciuki (amplituda, kierunek, tempo): to główna nagroda dotykowa.
+- Tryby 1 i 3 (jeden kciuk, drążek) zostają jako zapas; w poziomie główny jest „dwa kciuki jak skrzydła”.
+
+### 16.2 Strefy wysokości (zamiast jednego „wysokościomierza”)
+- Cztery strefy w pionie, każda z własnym światem: ZIEMIA (nisko: łąki, wzgórza, drzewa, rzeka, wieś w stylu baśniowych krajobrazów; znajdźki; spowolnienie przy muskaniu ziemi lub bonus za „muśnięcie” zgodnie z listą pomysłów), POWIETRZE (środek: wiatry, ptaki, motolotnie, samoloty), CHMURY (góra: kolorowe chmury jako przeszkody i buffy, burze, grad, tornada), NADCHMURZE (szczyt: top prędkość, hiperprzestrzeń, gwiazdy i światło; wejście tu wymaga łańcucha wiatrów, jak pełny kolor i L5 w Z3c).
+- Mapowanie na tor z Z14: wiersze toru = strefy (ziemia, powietrze, chmury, nadchmurze), czyli ROWS = 4; kolumny jak dotąd 3 (parametryzowane, może 5 w poziomie, bo ekran szerszy).
+- Ziemia nie jest śmiercią: dolny wiersz to bezpieczna, ładna strefa z znajdźkami, ale wolniejsza (tarcie) i z przeszkodami naziemnymi (drzewa, wieże, latawce na sznurach); „morze chmur” jako koniec biegu zostaje tylko dla pionowych krain nad chmurami, a w ziemi „lądowanie” to miękkie odpoczęcie (koniec biegu jak w Z2).
+- Znajdźki przy ziemi: z listy 03-przyspieszacze-i-dodatki.md (pióra, drobiny akwareli, listy do domu, światełka, wspomnienia do Zeszytu), bez waluty i bez presji.
+- Piękny widok przy ziemi: faliste wzgórza z cieniami chmur wędrującymi po polach (pomysł z „Cloud Dancing”, własny rysunek), łąka, kołysząca się trawa, drzewa, rzeka z odbiciem nieba, wioska z okien z ciepłym światłem; paleta baśniowa z 15.5, zieleń ziemi dopuszczalna jako tło krajobrazu (naturalna), a nie jako chmura bez funkcji (15.7).
+
+### 16.3 Ryzyka (uczciwie)
+- Orientacja: iOS Safari nie zablokuje poziomu; trzeba prosić o obrót i zaprojektować układ pod oba układy lub tylko pod poziomy.
+- Gesty przy krawędziach ekranu mogą kolidować z gestami systemu (cofanie, dom); stąd wcięte strefy chwytu.
+- Detekcja „na zewnątrz/do wewnątrz” wymaga strojenia progów (amplituda, prędkość, okno) na prawdziwym telefonie; to zadanie na test właściciela; pierwsza wersja ma suwak czułości i tryb kalibracji.
+- Większa liczba pikseli w poziomie i dodatkowa warstwa ziemi zwiększają koszt rysowania; konieczny tryb lekki i ograniczenia dla ziemi (sprite'y pre-renderowane).
+- Zmęczenie dłoni: sesje 3-5 minut, krótkie „oddechy”, rytm nie spamowany.
+- iOS nie wspiera wibracji w przeglądarce; Android tak (opcjonalne krótkie impulsy przy zamachu).
+
+### 16.4 Zlecenie Z16 (po Z14 i Z15)
+Z16 (Opus high): tryb poziomy z gestami skrzydeł (16.1), strefy wysokości i ziemia z znajdźkami i krajobrazem (16.2), układ poziomy HUD i ekranów, prośba o obrót, manifest/orientacja, testy gestów (dotyk dwoma palcami przez CDP, zamach na zewnątrz i do wewnątrz, asymetria), test stref i znajdźek, zrzuty 844x390 (poziomo). Wersjonowanie: ?poziomo=1 obok ?tor=1; po akceptacji właściciela staje się domyślny na telefonach.
