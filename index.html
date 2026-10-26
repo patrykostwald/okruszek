@@ -5280,6 +5280,23 @@ Słońce obiecało wrócić rano.</p>
     ctx.beginPath();   /* jedna ścieżka, same jasne ramki (bez wypełnienia: tańsze) */
     for (k = 0; k < TOR.COLS; k++) for (n = 0; n < TOR.ROWS; n++) { X = torSX(k, G.ZB); Y = torRowSY(n); ctx.rect(X - hw + 5, Y - hh + 5, (hw - 5) * 2, (hh - 5) * 2); }   /* rect (roundRect w rasteryzacji programowej ok. 3 x droższy) */
     ctx.lineJoin = 'round'; ctx.strokeStyle = rgba(col, 0.24); ctx.lineWidth = 1.2; ctx.stroke();
+    /* cień nadlatującego plastra na tej siatce (ostatnie OSTRZEZ s przed kontaktem): w której komórce jest przeszkoda, a w której wiatr, bez zgadywania z perspektywy */
+    var nb = null, q3, et, ga, ch3, r3, c3;
+    for (k = 0; k < torPl.length; k++) { q3 = torPl[k]; if (!q3.puste && !q3.kontakt && q3.z > G.ZB && (!nb || q3.z < nb.z)) nb = q3; }
+    if (nb && state === 'gra') {
+      et = (nb.z - G.ZB) / Math.max(0.3, curSpeed); ga = sm(1 - et / TOR.OSTRZEZ);
+      if (ga > 0.01) {
+        for (var rodz = 0; rodz < 2; rodz++) {   /* 0 = przeszkody (miodowa ramka), 1 = wiatry (jasna ramka) */
+          ctx.beginPath();
+          for (r3 = 0; r3 < nb.g.length; r3++) for (c3 = 0; c3 < nb.g[r3].length; c3++) {
+            ch3 = nb.g[r3].charAt(c3); if (ch3 === '.' || ch3 === 'o' || (rodz === 0) !== !TOR_WIATRY[ch3]) continue;
+            if (ch3 === 'F' && !(c3 === Math.round(torKC()) && r3 === Math.round(torKR()))) continue;
+            X = torSX(c3, G.ZB); Y = torRowSY(r3); ctx.rect(X - hw + 9, Y - hh + 9, (hw - 9) * 2, (hh - 9) * 2);
+          }
+          ctx.strokeStyle = rodz === 0 ? rgba(mixc(LINE, [255, 214, 140], 0.25 + 0.6 * amt), 0.6 * ga) : rgba(col, 0.5 * ga); ctx.lineWidth = rodz === 0 ? 2.2 : 1.6; ctx.stroke();
+        }
+      }
+    }
     gr = ctx.createRadialGradient(cx, cy, 6, cx, cy, Math.max(hw, hh) * 0.85); gr.addColorStop(0, rgba(col, 0.16)); gr.addColorStop(1, rgba(col, 0));
     ctx.fillStyle = gr; ctx.fillRect(cx - hw * 0.9, cy - hh * 0.9, hw * 1.8, hh * 1.8);
     X = torSX(TC, G.ZB); Y = torRowSY(TR);
