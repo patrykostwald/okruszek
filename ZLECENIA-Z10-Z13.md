@@ -171,3 +171,5 @@ Z12 (Zeszyt i ekrany) i Z13 (nuty wiatru, rzadkie zdarzenia, Bączek) są WSTRZY
 | Z19 | Runda czucia lotu (game feel) wg PROJEKT.md 17.2: opóźnienie, animacje skrzydeł z dobiegiem, dźwięk i wibracja na zdarzenia toru, kamera, rytm fraz, mikro-nagrody; podpięcie dzwiek.js pod zdarzenia toru | Opus 5.5 high | Z18 | opóźnienie wejścia do pierwszej reakcji < 50 ms, każdy typ zdarzenia ma co najmniej dwa kanały sprzężenia, brak migotań > 3/s, ocena QA satysfakcji >= 8 w rundzie 2 (cel 9+ w rundzie 3-4), testy zielone |
 
 | Z21 | Przewrót w bok (podwójne tapnięcie, unik, PROJEKT.md 19.1), widoczne drogi toru bez ramek (19.2), widoczne unoszenie (19.3) | Codex (gpt-6-astra) | Z19 | testy z 19.1 i 19.2, boty, kontrast, testy Z2-Z20 zielone |
+
+| Z22 | Tor dwupoziomowy 9 x 9 (PROJEKT.md sekcja 20) pod flagą ?tor9=1: 9 dróg, w każdej 9 miejsc Okruszka, małe i duże kroki, idealne wejście = środek wiatru, przeszkody zajmujące część komórki | Fable | Z21 | boty 9 x 9, uczciwość, trzy tryby, opóźnienie < 50 ms, testy Z2-Z21 zielone, ocena właściciela na telefonie |

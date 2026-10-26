@@ -289,3 +289,22 @@ Właściciel po 15.9 nie widzi, gdzie jest 9 miejsc („ten tor 9 miejsc, gdzie 
 
 ### 19.3 Unoszenie się
 - Delikatne unoszenie (kołysanie góra-dół) ptaszka jest w kodzie (bob) i zostaje; w torze wysokość to trzy wiersze, a szybowanie opada o wiersz co 3,6 s, machanie 2-3 stuknięcia na wiersz w górę (ciężko, jak chciał właściciel), szczyt tylko wiatrem. Jeśli właściciel miał na myśli płynne „unoszenie się” bez skoków (ciągła wysokość jak w Z2) albo wyraźny lot ku górze z ciepłego prądu, to wymaga jego doprecyzowania; do tego czasu w torze dodać WIDOCZNE unoszenie: łagodne ruchy wznoszące po wiatrach (płynny wzlot, nie skok), widoczne wznoszenie przy kolejnych machnięciach (ptaszek unosi się płynnie w górę wiersza z drgnięciem skrzydeł) i delikatne „dyszki” unoszenia przy szybowaniu w ciepłym powietrzu.
+
+
+## 20. Tor dwupoziomowy: 9 dróg, a w każdej 9 miejsc Okruszka (właściciel 26.10 późnym wieczorem)
+Cytat: „może być taka swobodna mapa, ale będziesz miał więcej do pracy. Ja to widziałem jako właśnie te 9 kwadratów i w każdym z nich może znaleźć się Okruszek. A Okruszek też ma możliwość lotu w te boki, ale też do góry (i na boki do góry) oraz w dół. Czyli droga ma 9 boxów, w których może znaleźć się Okruszek, a sam Okruszek też ma w sumie 9 opcji, gdzie może się znaleźć w danym kwadracie. To tylko koncepcja, która powinna Ci pomóc. Jeśli masz lepsze rozwiązanie, jestem na nie otwarty.”
+Przyczyna zgłoszenia: w swobodnym locie (bez toru) skręt był nieograniczony (zbaczanie z trasy, brak wiatrów); dlatego od 26.10 TOR jest domyślny dla graczy (?swobodny=1 przywraca stary lot).
+
+### 20.1 Model
+- Poziom 1 (droga): siatka 3 x 3 komórek (jak w sekcji 15). Wiatry, przeszkody i frazy z biblioteki (05-bestiariusz-stref.md) żyją na poziomie komórek.
+- Poziom 2 (Okruszek): w KAŻDEJ komórce Okruszek ma siatkę 3 x 3 pozycji (dziewięć miejsc: środek, cztery strony, cztery rogi). Razem 9 x 9 = 81 możliwych miejsc, ale gracz nie widzi 81 kwadratów: widzi trzy drogi i (jak poprzednio) płynny ruch; pozycje wewnątrz komórki są dyskretne z miękkim „przyciąganiem” (magnes) i animowanym ruchem.
+- Ruch: małe wychylenie (krótkie przeciągnięcie / krótkie stuknięcie kierunku / lekki ruch drążka) przesuwa o JEDNO miejsce w komórce; ruch w tym samym kierunku z brzegu komórki przechodzi do następnej komórki (jeden ciągły łańcuch pozycji 9 x 9); długie przeciągnięcie i przewrót (19.1) przeskakują do następnej komórki w danym kierunku. Wszystkie osiem kierunków (z ukosami) w obu poziomach.
+- Wiatry i „idealne wejście” (Z3c, Z18, Z19): środek wiatru to środkowe miejsce w komórce (idealne wejście, nuta, łańcuch); miejsca na brzegu dają mały skok bez przedłużania łańcucha. To zastępuje dzisiejsze okno ±11 px czytelną, dyskretną regułą i naturalnie rozwiązuje uwagę QA, że idealne wejście było niewidoczne.
+- Przeszkody: chmury i inne obiekty zajmują część komórki (od 1 do 6 z 9 miejsc), więc w obrębie jednej drogi można ominąć przeszkodę drobnym ruchem; duże obiekty (tornado, samolot, burza) zajmują całą komórkę lub dwie. Hitbox Okruszka = jedno miejsce (z tolerancją).
+- Wysokość: wiersz toru (ziemia/powietrze/chmury/nadchmurze w trybie poziomym, sekcja 16) zostaje poziomem 1; unoszenie i opadanie w komórce to ruch góra/dół w poziomie 2.
+- Grafika: bez ramek i bez siatki (15.9, 19.2): drogi jako wstęgi światła, cień i poświata pokazują miejsce; miejsce wewnątrz komórki pokazane naturalnie (cień Okruszka, delikatne podświetlenie punktu przyciągania w środku wiatru).
+
+### 20.2 Wersjonowanie i test
+- Eksperyment pod flagą ?tor9=1 obok toru 3 x 3 (domyślny zostaje 3 x 3 do decyzji właściciela po teście na telefonie). Zlecenie Z22 po Z21 (Fable), bo zmienia wejście, ruch i kolizje.
+- Testy: boty na siatce 9 x 9 (idealny, 70%, 50%, losowy, bierny), uczciwość (zawsze wolna ścieżka na poziomie miejsc), trzy tryby sterowania wykonują wszystkie kroki małe i duże, magnes nie zmienia celów trudności z Z18, opóźnienie wejścia < 50 ms, czytelność (gracz bez instrukcji widzi, dokąd może się przesunąć).
+- Kryterium akceptacji właściciela: czy dwupoziomowy ruch daje większą satysfakcję z lotu niż toru 3 x 3 (ocena na telefonie).
