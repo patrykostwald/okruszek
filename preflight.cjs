@@ -17,6 +17,7 @@
    Z11: hak krain K2-K5 (z11, z11Zbuduj, ptakEkran, budzetLog; zdarzenie szpile / komin / latawce / poryw / przelot / tecza_ks / rogal widoczne w gdzie()), potem pełny test gra_test_z11.cjs
    (wymuszenia, szczeliny i kolizje, komin / tęcza / poryw / smuga / wiry, budżet prędkości z bonusami, 400 wymuszeń, zapowiedzi, kolejność koloru i brak czerwieni przy s = 0,
    słońce, finały i zwiastuny, Rogal, pamięć <= 60 MB, klatki względem Z5). SKIP_Z11=1 pomija go (ok. 8 min).
+   Z15: grafika tonalna: pełny test gra_test_z15.cjs (brak ciemnego obrysu, przejścia bez skoków jasności, L0 nie czarny, zieleń tylko z funkcją, pamięć, klatki względem Z11). SKIP_Z15=1 pomija go (ok. 3 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -74,7 +75,7 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       uniq > 12 ? ok('obraz niepusty przy s=' + v + ' (' + uniq + ' kolorów)') : bad('obraz prawie jednolity przy s=' + v + ' (' + uniq + ')');
     }
     const k0 = kolory[0], k5 = kolory[0.5], k1 = kolory[1];
-    (k0.niebo === 0 && k0.daleko === 0 && k0.blisko === 0 && k0.smugi === 0) ? ok('s=0: zero koloru (same kreski)') : bad('s=0 ma kolor: ' + JSON.stringify(k0));
+    (k0.niebo === 0 && k0.daleko === 0 && k0.blisko === 0 && k0.smugi === 0) ? ok('s=0: zero koloru (tony L0)') : bad('s=0 ma kolor: ' + JSON.stringify(k0));
     (k5.niebo > k5.daleko && k5.daleko > k5.blisko && k5.blisko > 0 && k5.smugi === 0) ? ok('s=0,5 (L2): kolor od tyłu do przodu (niebo > daleko > blisko > 0, smugi dopiero od L3) ' + JSON.stringify(k5)) : bad('s=0,5 złe progi: ' + JSON.stringify(k5));
     (k1.niebo > 0.9999 && k1.daleko > 0.9999 && k1.blisko > 0.9999 && k1.smugi > 0.9999) ? ok('s=1: pełny kolor wszędzie') : bad('s=1 nie jest pełnią: ' + JSON.stringify(k1));
     (k5.niebo < 0.5 && k5.daleko < 0.5) ? ok('s=0,5: pełnia jeszcze nie osiągnięta (pełny kolor dopiero w L4-L5)') : bad('pełnia za wcześnie przy s=0,5');
@@ -222,6 +223,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z11|BŁĄD|^[(]| info (klatki|CPU|czerwone|boty|bot idealny|finały)/.test(l));
       lines.forEach(l => console.log('  z11> ' + l.trim()));
       code === 0 && /TEST Z11 OK/.test(out) ? ok('test Z11 (gra_test_z11.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z11 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z15: grafika tonalna (brak ciemnego obrysu, przejścia bez skoków, L0 nie czarny, zieleń tylko z funkcją, pamięć, klatki), pełny test w osobnym procesie */
+  if (process.env.SKIP_Z15) console.log('  info pominięto test Z15 (SKIP_Z15)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z15.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z15.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 590000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z15|BŁĄD|^[(]| info (baza|klatki|przemiatanie|wlot|L0 doba|L2 doba)/.test(l));
+      lines.forEach(l => console.log('  z15> ' + l.trim()));
+      code === 0 && /TEST Z15 OK/.test(out) ? ok('test Z15 (gra_test_z15.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z15 nie przeszedł (kod ' + code + ')');
     }
   }
   /* Z5: intro, dźwięk, PWA, prywatność; własny lokalny serwer na localhost, pełny test w osobnym procesie */

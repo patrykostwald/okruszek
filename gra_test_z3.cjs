@@ -222,11 +222,11 @@ const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
     }
   }
   const n0 = col.n0, n1 = col.n1;
-  chk(n0.niebo === 0 && n0.daleko === 0 && n0.blisko === 0 && n0.smugi === 0 && n0.noc === 1, 'noc s=0: zero koloru (same kontury), biom nocny włączony');
+  chk(n0.niebo === 0 && n0.daleko === 0 && n0.blisko === 0 && n0.smugi === 0 && n0.noc === 1, 'noc s=0: zero koloru (tony L0), biom nocny włączony');
   chk(col['n0.5'].niebo > col['n0.5'].daleko && col['n0.5'].daleko > col['n0.5'].blisko && col['n0.5'].smugi === 0, 'noc s=0,5: kolor wchodzi od tyłu do przodu');
   chk(n1.niebo === 1 && n1.daleko === 1 && n1.blisko === 1 && n1.smugi === 1, 'noc s=1: pełny kolor');
   chk(['niebo', 'daleko', 'blisko', 'smugi'].every(k => col['n0.5'][k] === col['d0.5'][k] && col.n1[k] === col.d1[k]), 'reguła kolor z prędkością identyczna w dzień i w nocy');
-  chk(satN.n0.n / satN.n0.tot < 0.002, 'noc s=0: tylko kontur, brak nasyconych pikseli poza ptaszkiem (' + satN.n0.n + ' z ' + satN.n0.tot + ')', 'noc s=0 ma kolor: ' + JSON.stringify(satN.n0));
+  chk(satN.n0.n / satN.n0.tot < 0.002, 'noc s=0: bez koloru (tony L0), brak nasyconych pikseli poza ptaszkiem (' + satN.n0.n + ' z ' + satN.n0.tot + ')', 'noc s=0 ma kolor: ' + JSON.stringify(satN.n0));
   chk(satN.n1.n30 / satN.n1.tot > 0.4, 'noc s=1: kolor wypełnia obraz (Z3b: paleta pastelowa, więc próg chroma > 30: ' + (100 * satN.n1.n30 / satN.n1.tot).toFixed(0) + '% pikseli)', 'noc s=1 bez koloru: ' + JSON.stringify(satN.n1));
   chk(star.n1 > 0.9 && star['n0.5'] > 0.9 && star.d1 < 0.05, 'gwiazdy: w nocy nie gasną z kolorem (s=1: ' + f2(star.n1) + '), w dzień przy s=1 gasną (' + f2(star.d1) + ')', 'gwiazdy ' + JSON.stringify(star));
   /* Z3b: biom nocny po 1000 m zastąpiła doba w tle (noc jest jedną z pór); płynność doby i jej tempo sprawdza gra_test_z3b.cjs */

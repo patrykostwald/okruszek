@@ -708,6 +708,7 @@ Słońce obiecało wrócić rano.</p>
     x.restore(); if (soft) blurInPlace(S, 3); M.body = S;
     /* etapy wzrostu plamy (kolor rośnie od środków płatów jak malowany obraz): 35% i 65% pokrycia, liczone na pikselach */
     M.st = [growStage(M.body, g, 0.35, zFrame(g, pad, MSL)), growStage(M.body, g, 0.65, zFrame(g, pad, MSL))];
+    blurInPlace(M.st[0], 1.6); blurInPlace(M.st[1], 1.2);   /* Z15: miękki brzeg rosnącej plamy (bez kropek) */
     /* schnący brzeg: ciemniejsza obwódka plamy, zakładki płatów, kalafiory */
     S = fr(MSC); x.save(); shapeClip(1.4); x.strokeStyle = '#000';
     for (k = 0; k < g.runs.length; k++) { x.beginPath(); n = g.runs[k]; x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.globalAlpha = 0.3; x.lineWidth = 8; x.stroke(); x.globalAlpha = 0.8; x.lineWidth = 2.8; x.stroke(); }
@@ -1747,7 +1748,7 @@ Słońce obiecało wrócić rano.</p>
   }
   function updStage() {
     var se = sk + 0.02, k, w, n = 0;
-    ST.g = sg(se); ST.p = sp_(se); ST.w = sw_(se); ST.f = sf(se);
+    ST.g = sm((se - 0.09) / 0.42); ST.p = sp_(se);   /* Z15: wizualny etap szarości łagodniejszy niż sg (krzywa koloru cAll i testy kolejności bez zmian) */ ST.w = sw_(se); ST.f = sf(se);
     for (k = 0; k < NHUE; k++) { w = sm((sk + 0.015 - HUES[k].enter) / HUEW); hueW[k] = w; if (w > 0.5) n++; }
     odcieni = n;
   }
@@ -1762,7 +1763,7 @@ Słońce obiecało wrócić rano.</p>
     for (k = 0; k < 4; k++) tones[k] = satc(tones[k], 1 + SAT_FULL * ST.f);   /* Z3c: nasycenie chmur rośnie w pełni koloru */
     /* Z15: podkład tonalny: tony L0 pory (c0..c3) przechodzą w szarości/błękit L1 (gB) z etapem g; plama koloru (tones) rośnie na nim */
     var B0 = [P.c0, P.c1, P.c2, P.c3], bs = [];
-    for (k = 0; k < 4; k++) bs.push(mixc(mixc(B0[k], gB[k], ST.g), tones[k], ST.f));   /* w pełni koloru podkład = barwa (plama pokrywa całość) */
+    for (k = 0; k < 4; k++) bs.push(mixc(mixc(B0[k], gB[k], Math.min(1, ST.g * 1.5)), tones[k], ST.f));   /* podkład dochodzi do szarości szybciej niż plama (bez kropek w L1) */   /* w pełni koloru podkład = barwa (plama pokrywa całość) */
     if (storm) {   /* burza: ciemniejsza, fioletowo-szara, ale nie czarna (tony średnie) */
       C.tones = [mixc(tones[0], [150, 146, 190], 0.62), mixc(tones[1], [118, 114, 164], 0.66), mixc(tones[2], [94, 90, 140], 0.7), mixc(tones[3], [74, 70, 118], 0.72)];
       C.base = [mixc(bs[0], P.s0, 0.22), mixc(bs[1], P.s0, 0.3), mixc(bs[2], P.s0, 0.38), mixc(bs[3], P.s0, 0.46)];
@@ -3908,7 +3909,7 @@ Słońce obiecało wrócić rano.</p>
     C.rim = mixc(stageCol(P.r0, P.rim, P.warm), LIGHTC, 0.35 * ST.w); C.rimA = lerp(0.55, 0.85, sm((sk + 0.02 - 0.3) / 0.3));   /* Z15: jasna krawędź od światła także w L0 */
     C.wShL = 1 - LW_L; C.wShR = LW_L; C.wRimL = LW_L; C.wRimR = 1 - LW_L;
     C.glass = stageCol(P.c0, mixc(P.sL, [236, 244, 255], 0.5), P.warm); C.glassA = 0.42;
-    C.okno = stageCol(P.c2, mixc(P.sh, [112, 128, 182], 0.45), P.warm); C.oknoA = 0.72 * (1 - 0.6 * P.nightW);
+    C.okno = stageCol(P.c2, mixc(P.sh, [112, 128, 182], 0.45), P.warm); C.oknoA = 0.72 * (1 - 0.6 * P.nightW) * (0.45 + 0.55 * ST.g);   /* Z15: w L0 okna jaśniejsze (bez rzędów ciemnych kresek) */
     C.mint = stageCol(P.c1, [168, 217, 184], P.warm); C.drew = stageCol(P.c1, [206, 176, 146], P.warm); C.granA = 0.1 + 0.08 * (1 - ST.p);
     C.key = keyC(C.top) + keyC(C.mid) + keyC(C.bot) + keyC(C.fog) + keyC(C.shade) + keyC(C.rim) + keyC(C.glass) + keyC(C.okno) + Math.round(C.rimA * 10) + '/' + Math.round(C.oknoA * 10) + C.wShR + '/' + Math.round(C.mulK * 20);
     return C;

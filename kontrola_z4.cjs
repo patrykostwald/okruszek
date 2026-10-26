@@ -21,7 +21,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const chr = [];
   for (let n = 0; n <= 4; n++) { await fresh(); await ev(() => __okruszek.ustawPore('zachod')); await ev((q) => __okruszek.ustawPoziom(q), n); await sleep(900); chr.push(await metr()); }
   console.log('  info zachód L0..L4 nadwyżka/barwne: ' + chr.map(c => c.ex.toFixed(1) + '/' + c.kol.toFixed(3)).join('  '));
-  chk(chr[0].ex < 5 && chr[0].kol < 0.05, 'L0 sam kontur'); chk(chr[1].ex < 8 && chr[1].kol < 0.25, 'L1 niskie nasycenie');
+  chk(chr[0].ex < 5 && chr[0].kol < 0.05, 'L0 bez koloru (tony L0)'); chk(chr[1].ex < 8 && chr[1].kol < 0.25, 'L1 niskie nasycenie');
   chk(chr[2].ex >= chr[1].ex && chr[3].ex > chr[2].ex && chr[4].ex >= chr[3].ex * 0.9 && chr[2].kol > chr[1].kol && chr[3].kol > chr[2].kol && chr[4].kol > chr[3].kol, 'nasycenie i barwne piksele rosną z poziomem');
   const chrP = {};
   for (const pr of ['noc', 'swit', 'dzien', 'zachod']) { await fresh(); await ev((q) => __okruszek.ustawPore(q), pr); await ev(() => __okruszek.ustawPoziom(0)); await sleep(800); const a0 = await metr(); await ev(() => __okruszek.ustawPoziom(1)); await sleep(800); const a1 = await metr(); await ev(() => __okruszek.ustawPoziom(4)); await sleep(900); const a4 = await metr(); chrP[pr] = [a0.ex, a1.ex, a4.ex]; }

@@ -197,7 +197,7 @@ const NSEED = FAST ? 6 : 16, NPOL = FAST ? 12 : 40;   /* bot 50%: więcej ziaren
   const pelna = PN.every(p => kPor[p + 1].niebo > 0.9999 && kPor[p + 1].daleko > 0.9999 && kPor[p + 1].blisko > 0.9999 && kPor[p + 1].smugi > 0.9999);
   const posr = PN.every(p => kPor[p + 0.3].blisko < 0.5 && kPor[p + 0.62].blisko < 0.8 && kPor[p + 0.62].blisko > kPor[p + 0.3].blisko + 0.15 && kPor[p + 0.3].niebo > 0.15 && kPor[p + 0.62].smugi < 0.5);
   console.log('  info kolory (zachód): E=0 ' + JSON.stringify(kPor['zachod0']) + '; E=0,3 ' + JSON.stringify(kPor['zachod0.3']) + '; E=0,62 ' + JSON.stringify(kPor['zachod0.62']) + '; E=1 ' + JSON.stringify(kPor['zachod1']));
-  chk(zer && pelna && posr, 'E = 0: sam kontur (zero koloru); E = 1: pełny kolor wszędzie (kolory 1,0); E = 0,3 i 0,62 pośrednie, rosnące, pełni jeszcze nie ma', 'etapy E: ' + JSON.stringify({ zer, pelna, posr }));
+  chk(zer && pelna && posr, 'E = 0: bez koloru (tony L0); E = 1: pełny kolor wszędzie (kolory 1,0); E = 0,3 i 0,62 pośrednie, rosnące, pełni jeszcze nie ma', 'etapy E: ' + JSON.stringify({ zer, pelna, posr }));
   /* rozkwit na klatkach: próbkowanie kolejności i fali (tempo 0,25: 1,2 s gry = 4,8 s rzeczywistych) */
   await fresh(); await ev(() => { const o = __okruszek; o.ustawPore('zachod'); o.stala('SINK', 0); o.trafPrad(); o.symuluj(1.0, 1 / 60); o.trafPrad(); o.symuluj(1.0, 1 / 60); o.tempo(0.25); });
   const fr = await ev(() => new Promise(res => {

@@ -32,6 +32,15 @@ const chce = (g) => grupa === 'wszystko' || grupa === g;
       for (let k = 0; k < 6; k++) { const v = mid[n] + (mid[n + 1] - mid[n]) * k / 5; await ev((x) => { __okruszek.ustaw(x); __okruszek.ustawPore('zachod'); }, v); await sleep(380); await shot('przejscie-L' + n + 'L' + (n + 1) + '-' + k); }
     }
   }
+  if (chce('czas')) {   /* przejście w czasie gry: wlot w prąd (E 0 -> 0,3, potem 0,3 -> 0,62), 6 klatek co 0,05 s czasu gry (tempo 0,1: 0,5 s na klatkę) */
+    await fresh(); await ev(() => { const o = __okruszek; o.odblokuj(); o.ustawPore('zachod'); o.tempo(1); }); await sleep(700);
+    for (const [nm, ile] of [['E0-E03', 1], ['E03-E062', 1]]) {
+      await ev(() => { __okruszek.tempo(0.1); }); await sleep(200);
+      for (let i = 0; i < ile; i++) await ev(() => __okruszek.trafPrad());
+      for (let k = 0; k < 6; k++) { await shot('czas-' + nm + '-' + k); await sleep(Math.max(0, 500 - 160)); }
+      await sleep(1500);
+    }
+  }
   if (chce('zblizenia')) {   /* chmury z bliska: płótno w 3x (sc=3), wycinek 130x150 px CSS powiększony 3 razy */
     const c3 = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
     const q = await c3.newPage(); await q.goto('file:///' + file.split(path.sep).join('/') + '?test&seed=23&pasmo=1'); await sleep(900);
