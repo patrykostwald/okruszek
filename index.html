@@ -834,12 +834,12 @@ Słońce obiecało wrócić rano.</p>
   function spodNocny(x, S, g, C, nb) {
     var gh = Math.max(16, -g.top * SPOD.H), lg, r = R32((g.sd || 7) * 3 + 11), xx, rw, rh, rg;
     x.save(); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
-    lg = x.createLinearGradient(0, -gh, 0, 6); lg.addColorStop(0, rgba(C.rim, 0)); lg.addColorStop(1, rgba(mixc(C.rim, C.tones[1], 0.5), SPOD.A * nb));   /* światło w barwie tej chmury (nie blednie: kolor nocą zostaje) */
+    lg = x.createLinearGradient(0, -gh, 0, 6); lg.addColorStop(0, rgba(C.rim, 0)); lg.addColorStop(1, rgba(mixc(C.rim, C.tones[1], 0.5), SPOD.A * nb * (1 - 0.85 * ST.p)));   /* rozjaśnienie głównie w L0-L1 (tam spód był ciężki); w kolorze nie zabiera nasycenia nocy */   /* światło w barwie tej chmury (nie blednie: kolor nocą zostaje) */
     x.globalCompositeOperation = 'source-atop'; x.fillStyle = lg; x.fillRect(g.minx - 30, -gh, g.maxx - g.minx + 60, gh + 30);
     x.globalCompositeOperation = 'destination-out';
     for (xx = g.minx + 6; xx < g.maxx; xx += rw * 1.3) {
       rw = 14 + r() * 24; rh = 4 + r() * 7;
-      rg = x.createRadialGradient(xx, 4, 0, xx, 4, rw); rg.addColorStop(0, 'rgba(0,0,0,' + (SPOD.WCIECIE * nb).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      rg = x.createRadialGradient(xx, 4, 0, xx, 4, rw); rg.addColorStop(0, 'rgba(0,0,0,' + (SPOD.WCIECIE * nb * (1 - 0.7 * ST.p)).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(0,0,0,0)');
       x.fillStyle = rg; x.save(); x.translate(xx, 4); x.scale(1, rh / rw); x.translate(-xx, -4); x.fillRect(xx - rw, 4 - rw, rw * 2, rw * 2); x.restore();
     }
     x.restore();
