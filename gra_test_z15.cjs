@@ -50,6 +50,8 @@ const MIERZ = () => {
   let lum = 0, chr = 0, ex = 0, tot = 0, dol = 0, grz = 0, n = 0, zie = 0;
   for (let y = Math.round(90 * sc); y < H - 2; y++) for (let xx = 2; xx < W - 2; xx++) {
     if (Math.abs(xx - bcx) < bw && Math.abs(y - bcy) < bw) continue;
+    /* Z18: poza napisami HUD pod paskiem (nazwa krainy do y 122, komunikat poziomu y 122-158): w dzień mają ciemny tusz (QA P1-4: kontrast >= 4,5:1), a to nie kontur obiektu */
+    if ((y < 122 * sc && xx < 260 * sc) || (y >= 122 * sc && y < 158 * sc && Math.abs(xx - W / 2) < 95 * sc)) continue;
     const i = y * W + xx, l = L[i];
     if ((y & 1) === 0 && (xx & 1) === 0) {
       const q = i * 4, r = d[q], g = d[q + 1], b = d[q + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), ch = mx - mn;

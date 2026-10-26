@@ -1,0 +1,418 @@
+{
+ "pliki": {
+  "index.html": 581408,
+  "teksty.js": 4487,
+  "dzwiek.js": 7589,
+  "sw.js": 1510,
+  "manifest.webmanifest": 647,
+  "ikona-192.png": 36712,
+  "ikona-512.png": 186560,
+  "ikona-180.png": 34392,
+  "index_gzip": 185294,
+  "index_brotli": 147045
+ },
+ "fps": {
+  "cpu1-L0-dzien": {
+   "fps": {
+    "n": 240,
+    "avg": 100,
+    "p5": 99,
+    "min": 97.1
+   },
+   "praca": {
+    "n": 600,
+    "avg": 2.39,
+    "p95": 3.3,
+    "max": 11.1
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 1.72,
+    "p50": 1.7,
+    "p95": 2.2
+   },
+   "sprite": {
+    "MB": 16.7,
+    "sprite": 257,
+    "rejestr": 34
+   },
+   "heapMB": 6,
+   "plastrow": 7,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu1-L5-noc": {
+   "fps": {
+    "n": 240,
+    "avg": 96.4,
+    "p5": 99,
+    "min": 33.2
+   },
+   "praca": {
+    "n": 600,
+    "avg": 3.9,
+    "p95": 5.8,
+    "max": 34.5
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 3.41,
+    "p50": 3.2,
+    "p95": 5.1
+   },
+   "sprite": {
+    "MB": 17.5,
+    "sprite": 261,
+    "rejestr": 34
+   },
+   "heapMB": 10,
+   "plastrow": 5,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu1-L3-zachod-duzo": {
+   "fps": {
+    "n": 240,
+    "avg": 99.6,
+    "p5": 99,
+    "min": 50
+   },
+   "praca": {
+    "n": 600,
+    "avg": 3.8,
+    "p95": 6,
+    "max": 41
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 2.99,
+    "p50": 2.7,
+    "p95": 5
+   },
+   "sprite": {
+    "MB": 21.8,
+    "sprite": 295,
+    "rejestr": 49
+   },
+   "heapMB": 12,
+   "plastrow": 9,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu1-L5-dzien-duzo": {
+   "fps": {
+    "n": 240,
+    "avg": 92.7,
+    "p5": 50,
+    "min": 33.3
+   },
+   "praca": {
+    "n": 600,
+    "avg": 6.59,
+    "p95": 12.2,
+    "max": 47
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 3.99,
+    "p50": 3.8,
+    "p95": 6.1
+   },
+   "sprite": {
+    "MB": 22.1,
+    "sprite": 298,
+    "rejestr": 50
+   },
+   "heapMB": 13,
+   "plastrow": 9,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu1-bledy": [],
+  "cpu4-L0-dzien": {
+   "fps": {
+    "n": 240,
+    "avg": 42.2,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 350,
+    "avg": 17.14,
+    "p95": 32.4,
+    "max": 58.5
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 13.36,
+    "p50": 11,
+    "p95": 26.3
+   },
+   "sprite": {
+    "MB": 16.7,
+    "sprite": 257,
+    "rejestr": 34
+   },
+   "heapMB": 8,
+   "plastrow": 7,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu4-L5-noc": {
+   "fps": {
+    "n": 240,
+    "avg": 33.4,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 268,
+    "avg": 24.48,
+    "p95": 37.2,
+    "max": 56.6
+   },
+   "cpu": {
+    "n": 240,
+    "sr": 19.45,
+    "p50": 18.5,
+    "p95": 29.3
+   },
+   "sprite": {
+    "MB": 17.5,
+    "sprite": 261,
+    "rejestr": 34
+   },
+   "heapMB": 9,
+   "plastrow": 4,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu4-L3-zachod-duzo": {
+   "fps": {
+    "n": 191,
+    "avg": 25,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 191,
+    "avg": 35.36,
+    "p95": 57,
+    "max": 90.6
+   },
+   "cpu": {
+    "n": 191,
+    "sr": 28.54,
+    "p50": 27.4,
+    "p95": 45.6
+   },
+   "sprite": {
+    "MB": 20.8,
+    "sprite": 290,
+    "rejestr": 47
+   },
+   "heapMB": 8,
+   "plastrow": 11,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu4-L5-dzien-duzo": {
+   "fps": {
+    "n": 164,
+    "avg": 23.9,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 164,
+    "avg": 41.65,
+    "p95": 80.4,
+    "max": 134.1
+   },
+   "cpu": {
+    "n": 164,
+    "sr": 33.81,
+    "p50": 29.8,
+    "p95": 64.8
+   },
+   "sprite": {
+    "MB": 22.9,
+    "sprite": 303,
+    "rejestr": 52
+   },
+   "heapMB": 10,
+   "plastrow": 12,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu4-bledy": [],
+  "cpu6-L0-dzien": {
+   "fps": {
+    "n": 150,
+    "avg": 23.1,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 150,
+    "avg": 41.37,
+    "p95": 72.8,
+    "max": 90.7
+   },
+   "cpu": {
+    "n": 150,
+    "sr": 29.88,
+    "p50": 27.1,
+    "p95": 52.2
+   },
+   "sprite": {
+    "MB": 16.7,
+    "sprite": 257,
+    "rejestr": 34
+   },
+   "heapMB": 8,
+   "plastrow": 7,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu6-L5-noc": {
+   "fps": {
+    "n": 124,
+    "avg": 21,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 124,
+    "avg": 53.82,
+    "p95": 104.5,
+    "max": 132.8
+   },
+   "cpu": {
+    "n": 124,
+    "sr": 41.67,
+    "p50": 36.1,
+    "p95": 82.9
+   },
+   "sprite": {
+    "MB": 17.5,
+    "sprite": 261,
+    "rejestr": 34
+   },
+   "heapMB": 7,
+   "plastrow": 5,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu6-L3-zachod-duzo": {
+   "fps": {
+    "n": 119,
+    "avg": 20.2,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 119,
+    "avg": 56.57,
+    "p95": 98.8,
+    "max": 115.2
+   },
+   "cpu": {
+    "n": 119,
+    "sr": 46.94,
+    "p50": 43,
+    "p95": 87.3
+   },
+   "sprite": {
+    "MB": 19.2,
+    "sprite": 280,
+    "rejestr": 43
+   },
+   "heapMB": 9,
+   "plastrow": 11,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu6-L5-dzien-duzo": {
+   "fps": {
+    "n": 97,
+    "avg": 20,
+    "p5": 20,
+    "min": 20
+   },
+   "praca": {
+    "n": 97,
+    "avg": 70.19,
+    "p95": 110.9,
+    "max": 143.1
+   },
+   "cpu": {
+    "n": 97,
+    "sr": 57.58,
+    "p50": 53.2,
+    "p95": 96.8
+   },
+   "sprite": {
+    "MB": 20.1,
+    "sprite": 285,
+    "rejestr": 45
+   },
+   "heapMB": 8,
+   "plastrow": 13,
+   "budzet": {
+    "s0": 0,
+    "s1": 0,
+    "s2": 0,
+    "duze": 0
+   }
+  },
+  "cpu6-bledy": []
+ },
+ "zimny": {},
+ "dlugi": [],
+ "live": null
+}

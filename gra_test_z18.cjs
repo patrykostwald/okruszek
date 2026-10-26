@@ -173,7 +173,7 @@ const BIEG = ([src, kr, seed, MAXS]) => {
   for (const [pora, L] of [['dzien', 0], ['swit', 1], ['dzien', 2], ['zachod', 3], ['noc', 0], ['noc', 4]]) {
     await H2.pg.evaluate(([pora, L]) => { const O = window.__okruszek; O.tempo(1); O.pauza(true); O.panel(false); O.ziarno(77); O.brama(3); O.odblokuj(); O.bezPrzeszkod(false); O.bezPradow(false); O.nowyBieg();
       let n = -9; O.torSymuluj(30, (A) => (A.kom.wiersz >= 2 || A.kom.p > 0.5) && A.t - n > 0.25 ? (n = A.t, { stuk: 0 }) : {}, 1 / 60); O.ustawPore(pora); O.ustawPoziom(L); O.tempo(0.001); O.pauza(false); }, [pora, L]);
-    await sleep(700); hud[pora + '-L' + L] = await H2.pg.evaluate(KONTRAST, BOXY);
+    await sleep(1500); hud[pora + '-L' + L] = await H2.pg.evaluate(KONTRAST, BOXY);   /* tusz HUD przechodzi płynnie (ok. 0,3 s czasu rzeczywistego) po próbce co 0,25 s */
   }
   const hudMin = Math.min(...Object.values(hud).flat().map(b => b.kontrast));
   chk(hudMin >= 4.5, 'kontrast napisów HUD >= 4,5:1 (najmniej ' + hudMin + '): ' + Object.keys(hud).map(k => k + ' ' + hud[k].map(b => b.kontrast).join('/')).join(', ') + ' (przed Z18 w dzień 1,75-2,5)');

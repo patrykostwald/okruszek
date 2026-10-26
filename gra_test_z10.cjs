@@ -338,7 +338,8 @@ const NZ = +process.env.ZIAREN || 10;
     const k = c.width / 390, row = (x0, x1) => { const d = x.getImageData(Math.round(x0 * k), Math.round(56.5 * k) - 1, Math.round((x1 - x0) * k), 2).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += d[i] + d[i + 1] + d[i + 2]; return s / (d.length / 4); };
     const d = __okruszek.droga(); return { pelne: row(20, 20 + 107 * 0.45), puste: row(18 + 107 * 0.62, 122), f: (d.drogaM - d.od) / (d.do - d.od) }; });
   await p390.evaluate(() => { __okruszek.pauza(true); __okruszek.tempo(1); __okruszek.odblokuj(); });
-  chk(kr.pelne > kr.puste + 60 && kr.f > 0.5 && kr.f < 0.56, 'kreska do bramy pod licznikiem: wypełniona część jaśniejsza (' + Math.round(kr.pelne) + ' vs ' + Math.round(kr.puste) + ') przy ' + Math.round(kr.f * 100) + '% drogi do bramy, bez liczb');
+  /* Z18: na jasnym niebie tusz HUD jest ciemny (QA P1-4), więc wypełniona część bywa ciemniejsza; sprawdzamy wyraźną różnicę wypełnionej i pustej części */
+  chk(Math.abs(kr.pelne - kr.puste) > 60 && kr.f > 0.5 && kr.f < 0.56, 'kreska do bramy pod licznikiem: wypełniona część wyraźnie odróżnia się od pustej (' + Math.round(kr.pelne) + ' vs ' + Math.round(kr.puste) + ') przy ' + Math.round(kr.f * 100) + '% drogi do bramy, bez liczb');
   await p390.evaluate(() => { const o = __okruszek; o.wyczyscZapis(); o.wytrwalosc(1, 1e6); o.pauza(true); o.nowyBieg(); o.ustawPoziom(2); o.symuluj(1.4); o.tempo(0.1); o.pauza(false); });
   await p390.waitForTimeout(400); await shot('scena-fiuk-brama2'); await p390.evaluate(() => { __okruszek.pauza(true); __okruszek.tempo(1); __okruszek.odblokuj(); __okruszek.wyczyscZapis(); });
   await p390.evaluate(() => { const o = __okruszek; o.pauza(true); o.wyczyscZapis(); o.bezPrzeszkod(true); o.brama(2); o.ustawPore('noc'); o.ustawPoziom(2); o.zdarzenie('sowaPokaz'); o.symuluj(2); o.tempo(0.1); o.pauza(false); });

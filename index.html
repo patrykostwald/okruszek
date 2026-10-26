@@ -2501,32 +2501,29 @@ Słońce obiecało wrócić rano.</p>
   /* licznik dystansu (lewa strefa), poziom (lewa strefa, pod licznikiem) i pasek wysokości (prawa strefa): stałe miejsca */
   function rrect(x, y, w, hh, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, hh, r); else ctx.rect(x, y, w, hh); }
   /* ---------- Z18 (P1-4, P2-5): tusz HUD zależny od jasności tła ----------
-     Co HUD_PROBE s średnia luminancja względna (WCAG) obrazu w strefach HUD (lewa: dystans, poziom, iskierki, nazwa krainy; prawa: wysokość), zanim HUD zostanie narysowany.
+     Co HUD_PROBE s luminancja względna (WCAG) nieba u góry kadru (skyStops, bez odczytu płótna), uwzględnia ściemnienie burzy.
      Ciemne tło (noc): jasny tusz LINE z ciemną poświatą. Jasne tło (dzień, świt, pastelowy start): ciemny fiolet HUD_INK z jasną poświatą i mleczną plakietką,
      której krycie dobiera się tak, by tło pod tekstem miało luminancję >= HUD_LMIN (kontrast tuszu >= 4,5:1). Przełączenie z histerezą (HUD_L_DZ / HUD_L_NOC), płynnie. */
-  var HUD_INK = [52, 48, 98], HUD_MLEKO = [250, 248, 255], HUD_PROBE = 0.4, HUD_L_DZ = 0.11, HUD_L_NOC = 0.08, HUD_LMIN = 0.62;
+  var HUD_INK = [52, 48, 98], HUD_MLEKO = [250, 248, 255], HUD_PROBE = 0.25, HUD_L_DZ = 0.11, HUD_L_NOC = 0.08, HUD_LMIN = 0.62;
   var hudL = 0.1, hudDz = false, hudK = 0, hudPT = 9, hudPlA = 0;
   function linL(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
-  var hudPrC = null, hudPrX = null;   /* małe płótno CPU (willReadFrequently): strefa HUD zmniejszona do 16 x 8 px, odczyt bez czytania dużego płótna gry */
-  function hudProbe(dt) {
-    var d, i, n = 0, sum = 0, Z = [[14, 10, 190, 104], [W - 146, 10, 134, 50]], z;
-    hudPT += dt;
+  var hudRT = 0;
+  function hudProbe(dt0, dk) {
+    var d, i, n = 0, sum = 0, Z = [[14, 10, 190, 104], [W - 146, 10, 134, 50]], z, nw = performance.now() / 1000, dt = hudRT ? Math.min(0.1, Math.max(0, nw - hudRT)) : 0;   /* czas rzeczywisty (także przy zwolnionym tempie gry) */
+    hudRT = nw; hudPT += dt;
     if (hudPT >= HUD_PROBE) {
       hudPT = 0;
       try {
-        if (!hudPrC) { hudPrC = document.createElement('canvas'); hudPrC.width = 16; hudPrC.height = 8; hudPrX = hudPrC.getContext('2d', { willReadFrequently: true }); }
-        for (z = 0; z < Z.length; z++) {
-          hudPrX.drawImage(cv, Math.max(0, Math.round(Z[z][0] * SC)), Math.round(Z[z][1] * SC), Math.round(Z[z][2] * SC), Math.round(Z[z][3] * SC), 0, 0, 16, 8);
-          d = hudPrX.getImageData(0, 0, 16, 8).data;
-          for (i = 0; i < d.length; i += 4) { sum += 0.2126 * linL(d[i]) + 0.7152 * linL(d[i + 1]) + 0.0722 * linL(d[i + 2]); n++; }
-        }
+        /* Z18: jasność liczona z barw nieba u góry kadru (skyStops, 0-20% wysokości), bez czytania płótna z karty graficznej (to zatrzymywało klatki) */
+        d = skyStops().col; for (z = 0; z < 2; z++) { sum += 0.2126 * linL(d[z][0]) + 0.7152 * linL(d[z][1]) + 0.0722 * linL(d[z][2]); n++; }
+        if (dk > 0.01) sum *= 1 - 0.45 * dk;   /* ściemnienie burzy */
         if (n) hudL = sum / n;
       } catch (e) { hudL = lumOf(PAL.bg) / 255; }
       if (!hudDz && hudL > HUD_L_DZ) hudDz = true; else if (hudDz && hudL < HUD_L_NOC) hudDz = false;
     }
-    hudK += ((hudDz ? 1 : 0) - hudK) * Math.min(1, dt * 6);
-    if (lockS !== null || paused || hudPT === 0 && dt === 0) hudK = hudDz ? 1 : 0;   /* zrzut, pauza, pierwsza klatka: bez przejścia */
-    hudPlA = hudDz ? Math.max(0.16, Math.min(0.6, (HUD_LMIN - hudL) / Math.max(0.2, 0.96 - hudL))) : 0;
+    hudK += ((hudDz ? 1 : 0) - hudK) * Math.min(1, dt * 6);   /* płynnie (ok. 0,3 s): bez skoku jasności klatek przy zmianie tuszu i plakietki */
+    if (dt === 0) hudK = hudDz ? 1 : 0;   /* pierwsza klatka: bez przejścia */
+    hudPlA += ((hudDz ? Math.max(0.16, Math.min(0.6, (HUD_LMIN - hudL) / Math.max(0.2, 0.96 - hudL))) : hudPlA) - hudPlA) * Math.min(1, dt * 6);
   }
   function hudTusz(a) { return rgba(mixc(LINE, HUD_INK, hudK), a); }
   function hudPoswiata(blur) { ctx.shadowColor = hudK > 0.5 ? 'rgba(255,252,255,' + (0.9 * hudK).toFixed(3) + ')' : 'rgba(13,18,36,' + (0.75 * (1 - hudK)).toFixed(3) + ')'; ctx.shadowBlur = blur; }
@@ -2547,14 +2544,14 @@ Słońce obiecało wrócić rano.</p>
   function drawHUD() {
     var pad = 18, bw = 112, bl = h < 0.25 && state === 'gra' ? 0.6 + 0.4 * Math.sin(t * 7) : 1, ls = 'letterSpacing' in ctx;
     ctx.save(); hudPoswiata(5); ctx.textBaseline = 'alphabetic';
-    if (ls) ctx.letterSpacing = '1.2px';
-    ctx.font = '700 11px ' + FONT; ctx.fillStyle = hudTusz(0.92);   /* Z18: etykiety grubsze i pełniejsze (kontrast >= 4,5:1) */
+    if (ls) ctx.letterSpacing = '1.4px';
+    ctx.font = '600 10px ' + FONT; ctx.fillStyle = hudTusz(hudK > 0.5 ? 0.92 : 0.76);   /* Z18: w dzień etykiety pełniejsze (kontrast >= 4,5:1) */
     ctx.textAlign = 'left'; ctx.fillText('DYSTANS', pad, 24);
     ctx.textAlign = 'right'; ctx.fillText('WYSOKOŚĆ', W - pad, 24);
     if (ls) ctx.letterSpacing = '0px';
     ctx.textAlign = 'left'; ctx.fillStyle = hudTusz(0.96); ctx.font = '600 24px ' + FONT;
     var txt = fmtM(dist); ctx.fillText(txt, pad, 51);
-    var tw = ctx.measureText(txt).width; ctx.font = '600 13px ' + FONT; ctx.fillStyle = hudTusz(0.85); ctx.fillText('m', pad + tw + 4, 51);
+    var tw = ctx.measureText(txt).width; ctx.font = '600 13px ' + FONT; ctx.fillStyle = hudTusz(hudK > 0.5 ? 0.85 : 0.8); ctx.fillText('m', pad + tw + 4, 51);
     ctx.shadowBlur = 0;
     ctx.strokeStyle = hudTusz(0.55); ctx.lineWidth = 1.2; rrect(W - pad - bw, 38, bw, 11, 5.5); ctx.stroke();
     ctx.fillStyle = hudTusz(0.92 * bl); var fw = Math.max(0, (bw - 5) * h);
@@ -2581,7 +2578,7 @@ Słońce obiecało wrócić rano.</p>
     hudPoswiata(6);
     if (ls) ctx.letterSpacing = '1.2px';
     ctx.font = '600 10px ' + FONT; ctx.textAlign = 'left';
-    ctx.font = '700 11px ' + FONT;
+    ctx.font = '600 10px ' + FONT;
     ctx.fillStyle = hudK > 0.5 ? rgba(mixc(HUD_INK, lvl > 0 ? LVCOL[lvl] : HUD_INK, 0.12), 1) : (lvl === 5 ? hsla(hueFlow() + 40, 90, 74, 1) : rgba(lvl > 0 ? mixc(LINE, LVCOL[lvl], 0.5) : LINE, 0.9));   /* Z18: w dzień ciemny tusz z odcieniem poziomu */
     if (hudK <= 0.5) { ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(13,18,36,0.6)'; ctx.strokeText(nm, xt, y + 7); }
     ctx.fillText(nm, xt, y + 7);
@@ -3064,7 +3061,7 @@ Słońce obiecało wrócić rano.</p>
     drawStick(dt);
     if (!introOn) {   /* Z5: we wstępie sam świat, bez wskaźników */
       if (state !== 'koniec') {   /* Z15 (15.8): na jasnym niebie pod białym tekstem HUD miękki, tonalny welon u góry ekranu (czytelność; jeden gradient, bez cieni tekstu) */
-        hudProbe(dt); drawHudPlakietki();   /* Z18 (P1-4): tusz HUD z jasności tła pod nim (próbka obrazu), na jasnym niebie mleczna plakietka i ciemny fiolet */
+        hudProbe(dt, darkK); drawHudPlakietki();   /* Z18 (P1-4): tusz HUD z jasności tła pod nim (próbka obrazu), na jasnym niebie mleczna plakietka i ciemny fiolet */
         drawHUD();
       }
       drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
@@ -4801,7 +4798,7 @@ Słońce obiecało wrócić rano.</p>
     SINK_T: 3.6, SINK_SHOW: 0.3, LIFT_SHOW: 0.5,       /* szybowanie: wiersz w dół co SINK_T s (x G.SINK / 0,04); ile wiersza widać opadanie i zebrany wzlot */
     BEAT: 1, BEAT_SILNE: 1.6, SPAM_K: 0.35, RYTM_MIN: 0.15,   /* wartość machnięcia, mocne (oba kciuki), machnięcie szybsze niż RYTM_MIN po poprzednim liczy się x SPAM_K */
     KOSZT_MIN: 2, KOSZT_MAX: 3, BEAT_P: 0.4, LIFT_HOLD: 0.75, LIFT_LEAK: 1.6,   /* machnięć na wiersz (do środkowego 2, do górnego 3); machnięcie cofa opadanie; wzlot trzyma się / ucieka */
-    HOLD_T: 0.2, TAP_T: 0.26, TAP_D: 14, SWIPE_D: 36, PARA_T: 0.16, NURK_COFNIJ: 0.35, ZJAZD_PO: 0.12,  /* dotyk: przytrzymanie, stuknięcie (czas, ruch), przeciągnięcie (px / czułość), para kciuków (tryb 2) */
+    HOLD_T: 0.2, TAP_T: 0.26, TAP_D: 14, SWIPE_D: 36, PARA_T: 0.16, NURK_COFNIJ: 0.8, ZJAZD_PO: 0.12,  /* dotyk: przytrzymanie, stuknięcie (czas, ruch), przeciągnięcie (px / czułość), para kciuków (tryb 2) */
     STICK_ON: 0.5, STICK_OFF: 0.3, STICK_REP: 0.42,    /* drążek: wychylenie kroku, powrót, powtarzanie przy pełnym wychyleniu */
     DIVE_ROW2: 0.55, DIVE_MAX: 2, DIVE_SINK_T: 2.4, POP_MIN: 0.18,   /* nurkowanie: drugi wiersz po DIVE_ROW2 s, potem opadanie w komórce; wybicie po co najmniej POP_MIN s */
     WIND_T: 0.34, IDEAL: 0.09, IDEAL_UCZ: 0.38, UCZ_GAP: 3.0,   /* przerzut wiatrem; idealne wejście = odchylenie od środka wstęgi < IDEAL wiersza (Z18: było 0,24 względem celu ruchu, więc prawie zawsze; na starcie szersze) */
@@ -5340,7 +5337,7 @@ Słońce obiecało wrócić rano.</p>
     dur = now - p.t0; moved = Math.sqrt((p.x - p.x0) * (p.x - p.x0) + (p.y - p.y0) * (p.y - p.y0));
     tap = !p.ruch && !p.trzyma && dur < TOR.TAP_T && moved < TOR.TAP_D;
     if (!tap && ctrlMode === 2 && !p.ruch && !p.zjazd && dur < TOR.HOLD_T + TOR.PARA_T && moved < TOR.TAP_D) {   /* Z18 (P1-3): pierwszy kciuk położony do PARA_T s przed drugim i puszczony razem z nim = para (mocne machnięcie), nie przytrzymanie */
-      for (var kq in ptr) { var qq = ptr[kq]; if (qq.side !== p.side && !qq.trzyma && qq.t0 > p.t0 && qq.t0 - p.t0 < TOR.PARA_T + 0.1) { qq.para = true; torMachnij(TOR.BEAT_SILNE, 0); torLog.pary = (torLog.pary || 0) + 1; return; } }
+      for (var kq in ptr) { var qq = ptr[kq]; if (qq.side !== p.side && !qq.zjazd && Math.abs(qq.t0 - p.t0) < TOR.PARA_T + 0.1 && now - qq.t0 < TOR.HOLD_T + TOR.PARA_T + 0.1) { qq.para = true; qq.trzyma = false; torNurkAnuluj(); torMachnij(TOR.BEAT_SILNE, 0); torLog.pary = (torLog.pary || 0) + 1; return; } }   /* także gdy obciążona klatka zdążyła zrobić z nich przytrzymanie: krótkie oba = para, nie nurkowanie */
     }
     if (!tap) return;
     if (ctrlMode === 2) torTap2(p, now);
