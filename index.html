@@ -799,7 +799,8 @@ Słońce obiecało wrócić rano.</p>
     var x = S.c.getContext('2d'), g = S.g, w = S.w, hh = S.h, tn = C.tones, bs = C.base || tn, k, cc, b, rg, y;
     x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, hh);
     x.drawImage(M.body.c, 0, 0, w, hh);
-    x.globalCompositeOperation = 'source-in'; x.fillStyle = bandGrad(x, S, g, bs, -0.9); x.fillRect(0, 0, w, hh);   /* podkład: płynne przejścia tonów (bez pasków) */
+    if (C.cov >= 0.999) bs = tn;   /* plama pokrywa całość: od razu tony koloru, bez drugiej warstwy (taniej) */
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = bandGrad(x, S, g, bs, bs === tn ? C.band * 0.4 - 0.6 : -0.9); x.fillRect(0, 0, w, hh);   /* podkład: płynne przejścia tonów (bez pasków) */
     if (bs !== tn && C.cov > 0.004) {   /* plama koloru na podkładzie (płótno robocze, przyłożenie source-atop) */
       y = scratch(w, hh); y.setTransform(1, 0, 0, 1, 0, 0); y.globalCompositeOperation = 'source-over'; y.globalAlpha = 1; y.clearRect(0, 0, w, hh);
       growMask(y, M, C.cov, w, hh);
@@ -2968,7 +2969,11 @@ Słońce obiecało wrócić rano.</p>
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
     if (!introOn) {   /* Z5: we wstępie sam świat, bez wskaźników */
-      if (state !== 'koniec') { ctx.save(); ctx.shadowColor = rgba(mixc(NAVY, [40, 44, 84], 0.6), 0.55 * sm((lumOf(PAL.bg) - 90) / 60)); ctx.shadowBlur = 4; drawHUD(); ctx.restore(); }   /* Z15 (15.8): na jasnym niebie biały tekst HUD dostaje miękki cień (czytelność) */
+      if (state !== 'koniec') {   /* Z15 (15.8): na jasnym niebie pod białym tekstem HUD miękki, tonalny welon u góry ekranu (czytelność; jeden gradient, bez cieni tekstu) */
+        var hk = sm((lumOf(PAL.bg) - 120) / 60);
+        if (hk > 0.01) { if (!HUDW || HUDW.key !== Math.round(hk * 20)) { HUDW = ctx.createLinearGradient(0, 0, 0, 120); HUDW.addColorStop(0, rgba([58, 66, 108], 0.34 * hk)); HUDW.addColorStop(1, rgba([58, 66, 108], 0)); HUDW.key = Math.round(hk * 20); } ctx.fillStyle = HUDW; ctx.fillRect(0, 0, W, 120); }
+        drawHUD();
+      }
       drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
       drawLvMsg();
     }
@@ -2983,7 +2988,7 @@ Słońce obiecało wrócić rano.</p>
 
   /* Z15: przejście etapów koloru w czasie: rysowanie używa wygładzonego etapu skV (stała czasu Z15_TAU s, ok. 0,3 s do 95%),
      żeby kolor po wlocie w prąd napływał falą zamiast skakać w jednej klatce. Logika (E, sk, kolory() w haku) bez zmian; przy blokadzie (ustaw, ustawPoziom, ustawEnergie) bez wygładzania. */
-  var skV = 0, Z15_TAU = 0.11, Z15_LIFT = 0.6;
+  var skV = 0, Z15_TAU = 0.11, Z15_LIFT = 0.6, HUDW = null;
   function skWidok(dt) {
     if (lockS !== null || lockE !== null || gameT < 0.05 || state !== 'gra') skV = sk;
     else if (!paused) skV += (sk - skV) * (1 - Math.exp(-dt * tempo / Z15_TAU));
