@@ -46,6 +46,17 @@ const OUT = path.join(__dirname, 'zrzuty-z17');
   await scena('51_nadchmurze_kolor', { k: 1, w: 0, zd: NC.map((n, i) => ['nadchmurze:' + n, [-0.2, 2.2, 1.0, 1.4, 0.1][i], [-0.4, -0.15, 0, -0.55, -0.05][i], [1.2, 1.35, 1.1, 1.6, 1.25][i]]), lot: 0.6, E: 1, s: 0.9 });
   await scena('52_nadchmurze_noc', { k: 1, w: 0, pora: 'noc', zd: NC.map((n, i) => ['nadchmurze:' + n, [-0.2, 2.2, 1.0, 1.4, 0.1][i], [-0.4, -0.15, 0, -0.55, -0.05][i], [1.2, 1.35, 1.1, 1.6, 1.25][i]]), lot: 0.6, E: 0.62, s: 0.5 });
   await scena('60_noc_bliska_chmura', { gen: true, k: 1, w: 1, pora: 'noc', lot: 3, E: 0.3, s: 0.2 });
+  /* Z17 bez siatki (właściciel 26.10): start, lot, wiatr, przeszkoda w drodze Okruszka (1 s przed kontaktem), drapieżnik, pauza, ekran końca */
+  await scena('70_bez_siatki_start', { brama: 1, k: 1, w: 1, lot: 1.2, s: 0.02 });
+  await scena('71_bez_siatki_lot', { brama: 1, gen: true, lot: 7, s: 0.3 });
+  await scena('72_bez_siatki_wiatr', { brama: 1, k: 0, w: 1, zd: [['wiatr:prawo', 0, 1, 1.45], ['wiatr:gora', 2, 2, 2.6]], E: 0.3, s: 0.2 });
+  await scena('73_bez_siatki_przeszkoda', { brama: 1, k: 1, w: 1, zd: [['chmura:szara', 1, 1, 1.35], ['chmura:lawenda', 0, 0, 1.6], ['ptak', 2, 2, 2.2]], s: 0.02 });
+  await scena('74_bez_siatki_jastrzab', { brama: 4, k: 1, w: 1, jastrzab: true, lot: 4.0, s: 0.1 });
+  if (!filtr || filtr.test('75_bez_siatki_pauza')) { await pg.evaluate(async () => { const O = __okruszek; O.tempo(1); O.pauza(true); await new Promise(r => setTimeout(r, 300)); }); await pg.screenshot({ path: path.join(OUT, '75_bez_siatki_pauza.png') }); console.log('  zrzut 75_bez_siatki_pauza'); await pg.evaluate(() => __okruszek.pauza(false)); }
+  if (!filtr || filtr.test('76_bez_siatki_koniec')) {
+    await pg.evaluate(async () => { const O = __okruszek; O.tempo(1); O.pauza(false); O.brama(1); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustaw(0.05); O.odblokuj(); O.idz(1, 2, true); for (let i = 0; i < 60 * 40; i++) { O.torSymuluj(1 / 60); if (O.koniec() || O.stan().tryb !== 'gra') break; } await new Promise(r => setTimeout(r, 2600)); });
+    await pg.screenshot({ path: path.join(OUT, '76_bez_siatki_koniec.png') }); console.log('  zrzut 76_bez_siatki_koniec');
+  }
   console.log(err.length ? 'BŁĘDY: ' + err.slice(0, 3).join(' | ') : 'bez błędów');
   await b.close();
 })().catch(e => { console.error('BŁĄD ' + e); process.exit(2); });

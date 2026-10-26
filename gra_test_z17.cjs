@@ -9,6 +9,9 @@
    (d) nadchmurze (górny wiersz) bez kolizji: widowiska (statek, satelita, ufo, samolot, drapieżnik) i samolot / UFO w górnym wierszu siatki nie zmieniają E, s,
        wiersza ani liczby kar (porównanie z identycznym biegiem bez nich); drapieżnik nie atakuje górnego wiersza i odlatuje
    (e) nazwa poziomu L1 w HUD: „PASTEL” (nie „Szarość”), także komunikat poziomu; teksty.js bez „Szarość”
+   (f) tor BEZ widocznej siatki (właściciel 26.10): domyślnie siatka wyłączona, ?siatka=1 ją włącza (debug); bez siatki znika większość cienkich jasnych linii
+       (szyny, ramy); cień Okruszka na chmurach widoczny we wszystkich wierszach (dzień i noc); wstęga wiatru widoczna; zapowiedź przeszkody (cień w miejscu
+       jej drogi) widoczna ok. 1 s przed kontaktem
    Kończy się kodem 0 tylko gdy wszystko przeszło. */
 const path = require('path'), fs = require('fs');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -32,7 +35,7 @@ const MIERZ = () => {
   const W = t.width, H = t.height, d = x.getImageData(0, 0, W, H).data, sc = W / 390, p = __okruszek.ptakEkran(), bw = 90 * sc, bcx = p.x * sc, bcy = p.y * sc, T = 16;
   const L = new Float32Array(W * H);
   for (let i = 0; i < W * H; i++) L[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
-  let dol = 0, n = 0, zie = 0, tot = 0;
+  let dol = 0, n = 0, zie = 0, tot = 0, grz = 0;
   for (let y = Math.round(90 * sc); y < H - 2; y++) for (let xx = 2; xx < W - 2; xx++) {
     if (Math.abs(xx - bcx) < bw && Math.abs(y - bcy) < bw) continue;
     const i = y * W + xx, l = L[i];
@@ -40,8 +43,9 @@ const MIERZ = () => {
     n++;
     const a = L[i - 2], bb = L[i + 2], u = L[i - 2 * W], v = L[i + 2 * W];
     if ((l < a - T && l < bb - T) || (l < u - T && l < v - T)) dol++;
+    if ((l > a + T && l > bb + T) || (l > u + T && l > v + T)) grz++;
   }
-  return { dol: dol / n, zie: zie / tot };
+  return { dol: dol / n, zie: zie / tot, grz: grz / n };
 };
 
 (async () => {
@@ -61,6 +65,38 @@ const MIERZ = () => {
   chk(HN.poziom === 1 && HN.nazwa === 'PASTEL' && HN.komunikaty[1] === 'Pastel' && HN.nazwy.indexOf('Szarość') < 0, 'L1 w HUD: „' + HN.nazwa + '”, komunikat „' + HN.komunikaty[1] + '” (bez „Szarość”)', JSON.stringify(HN));
   const tx = fs.readFileSync(path.join(path.dirname(file), 'teksty.js'), 'utf8');
   chk(!/Szaro/.test(tx), 'teksty.js bez „Szarość” (ekrany i panel)');
+
+  /* ---------- (f) tor bez widocznej siatki ---------- */
+  console.log('(f) tor bez widocznej siatki: cień Okruszka, wiatry i zapowiedzi zamiast ramek');
+  const S0 = await ev(() => __okruszek.torSiatka());
+  { const p2 = await ctx.newPage(); await p2.goto(base + '?test&tor=1&siatka=1&seed=23'); await p2.waitForTimeout(700); const s1 = await p2.evaluate(() => __okruszek.torSiatka()); await p2.close();
+    chk(S0 === false && s1 === true, 'siatka toru domyślnie niewidoczna, ?siatka=1 ją włącza (debug)', JSON.stringify({ domyslnie: S0, zFlaga: s1 })); }
+  const pusty = async (siatka) => { await ev(async (sg) => { const O = __okruszek; O.torSiatka(sg); O.tempo(1); O.pauza(true); O.panel(false); O.ziarno(5); O.brama(1); O.odblokuj(); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustawPore('dzien'); O.ustawPoziom(0); O.idz(1, 1, true); O.pauza(false); await new Promise(r => setTimeout(r, 500)); O.tempo(0.02); await new Promise(r => setTimeout(r, 400)); }, siatka); return ev(MIERZ); };
+  const G1 = await pusty(true), G0 = await pusty(false); await ev(() => __okruszek.torSiatka(false));
+  chk(G0.grz < G1.grz * 0.6, 'bez siatki znikają cienkie jasne linie toru (szyny, ramy): ' + f4(G0.grz) + ' wobec ' + f4(G1.grz) + ' z ?siatka=1', JSON.stringify({ bez: G0.grz, z: G1.grz }));
+  const CI = await ev(async () => { const O = __okruszek, out = [];
+    const kopia = () => { const c = document.getElementById('g'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0); return x; };
+    const lum = (x0, y0, w, h) => { const c = document.getElementById('g'), k = c.width / 390, d = kopia().getImageData(Math.round(x0 * k), Math.round(y0 * k), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))).data; let L = 0; for (let i = 0; i < d.length; i += 4) L += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; return L / (d.length / 4); };
+    const czekaj = (ms) => new Promise(r => setTimeout(r, ms));
+    for (const pora of ['dzien', 'noc']) for (const w of [0, 1, 2]) {
+      O.pauza(true); O.panel(false); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustawPore(pora); O.ustawPoziom(0); O.idz(1, w, true); O.pauza(false); await czekaj(400); O.tempo(0.02);
+      const q = O.cienOkruszka(); O.dbg({ torCien: 0 }); await czekaj(120); const a = lum(q.x - 20, q.y - 4, 40, 8); O.dbg({ torCien: 1 }); await czekaj(120); const b = lum(q.x - 20, q.y - 4, 40, 8); O.dbg({ torCien: 0 }); O.tempo(1);
+      out.push({ pora, w, d: b - a });
+    }
+    /* wiatr i zapowiedź: ta sama zamrożona klatka z elementem i bez niego (przełączniki rysowania dbg), bez porównywania dwóch różnych biegów */
+    const sc = async (zd) => { O.pauza(true); O.bezPrzeszkod(true); O.bezPradow(true); O.ziarno(5); O.nowyBieg(); O.ustawPore('dzien'); O.ustawPoziom(1); O.idz(1, 1, true); zd(); O.pauza(false); await czekaj(300); O.tempo(0.02); await czekaj(250); };
+    const obraz = () => { const c = document.getElementById('g'); return kopia().getImageData(0, 0, c.width, c.height).data; };
+    const roz = (P, Q, x0, y0, r) => { const c = document.getElementById('g'), k = c.width / 390; let s2 = 0, n = 0; for (let y = Math.round((y0 - r) * k); y < (y0 + r) * k; y += 2) for (let x = Math.round((x0 - r) * k); x < (x0 + r) * k; x += 2) { if (x < 0 || y < 0 || x >= c.width || y >= c.height) continue; const i = (y * c.width + x) * 4; s2 += Math.abs(P[i] - Q[i]) + Math.abs(P[i + 1] - Q[i + 1]) + Math.abs(P[i + 2] - Q[i + 2]); n++; } return s2 / Math.max(1, n) / 3; };
+    await sc(() => O.zdarzenie('wiatr:gora', { k: 2, w: 2, z: 1.6 })); const gw = O.gdzie().find(g => g.typ === 'wiatr:gora');
+    const A1 = obraz(); O.dbg({ torPl: 1 }); await czekaj(120); const A0 = obraz(); O.dbg({ torPl: 0 }); O.tempo(1);
+    const wiatr = gw ? Math.max(roz(A0, A1, gw.ex, gw.ey - 20, 22), roz(A0, A1, gw.ex, gw.ey - 60, 22)) : -1;   /* wstęga biegnie od komórki wiatru w górę (do celu przerzutu): pas nad komórką */
+    const sp = O.tor().sp; await sc(() => O.zdarzenie('chmura:szara', { k: 1, w: 1, z: 0.7 + sp * 1.35 })); const cq = O.cienKomorki(1, 1), eta = (O.gdzie().find(g => g.typ === 'chmura:szara') || {}).eta;
+    O.dbg({ torCien: 1 }); await czekaj(120); const l1 = lum(cq.x - 20, cq.y - 4, 40, 8); O.dbg({ torCien: 1, torZapow: 1 }); await czekaj(120); const l0 = lum(cq.x - 20, cq.y - 4, 40, 8); O.dbg({ torCien: 0, torZapow: 0 }); O.tempo(1);
+    return { cien: out, wiatr, zap: { l0, l1, eta } };
+  });
+  chk(CI.cien.every(c => c.d >= 3), 'cień Okruszka na chmurach widoczny w każdym wierszu, w dzień i w nocy (pociemnienie ' + CI.cien.map(c => c.pora[0] + c.w + ' ' + c.d.toFixed(1)).join(', ') + ' >= 3)', JSON.stringify(CI.cien));
+  chk(CI.wiatr >= 4, 'wstęga wiatru widoczna w świecie bez ramki komórki (średnia zmiana obrazu ' + CI.wiatr.toFixed(1) + ' >= 4)', JSON.stringify(CI));
+  chk(CI.zap.l0 - CI.zap.l1 >= 3, 'zapowiedź przeszkody bez ramki: ' + (CI.zap.eta || 0).toFixed(2) + ' s przed kontaktem jej cień leży w drodze Okruszka (pociemnienie wobec tej samej klatki bez zapowiedzi ' + (CI.zap.l0 - CI.zap.l1).toFixed(1) + ' >= 3)', JSON.stringify(CI.zap));
 
   /* ---------- (d) nadchmurze bez kolizji ---------- */
   console.log('(d) nadchmurze: widowiska S0 bez kolizji');
