@@ -336,12 +336,15 @@ const CZ = process.env.CZESCI ? process.env.CZESCI.split(',') : null, run = (x) 
   const urlB = 'file:///' + baza.replace(/\\/g, '/') + '?test&seed=23';
   if (!fs.existsSync(baza)) bad('brak pliku bazy do porównania klatek: ' + baza);
   else {
-    const FB = [], FN2 = []; let inf = null;
-    for (let r = 0; r < 4; r++) { FB.push(await fpsScena(urlB, false)); const q = await fpsScena(url, true); FN2.push(q); inf = q.info; }
-    const best = (a) => Math.max(...a.map(x => x.fps));
-    console.log('  info klatki (najlepszy z 4, 390x844 @2x, headless bez GPU): Z5 ' + f2(best(FB)) + ' (' + FB.map(x => f2(x.fps)).join('/') + '), Z11 z samolotem i ' + (inf && inf.wiez) + ' wieżami ' + f2(best(FN2)) + ' (' + FN2.map(x => f2(x.fps)).join('/') + '); czas rysowania (cpu, średnio ms): Z5 ' + FB.map(x => x.cpu && x.cpu.sr).join('/') + ', Z11 ' + FN2.map(x => x.cpu && x.cpu.sr).join('/'));
+    /* Z17: 5 rund naprzemiennych A/B (w rundach parzystych najpierw Z5, w nieparzystych najpierw Z11), wynik = mediana stosunków z rund (sąsiednie pomiary
+       znoszą zmiany obciążenia maszyny); dawniej jeden przebieg „najlepszy z 4”, który pod obciążeniem dawał fałszywe porażki (np. 80 vs 94,9). Próg 10% bez zmian. */
+    const FB = [], FN2 = [], RAT = []; let inf = null;
+    for (let r = 0; r < 5; r++) { let a, q; if (r % 2) { q = await fpsScena(url, true); a = await fpsScena(urlB, false); } else { a = await fpsScena(urlB, false); q = await fpsScena(url, true); } FB.push(a); FN2.push(q); inf = q.info; RAT.push(q.fps / a.fps); }
+    const med = (a) => { const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+    const mB = med(FB.map(x => x.fps)), mN = med(FN2.map(x => x.fps)), mR = med(RAT);
+    console.log('  info klatki (5 rund A/B, mediany; 390x844 @2x, headless bez GPU): Z5 ' + f2(mB) + ' (' + FB.map(x => f2(x.fps)).join('/') + '), Z11 z samolotem i ' + (inf && inf.wiez) + ' wieżami ' + f2(mN) + ' (' + FN2.map(x => f2(x.fps)).join('/') + '); stosunki rund ' + RAT.map(x => f2(x)).join('/') + '; czas rysowania (cpu, średnio ms): Z5 ' + FB.map(x => x.cpu && x.cpu.sr).join('/') + ', Z11 ' + FN2.map(x => x.cpu && x.cpu.sr).join('/'));
     chk(inf && inf.samolot && inf.wiez >= 5, 'na ekranie: samolot i ' + (inf && inf.wiez) + ' wież', 'scena klatek: ' + JSON.stringify(inf));
-    chk(best(FN2) >= 0.9 * best(FB), 'klatki z samolotem i 5 wieżami nie gorsze niż o 10% od Z5 (' + f2(best(FN2)) + ' vs ' + f2(best(FB)) + ' kl/s)', 'klatki: Z11 ' + best(FN2) + ' vs Z5 ' + best(FB));
+    chk(mR >= 0.9, 'klatki z samolotem i 5 wieżami nie gorsze niż o 10% od Z5 (mediana stosunków 5 rund A/B ' + f2(mR) + '; mediany ' + f2(mN) + ' vs ' + f2(mB) + ' kl/s)', 'klatki: Z11 vs Z5 mediana stosunków ' + f2(mR) + ' (' + RAT.map(x => f2(x)).join('/') + ')');
     const c4b = await fpsScena(urlB, false, 4), c4n = await fpsScena(url, true, 4);
     console.log('  info CPU x4 (tylko informacja, headless bez GPU): Z5 ' + f2(c4b.fps) + ' kl/s (rysowanie ' + (c4b.cpu && c4b.cpu.sr) + ' ms), Z11 z samolotem i wieżami ' + f2(c4n.fps) + ' kl/s (rysowanie ' + (c4n.cpu && c4n.cpu.sr) + ' ms); kryterium >= 55 kl/s na średnim Androidzie do potwierdzenia na telefonie (Z7)');
   }

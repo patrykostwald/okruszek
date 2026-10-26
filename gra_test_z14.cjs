@@ -277,16 +277,18 @@ const BOT_TOR = `(function () {
   const kom = () => ev(() => __okruszek.komorka());
   const mach = () => ev(() => __okruszek.torLog().machniecia);
   const fresh = async (mode, c, r) => { await upAll(); await ev(([m, c2, r2_]) => { const O = __okruszek; O.panel(false); O.odblokuj(); O.nurkuj(false); O.bezPrzeszkod(true); O.bezPradow(true); O.tempo(1); O.czulosc(1); O.sterowanie(m); O.nowyBieg(); O.ustaw(0); O.idz(c2, r2_, true); }, [mode, c, r]); await sleep(150); };
-  const swipe = async (x0, y0, x1, y1, n) => { await touch('touchStart', [[1, x0, y0]]); for (let i = 1; i <= (n || 6); i++) { await touch('touchMove', [[1, x0 + (x1 - x0) * i / (n || 6), y0 + (y1 - y0) * i / (n || 6)]]); await sleep(16); } await touch('touchEnd', []); await sleep(260); };
-  const tap = async (x, y, id) => { await touch('touchStart', [[id || 1, x, y]]); await sleep(50); await touch('touchEnd', []); await sleep(200); };
+  /* Z17: po = przerwa po geście (ms). Dwa gesty „w rytmie” (dwa machnięcia na wiersz) idą z krótką przerwą: każde wywołanie CDP kosztuje ok. 50 ms,
+     więc z pełną przerwą 260 ms dwa przeciągnięcia wypadały ok. 0,7 s od siebie (pomiar diag_z17_dotyk.cjs), na granicy LIFT_HOLD 0,75 s; to nie rytm gracza */
+  const swipe = async (x0, y0, x1, y1, n, po) => { await touch('touchStart', [[1, x0, y0]]); for (let i = 1; i <= (n || 6); i++) { await touch('touchMove', [[1, x0 + (x1 - x0) * i / (n || 6), y0 + (y1 - y0) * i / (n || 6)]]); await sleep(16); } await touch('touchEnd', []); await sleep(po === undefined ? 260 : po); };
+  const tap = async (x, y, id, po) => { await touch('touchStart', [[id || 1, x, y]]); await sleep(50); await touch('touchEnd', []); await sleep(po === undefined ? 200 : po); };
   const RUCH = {};
   /* tryb 1 */
   await fresh(1, 1, 1); await swipe(200, 600, 140, 600); RUCH.t1_lewo = (await kom()).kol === 0;
   await fresh(1, 1, 1); await swipe(200, 600, 260, 600); RUCH.t1_prawo = (await kom()).kol === 2;
   await fresh(1, 1, 1); await swipe(200, 600, 200, 660); RUCH.t1_dol = (await kom()).wiersz === 2;
   await fresh(1, 1, 1); await swipe(200, 600, 150, 650); { const k = await kom(); RUCH.t1_ukos_dol = k.kol === 0 && k.wiersz === 2; }
-  await fresh(1, 1, 2); let m0 = await mach(); await swipe(200, 600, 250, 550); await swipe(200, 600, 200, 550); { const k = await kom(); RUCH.t1_ukos_gora = k.kol === 2 && k.wiersz === 1 && (await mach()) - m0 === 2; }
-  await fresh(1, 1, 2); m0 = await mach(); await tap(200, 600); await tap(200, 600); { const k = await kom(); RUCH.t1_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
+  await fresh(1, 1, 2); let m0 = await mach(); await swipe(200, 600, 250, 550, 6, 40); await swipe(200, 600, 200, 550); { const k = await kom(); RUCH.t1_ukos_gora = k.kol === 2 && k.wiersz === 1 && (await mach()) - m0 === 2; }
+  await fresh(1, 1, 2); m0 = await mach(); await tap(200, 600, 1, 60); await tap(200, 600); { const k = await kom(); RUCH.t1_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
   await fresh(1, 1, 0); await touch('touchStart', [[1, 200, 600]]); await sleep(450); { const k = await kom(); RUCH.t1_nurk = k.nurkuje && k.wiersz >= 1; } await touch('touchEnd', []); await sleep(200); { const k = await kom(); RUCH.t1_duch = !k.nurkuje && (await ev(() => __okruszek.stan().palce)) === 0; }
   /* tryb 2 */
   await fresh(2, 1, 1); m0 = await mach(); await tap(80, 700); { const k = await kom(); RUCH.t2_lewo_gora = k.kol === 0 && (await mach()) - m0 === 1; }
@@ -303,7 +305,7 @@ const BOT_TOR = `(function () {
   await fresh(3, 1, 1); await stick(0, 50); RUCH.t3_dol = (await kom()).wiersz === 2;
   await fresh(3, 1, 1); await stick(-40, 40); { const k = await kom(); RUCH.t3_ukos_dol = k.kol === 0 && k.wiersz === 2; }
   await fresh(3, 1, 2); m0 = await mach(); await stick(40, -40); { const k = await kom(); RUCH.t3_ukos_gora = k.kol === 2 && (await mach()) - m0 === 1; }
-  await fresh(3, 1, 2); m0 = await mach(); await tap(300, 650); await tap(300, 650); { const k = await kom(); RUCH.t3_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
+  await fresh(3, 1, 2); m0 = await mach(); await tap(300, 650, 1, 60); await tap(300, 650); { const k = await kom(); RUCH.t3_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
   await fresh(3, 1, 0); await touch('touchStart', [[2, 300, 650]]); await sleep(450); { const k = await kom(); RUCH.t3_nurk = k.nurkuje && k.wiersz >= 1; } await touch('touchEnd', []); await sleep(200);
   RUCH.t3_duch = (await ev(() => __okruszek.stan().palce)) === 0 && !(await kom()).nurkuje && !(await ev(() => __okruszek.stan().drazek.jest));
   /* przełączenie trybu w trakcie dotyku: bez ducha */
