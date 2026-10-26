@@ -61,6 +61,24 @@ window.OKRUSZEK_TEKSTY = {
   dzwiek: {
     efekty: 'Efekty', muzyka: 'Muzyka', wl: 'włączone', wyl: 'wyłączone'
   },
+  /* Z20: przycisk „Zainstaluj” (ekran startu i panel sterowania) i instrukcja dla iPhone'a / iPada (iOS nie ma natywnego okna instalacji) */
+  instaluj: {
+    przycisk: 'Zainstaluj',
+    aria: 'Zainstaluj Crumbi jako aplikację na tym urządzeniu',
+    ok: 'Zainstalowano',
+    pozniej: 'Zainstalujesz później',
+    menu: 'Zainstaluj z menu przeglądarki',
+    ios: {
+      tytul: 'Zainstaluj na iPhonie',
+      kroki: [
+        'Stuknij „Udostępnij” w Safari.',
+        'Wybierz „Dodaj do ekranu początkowego”.',
+        'Stuknij „Dodaj”. Crumbi pojawi się wśród aplikacji.'
+      ],
+      zamknij: 'Rozumiem',
+      aria: 'Instrukcja instalacji. Stuknij, żeby ją zamknąć.'
+    }
+  },
   /* Z14: tor 3x3 (?tor=1): opisy trybów w panelu sterowania, podpis suwaka i opis gry dla czytnika ekranu (w swobodnym locie zostają teksty z index.html) */
   tor: {
     tryby: [   /*   = twarda spacja po jednoliterowych słowach (bez pojedynczych liter na końcu linii) */

@@ -22,6 +22,7 @@
    Z17: integracja toru z grafiką Z15, nadchmurze S0, nazwa L1 „Pastel”: pełny test gra_test_z17.cjs (3 tryby x 120 s czasu gry z rysowaniem). SKIP_Z17=1 pomija go (ok. 4 min).
    Z18: poprawki QA runda 1: pełny test gra_test_z18.cjs (boty na stałych ziarnach: pełny kolor, Turbo, L5, precyzja, długość biegu; nadchmurze, drapieżnik, luki,
    debiuty, czytelność, kontrast HUD i wstępu, sterowanie, jasne panele). SKIP_Z18=1 pomija go (ok. 1 min).
+   Z20: przycisk „Zainstaluj” (android: beforeinstallprompt, ios: instrukcja, standalone i brak: ukryty), manifest, ikona maskable, sw.js, getInstallabilityErrors: pełny test gra_test_z20.cjs. SKIP_Z20=1 pomija go (ok. 1 min).
    Z15: grafika tonalna: pełny test gra_test_z15.cjs (brak ciemnego obrysu, przejścia bez skoków jasności, L0 nie czarny, zieleń tylko z funkcją, pamięć, klatki względem Z11). SKIP_Z15=1 pomija go (ok. 3 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
@@ -311,6 +312,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z18|BŁĄD|^[(]/.test(l));
       lines.forEach(l => console.log('  z18> ' + l.trim()));
       code === 0 && /TEST Z18 OK/.test(out) ? ok('test Z18 (gra_test_z18.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z18 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z20: przycisk „Zainstaluj” i instalowalność PWA (manifest, ikona maskable, sw.js, getInstallabilityErrors), pełny test w osobnym procesie */
+  if (process.env.SKIP_Z20) console.log('  info pominięto test Z20 (SKIP_Z20)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z20.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z20.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 590000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z20|BŁĄD|^[(]|info installabilityErrors/.test(l));
+      lines.forEach(l => console.log('  z20> ' + l.trim()));
+      code === 0 && /TEST Z20 OK/.test(out) ? ok('test Z20 (gra_test_z20.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z20 nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

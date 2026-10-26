@@ -55,7 +55,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
   let man = null;
   try { man = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.webmanifest'), 'utf8')); ok('manifest.webmanifest to poprawny JSON'); } catch (e) { bad('manifest: ' + e); }
   if (man) {
-    chk(man.name === 'Crumbi' && man.short_name === 'Crumbi' && man.start_url === './' && man.scope === './' && man.display === 'standalone' && man.orientation === 'portrait', 'manifest: name/short_name Crumbi, start_url i scope ./, standalone, portrait');
+    chk(man.name === 'Crumbi' && man.short_name === 'Crumbi' && man.start_url === './' && man.scope === './' && man.display === 'standalone' && man.orientation === 'any', 'manifest: name/short_name Crumbi, start_url i scope ./, standalone, orientation any (Z20: nie blokuje poziomu)');
     chk(/^#[0-9a-f]{6}$/i.test(man.theme_color) && /^#[0-9a-f]{6}$/i.test(man.background_color) && man.theme_color.toLowerCase() === '#cdd5ee', 'manifest: kolory jasnego nieba gry (Z18, QA P1-7 i 15.8: dawniej granat #0d1224; ' + man.theme_color + ' / ' + man.background_color + ')');
     const ic = man.icons || [], s192 = ic.find(i => i.sizes === '192x192'), s512 = ic.find(i => i.sizes === '512x512');
     chk(!!s192 && !!s512, 'manifest: ikony 192 i 512');
@@ -69,7 +69,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
   }
   chk(/<link rel="manifest" href="manifest\.webmanifest">/.test(html), 'head: <link rel="manifest">');
   chk(/<meta name="theme-color" content="#cdd5ee">/.test(html), 'head: theme-color (Z18: jasne niebo zamiast granatu, QA P1-7)');
-  chk(/<link rel="apple-touch-icon" href="ikona-180\.png">/.test(html), 'head: apple-touch-icon 180');
+  chk(/<link rel="apple-touch-icon"[^>]*href="ikona-180\.png">/.test(html), 'head: apple-touch-icon 180');
   chk(/<meta name="robots" content="noindex">/.test(html), 'head: noindex zostaje');
   chk(/<script src="dzwiek\.js"><\/script>/.test(html) && /<script src="teksty\.js"><\/script>/.test(html), 'dzwiek.js i teksty.js ładowane jako osobne pliki (CSP self)');
   chk(!/ on(click|load|error)=|eval\(|new Function|http:\/\/|https:\/\/(?!www\.iapply)/.test(html.replace(/<!--[\s\S]*?-->/g, '')), 'bez inline-handlerów, eval i zewnętrznych adresów (poza www.iapply.pl w tekście)');
