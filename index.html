@@ -336,7 +336,9 @@ Słońce obiecało wrócić rano.</p>
     roz:          { tony: [[255, 232, 238], [248, 206, 220], [230, 178, 200], [206, 156, 184]], opis: 'dekoracyjna' },
     brzoskwinia:  { tony: [[255, 238, 222], [255, 214, 190], [244, 186, 164], [222, 160, 150]], opis: 'dekoracyjna' },
     mgla_zielona: { tony: [[214, 240, 214], [178, 222, 186], [146, 198, 162], [120, 172, 142]], opis: 'NERF: zatruta mgła (spowalnia, gasi energię koloru)', mgla: true },
-    oaza_zielona: { tony: [[236, 255, 226], [196, 240, 184], [156, 218, 150], [124, 194, 126]], opis: 'BUFF: oaza (odnawia wysokość)', blask: true }
+    oaza_zielona: { tony: [[236, 255, 226], [196, 240, 184], [156, 218, 150], [124, 194, 126]], opis: 'BUFF: oaza (odnawia wysokość)', blask: true },
+    burza:        { tony: [[188, 186, 222], [150, 146, 194], [118, 114, 166], [94, 90, 142]], opis: 'burza: spowalnia, wiruje, błysk (Z17: łupkowy indygo, odróżnia się od fioletu)' },
+    gradowa:      { tony: [[236, 244, 254], [208, 222, 244], [178, 196, 230], [150, 170, 210]], opis: 'grad: wiersz w dół (Z17: lodowy błękit)' }
   };
   function torTony(rodzaj) {
     var D = CHMURY15[rodzaj] || CHMURY15.biala, L0 = [PAL.c0, PAL.c1, PAL.c2, PAL.c3], u = Math.max(Z15.TOR_MIN_KOLOR, cAll(sk + 0.02)), out = [], k;
@@ -345,13 +347,13 @@ Słońce obiecało wrócić rano.</p>
   }
 
   /* ---------- poziomy i kolor z prędkości ----------
-     s = prędkość 0..1. Poziomy: L0 Kontur 0-0,15; L1 Szarość 0,15-0,35; L2 Kolor 0,35-0,6; L3 Złoto 0,6-0,8; L4 Turbo 0,8-0,95; L5 Hiper (>= 0,95 przez 2 s, łańcuch >= 5).
+     s = prędkość 0..1. Poziomy: L0 Kontur 0-0,15; L1 Pastel 0,15-0,35 (Z17, dawniej Szarość); L2 Kolor 0,35-0,6; L3 Złoto 0,6-0,8; L4 Turbo 0,8-0,95; L5 Hiper (>= 0,95 przez 2 s, łańcuch >= 5).
      Etapy koloru są ROZCIĄGNIĘTE i nakładają się: g (szarość/błękit) 0,13-0,43, p (pastele) 0,28-0,62, w (ciepło) 0,48-0,80, f (pełnia) 0,68-0,95.
      Każda warstwa ma przesunięcie (niebo/dalekie wcześniej niż bliskie): se = sk + off. Pełnia (c = 1) dopiero przy sk >= ok. 0,95. */
   var LV_LO = [0, 0.15, 0.35, 0.6, 0.8, 0.95];
-  var LV_NAMES = ['Kontur', 'Szarość', 'Kolor', 'Złoto', 'Turbo', 'Hiper'];
-  var LV_MSG = ['', 'Szarość', 'Kolor', 'Złoto', 'Turbo', 'Hiperprzestrzeń'];
-  var LVCOL = [[236, 240, 248], [168, 190, 222], [196, 178, 244], [255, 206, 120], [255, 112, 150], [255, 255, 255]];
+  var LV_NAMES = ['Kontur', 'Pastel', 'Kolor', 'Złoto', 'Turbo', 'Hiper'];   /* Z17: L1 „Pastel” (15.8: pierwsze blade barwy, nie szarość) */
+  var LV_MSG = ['', 'Pastel', 'Kolor', 'Złoto', 'Turbo', 'Hiperprzestrzeń'];
+  var LVCOL = [[236, 240, 248], [214, 198, 236], [196, 178, 244], [255, 206, 120], [255, 112, 150], [255, 255, 255]];
   function sg(se) { return sm((se - 0.13) / 0.30); }
   function sp_(se) { return sm((se - 0.28) / 0.34); }
   function sw_(se) { return sm((se - 0.48) / 0.32); }
@@ -823,7 +825,24 @@ Słońce obiecało wrócić rano.</p>
     stampMasks(x, [[M.sh[0], C.wL * C.shadeA], [M.sh[1], C.wR * C.shadeA], [M.hatch, C.hatchA], [M.edge, C.edgeA]], w, hh, mixc(C.shade, C.edgeC, 0.25 * cl(C.edgeA / (C.shadeA + C.edgeA + 0.01)) + 0.2 * cl(C.hatchA / (C.shadeA + 0.01))), 1, 'source-atop');
     stampMasks(x, [[M.rim[0], C.wL], [M.rim[1], C.wR]], w, hh, C.rim, C.rimA, 'source-atop');
     if (C.granA > 0.01) { x.globalCompositeOperation = 'source-atop'; x.globalAlpha = C.granA; if (!S.c._pat) S.c._pat = x.createPattern(TEX.grain, 'repeat'); x.fillStyle = S.c._pat; x.fillRect(0, 0, w, hh); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; }
+    if (S.kind !== 'stint' && PAL.nightW > 0.05 && !g.tile) spodNocny(x, S, g, C, PAL.nightW);   /* Z17 */
     if (S.far) { var xf = S.far.c.getContext('2d'); xf.setTransform(1, 0, 0, 1, 0, 0); xf.clearRect(0, 0, S.far.w, S.far.h); xf.drawImage(S.c, 0, 0, S.far.w, S.far.h); }
+  }
+  /* Z17 (brak 2 z Z15): nocą duża bliska chmura miała ciężki, płaski, jednolity spód. Dwie warstwy przy malowaniu (nie co klatkę):
+     odbite światło morza chmur rozjaśnia dolną część (ton jasnego brzegu, nie biel), a podstawa dostaje miękkie, płytkie wcięcia (płaska, lekko falująca, sekcja 2). */
+  var SPOD = { H: 0.38, A: 0.5, WCIECIE: 0.8 };
+  function spodNocny(x, S, g, C, nb) {
+    var gh = Math.max(16, -g.top * SPOD.H), lg, r = R32((g.sd || 7) * 3 + 11), xx, rw, rh, rg;
+    x.save(); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
+    lg = x.createLinearGradient(0, -gh, 0, 6); lg.addColorStop(0, rgba(C.rim, 0)); lg.addColorStop(1, rgba(mixc(C.rim, PAL.f0 || C.rim, 0.35), SPOD.A * nb));
+    x.globalCompositeOperation = 'source-atop'; x.fillStyle = lg; x.fillRect(g.minx - 30, -gh, g.maxx - g.minx + 60, gh + 30);
+    x.globalCompositeOperation = 'destination-out';
+    for (xx = g.minx + 6; xx < g.maxx; xx += rw * 1.3) {
+      rw = 14 + r() * 24; rh = 4 + r() * 7;
+      rg = x.createRadialGradient(xx, 4, 0, xx, 4, rw); rg.addColorStop(0, 'rgba(0,0,0,' + (SPOD.WCIECIE * nb).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = rg; x.save(); x.translate(xx, 4); x.scale(1, rh / rw); x.translate(-xx, -4); x.fillRect(xx - rw, 4 - rw, rw * 2, rw * 2); x.restore();
+    }
+    x.restore();
   }
   /* ławica mgły: miękka plama w barwie mgły i poziome smugi */
   function paintBank(S, M, C) {
@@ -2607,6 +2626,7 @@ Słońce obiecało wrócić rano.</p>
       case 'mgla': drawMgla(it, front); break;
       case 'prad': drawPrad(it); break;
       case 'torPl': drawTorPlaster(it.pl, false); break;   /* Z14 */
+      case 'torWid': drawTorWid(it.w); break;   /* Z17: widowiska nadchmurza (S0) */
       case 'brama': drawBrama(it); break;
       case 'sea': if (!DBG.sea) drawSeaRow(it, it.dy); break;
       case 'slab': if (!DBG.slab) drawHazeSlab(it); break;
@@ -4709,7 +4729,8 @@ Słońce obiecało wrócić rano.</p>
     DIVE_ROW2: 0.55, DIVE_MAX: 2, DIVE_SINK_T: 2.4, POP_MIN: 0.18,   /* nurkowanie: drugi wiersz po DIVE_ROW2 s, potem opadanie w komórce; wybicie po co najmniej POP_MIN s */
     WIND_T: 0.34, IDEAL: 0.24, IDEAL_UCZ: 0.38, UCZ_GAP: 3.0,   /* przerzut wiatrem; idealne wejście = odchylenie od środka < IDEAL komórki (na starcie szersze) */
     ATAK_PRZED: 0.6, ATAK_ZAP: 1.6, ATAK_UDER: 0.3, ATAKI: 3, ATAK_PRZERWA: 0.7,   /* pościg po komórkach */
-    IMM: 0.7, RAT_H: 0.27, RAT_ETA: 1.8, WYM_ZAP: 1.7, UFO_K: 0.15 };   /* prąd ratunkowy (Z10) w torze: winda w komórce Okruszka, gdy h < RAT_H */
+    IMM: 0.7, RAT_H: 0.27, RAT_ETA: 1.8, WYM_ZAP: 1.7, UFO_K: 0.15,
+    NADCHMURZE: true, NADCH_ODLOT: 3.5, WID_CO: 7, WID_MIN_Z: 1.05 };   /* Z17 (17.1): górny wiersz = nadchmurze; widowiska S0 co ok. WID_CO s, nie bliżej niż WID_MIN_Z; drapieżnik odlatuje po NADCH_ODLOT s czekania */   /* prąd ratunkowy (Z10) w torze: winda w komórce Okruszka, gdy h < RAT_H */
   /* wiatry: dr / dc = przerzut (wiersze / kolumny), srodek = działa tylko w komórce środkowej, ds = mnożnik skoku prędkości (jednostka G.PRAD_S; zawsze JEDEN prąd w łańcuchu) */
   var TOR_WIATRY = {
     U: { n: 'gora', dr: -2, ds: 1.0 },      /* winda w górę: z dolnego (albo środkowego) wiersza na górny */
@@ -4830,8 +4851,8 @@ Słońce obiecało wrócić rano.</p>
   var TC = 1, TR = 1, xF = 1, yF = 1, torP = 0, torLift = 0, torNurk = false, diving = false, diveT = 0, diveRows = 0, diveStartRow = 0, torPrzerzut = 0, torTrasa = null;
   var lastBeatT = -9, torBeatT = 9, torBeatSila = 1, torBokT = 9, torBokDir = 0, torZjazdT = 9, torZjazdDir = 0, TORW = null, torPl = [], torKolejka = [], torPid = 0, torUczI = 0, torRatT = -99;
   var torMysz = null, torMyszK = null, torTapCzeka = null, torStick = null, torFlow = 0, torBramaN = 0, torCW = 84, torCH = 82, BIRDY0 = 0;
-  var torLog = null, TORSPR = {};
-  function torLogNowy() { return { plastry: [], kontakty: [], wejscia: [], ataki: [], ruchy: 0, machniecia: 0, wzloty: 0, nurkowania: 0, wybicia: 0, przerzuty: 0, naprawy: 0, wygenerowane: 0, wzorce: {}, zielone: 0, uczciwe: 0, nieuczciwe: 0, konce: [] }; }
+  var torLog = null;
+  function torLogNowy() { return { plastry: [], kontakty: [], wejscia: [], ataki: [], ruchy: 0, machniecia: 0, wzloty: 0, nurkowania: 0, wybicia: 0, przerzuty: 0, naprawy: 0, wygenerowane: 0, wzorce: {}, zielone: 0, uczciwe: 0, nieuczciwe: 0, konce: [], widowiska: 0, widowiskaKontakty: 0 }; }
   torLog = torLogNowy();
   if (TORON) {   /* panel sterowania i opis dla czytnika ekranu: teksty toru z teksty.js (grupa tor) */
     (function () { var T = (TX.tor || {}), k, op, lb = document.querySelector('label[for="ster-c"] span');
@@ -4868,6 +4889,10 @@ Słońce obiecało wrócić rano.</p>
   function torZnak(g, c, r) { return (r >= 0 && r < g.length && c >= 0 && c < g[r].length) ? g[r].charAt(c) : '#'; }
   function torUstaw(g, c, r, ch) { if (r >= 0 && r < g.length && c >= 0 && c < g[r].length) g[r] = g[r].substr(0, c) + ch + g[r].substr(c + 1); }
   function torWolna(ch) { return ch === '.' || !!TOR_WIATRY[ch] || ch === 'o'; }
+  /* Z17, PROJEKT.md 17.1: w NADCHMURZU (górny wiersz toru) przelatujące drapieżniki, samoloty, UFO, statek kosmiczny i satelity są tylko widowiskiem klasy S0:
+     nie mają kolizji, nie zabierają energii ani prędkości. Samolot (A, a) i UFO (Y) w górnym wierszu siatki: bez kary; drapieżnik nie atakuje komórki w górnym wierszu
+     (krąży i po NADCH_ODLOT s odlatuje); statek kosmiczny i satelita istnieją tylko jako widowiska (torWid, poza siatką: nigdy nie biorą udziału w kontakcie). */
+  function torS0(ch, r) { return TOR.NADCHMURZE && r === 0 && (ch === 'A' || ch === 'a' || ch === 'Y'); }
   function torPustyPlaster(g) { var r; for (r = 0; r < g.length; r++) if (/[^.]/.test(g[r])) return false; return true; }
   /* zasada uczciwości: z każdej komórki (c, r) poprzedniego plastra istnieje wolna komórka (c', r') tego plastra, |c' - c| <= 1, r' w {r, r + 1} (bez wznoszenia) */
   function torUczciwy(g) {
@@ -5233,6 +5258,7 @@ Słońce obiecało wrócić rano.</p>
   }
   function torPrzeszkoda(pl, ch, c, r) {
     var C = CHMURY_TOR[ch], e = { t: gameT, typ: TOR_NAZWY[ch] || ch, znak: ch, k: c, w: r, s0: s, h0: h, l0: lvl }, d;
+    if (torS0(ch, r)) { e.efekt = 'widowisko'; e.s1 = s; torLog.widowiskaKontakty++; torLog.kontakty.push(e); return; }   /* Z17: nadchmurze, S0 */
     if (immT > 0 && !(C && C.fn === 'buff')) { e.efekt = 'odpornosc'; torLog.kontakty.push(e); return; }
     if (C && !C.rys) {
       if (C.fn === 'buff') { if (TR > 0) TR--; torP = 0; torLift = 0; e.efekt = 'oaza_wzlot'; torLog.kontakty.push(e); return; }   /* oaza: odnawia wysokość (bez kary) */
@@ -5272,7 +5298,11 @@ Słońce obiecało wrócić rano.</p>
     haw.t += dt;
     if (haw.faza === 'zapowiedz') { if (haw.t >= G.HAW_WARN) { haw.faza = 'poscig'; haw.t = 0; haw.atak = 0; haw.cel = null; haw.tAtak = TOR.ATAK_PRZED; haw.g = 1; } }
     else if (haw.faza === 'poscig') {
-      if (!haw.cel) { haw.tAtak -= dt; if (haw.tAtak <= 0) { haw.cel = { c: TC, r: TR, t: 0 }; torLog.ataki.push({ t: gameT, typ: haw.kind, k: TC, w: TR, wynik: null }); } }
+      if (!haw.cel && TOR.NADCHMURZE && TR === 0) {   /* Z17: nadchmurze, drapieżnik tu nie wlatuje: krąży niżej, po NADCH_ODLOT s odlatuje */
+        haw.wysoko = (haw.wysoko || 0) + dt; haw.tAtak = Math.max(haw.tAtak, 0.25);
+        if (haw.wysoko >= TOR.NADCH_ODLOT) { haw.faza = 'odlot'; haw.t = 0; haw.reason = 'nadchmurze'; hawkLog.uciekl++; torLog.ataki.push({ t: gameT, typ: haw.kind, k: TC, w: TR, wynik: 'nadchmurze' }); }
+      }
+      else if (!haw.cel) { haw.tAtak -= dt; if (haw.tAtak <= 0) { haw.cel = { c: TC, r: TR, t: 0 }; torLog.ataki.push({ t: gameT, typ: haw.kind, k: TC, w: TR, wynik: null }); } }
       else {
         c = haw.cel; c.t += dt;
         if (c.t >= TOR.ATAK_ZAP + TOR.ATAK_UDER) {
@@ -5309,6 +5339,89 @@ Słońce obiecało wrócić rano.</p>
       if (pl.z < 0.16) torPl.splice(k, 1);
     }
     torFlow += dt * sp;
+    torWidKrok(dt, sp, live);
+  }
+  /* ---------- Z17: widowiska nadchmurza (S0): statek kosmiczny, satelita, UFO, samolot, drapieżnik ----------
+     Lecą w poprzek górnego wiersza (i nieco nad nim) daleko przed Okruszkiem, nie zbliżają się bardziej niż WID_MIN_Z (płaszczyzna ptaszka to G.ZB), poza siatką toru:
+     nie ma z nimi kontaktu, nie zmieniają E, s ani wysokości. Pojawiają się rzadko, gdy Okruszek jest w nadchmurzu (górny wiersz), osobnym ziarnem (nie ruszają losowań toru). */
+  var torWid = [], torWidT = 0, torWidN = 0, torWidR = R32(1717), WID_TYPY = ['samolot', 'drapieznik', 'ufo', 'satelita', 'statek'], WID_WAGI = [0.28, 0.24, 0.16, 0.16, 0.16];
+  function torWidNowe(typ, opt) {
+    var dir, x0, o;
+    opt = opt || {};
+    dir = opt.dir || (opt.k !== undefined ? (opt.k < (TOR.COLS - 1) / 2 ? 1 : -1) : (torWidR() < 0.5 ? 1 : -1));
+    x0 = opt.k !== undefined ? +opt.k : (dir > 0 ? -0.9 : TOR.COLS - 0.1);
+    o = { typ: typ, z: opt.z !== undefined ? Math.max(TOR.WID_MIN_Z, +opt.z) : 1.15 + 0.9 * torWidR(), x: x0, dir: dir, r: opt.w !== undefined ? +opt.w : -0.15 - torWidR() * 0.3, age: 0, id: ++torWidN,
+          vx: typ === 'statek' ? 1.1 : (typ === 'satelita' ? 0.35 : (typ === 'samolot' ? 0.6 : 0.5)), vz: typ === 'satelita' ? 0.05 : 0.12, wariant: torWidR() < 0.5 ? 0 : 1 };
+    torWid.push(o); torLog.widowiska++;
+    return o;
+  }
+  function torWidKrok(dt, sp, live) {
+    var k, o, u, n;
+    for (k = torWid.length - 1; k >= 0; k--) {
+      o = torWid[k]; o.age += dt; o.x += o.dir * o.vx * dt; o.z = Math.max(TOR.WID_MIN_Z, o.z - dt * sp * o.vz);
+      if (o.x < -2.2 || o.x > TOR.COLS + 1.2 || o.age > 14) torWid.splice(k, 1);
+    }
+    if (!live || noObst || state !== 'gra' || TR !== 0 || !TOR.NADCHMURZE) return;
+    torWidT += dt;
+    if (torWidT >= TOR.WID_CO * (0.7 + 0.6 * torWidR())) {
+      torWidT = 0; u = torWidR(); n = 0;
+      while (n < WID_TYPY.length - 1 && u > WID_WAGI[n]) { u -= WID_WAGI[n]; n++; }
+      torWidNowe(WID_TYPY[n]);
+    }
+  }
+  /* rysunki widowisk (tonalne, jasny brzeg, bez ciemnych obrysów; skala jak przedmioty toru) */
+  function drawTorWid(o) {
+    var z = o.z, sc = 1 / z, X = torSX(o.x, z), Y = torSY(o.r, z), amt = obAmt(z), a = sm(o.age / 0.6) * sm((o.x + 2.2) / 0.8) * sm((TOR.COLS + 1.2 - o.x) / 0.8) * sm((TOR.Z_SPAWN + 0.6 - z) / 0.8), d, M, k;
+    if (a < 0.02) return;
+    switch (o.typ) {
+      case 'statek': torRysujStatek(X, Y, 0.75 * sc, a, amt, o.dir); break;
+      case 'satelita': torRysujSatelite(X, Y, 0.7 * sc, a, amt, o.id); break;
+      case 'ufo': torRysujUfo(X, Y, 0.7 * sc, a, amt); break;
+      case 'drapieznik': drawHawk(X, Y, 0.3 * sc, reduce ? 0.2 : Math.sin(t * 2.2 + o.id) * 0.35, amt, a, false); break;
+      case 'samolot':
+        if (!PL.length) { PL.push(samolotDef(0)); PL.push(samolotDef(1)); }
+        d = PL[o.wariant]; M = PLS[o.wariant]; k = 0.42 * sc;
+        ctx.save(); ctx.lineCap = 'round'; ctx.globalCompositeOperation = 'screen'; ctx.strokeStyle = rgba(torKolor('wstega'), 0.4 * a); ctx.lineWidth = Math.max(2, 7 * sc);   /* smuga kondensacyjna: jedna miękka, jasna wstęga */
+        ctx.beginPath(); ctx.moveTo(X - o.dir * d.span * k * 0.3, Y); ctx.lineTo(X - o.dir * (d.span * k * 0.3 + 160 * sc), Y); ctx.stroke(); ctx.restore();
+        if (M && M.tint) { ctx.save(); if (o.dir < 0) { ctx.translate(X, Y); ctx.scale(-1, 1); ctx.translate(-X, -Y); } drawTintS(M.tint, X, Y, k, a); ctx.restore(); }
+        else { ctx.globalAlpha = a; ctx.fillStyle = rgba(mixc(PAL.c1, [226, 228, 240], amt), 1); ctx.beginPath(); ctx.ellipse(X, Y, d.span * k, d.R * k * 0.3, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(X, Y, d.R * k, 0, TAU); ctx.fill(); }
+        break;
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* statek kosmiczny: smukły, zaokrąglony kadłub w tonach L0 (w kolorze perłowo-lawendowy), okienko i ogon, ciepły blask silnika i jasny ślad */
+  function torRysujStatek(X, Y, k, a, amt, dir) {
+    var body = mixc(PAL.c1, [232, 226, 248], 0.4 + 0.6 * amt), lite = jasnyBrzeg(body, 0.7), cien = tonalEdge(body, 0.8), gr, fl = reduce ? 0.8 : 0.75 + 0.25 * Math.sin(t * 17);
+    ctx.save(); ctx.translate(X, Y); ctx.scale(k * dir, k); ctx.rotate(-0.12); ctx.globalAlpha = a; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    gr = ctx.createLinearGradient(-90, 0, -40, 0); gr.addColorStop(0, rgba(torKolor('wstega'), 0)); gr.addColorStop(1, rgba(torKolor('wstega'), 0.5));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(-40, -6); ctx.lineTo(-96, -2); ctx.lineTo(-96, 2); ctx.lineTo(-40, 6); ctx.closePath(); ctx.fill();   /* ślad */
+    gr = ctx.createRadialGradient(-38, 0, 1, -38, 0, 14); gr.addColorStop(0, rgba(mixc([255, 236, 200], [255, 206, 150], amt), 0.95 * fl)); gr.addColorStop(1, rgba([255, 220, 180], 0));
+    ctx.fillStyle = gr; ctx.fillRect(-54, -14, 30, 28);   /* blask silnika */
+    gr = ctx.createLinearGradient(0, -14, 0, 14); gr.addColorStop(0, rgba(lite, 1)); gr.addColorStop(0.6, rgba(body, 1)); gr.addColorStop(1, rgba(cien, 1));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(-36, -9); ctx.quadraticCurveTo(8, -15, 40, 0); ctx.quadraticCurveTo(8, 15, -36, 9); ctx.quadraticCurveTo(-42, 0, -36, -9); ctx.fill();
+    ctx.fillStyle = rgba(mixc(body, cien, 0.5), 1); ctx.beginPath(); ctx.moveTo(-30, -8); ctx.lineTo(-40, -22); ctx.lineTo(-22, -9); ctx.closePath(); ctx.fill();   /* statecznik */
+    ctx.beginPath(); ctx.moveTo(-30, 8); ctx.lineTo(-38, 18); ctx.lineTo(-22, 9); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = rgba(mixc(LINE, [200, 226, 255], amt), 0.95); ctx.beginPath(); ctx.ellipse(14, -3, 7, 4.5, 0, 0, TAU); ctx.fill();   /* okienko */
+    ctx.strokeStyle = rgba(lite, 0.7); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-30, -9); ctx.quadraticCurveTo(8, -14.5, 36, -2); ctx.stroke();   /* jasny brzeg grzbietu */
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  /* satelita: korpus i dwa skrzydła paneli (jasna, chłodna tonacja; podział paneli jasnymi liniami), antena i migające światełko; obraca się powoli */
+  function torRysujSatelite(X, Y, k, a, amt, sd) {
+    var body = mixc(PAL.c1, [236, 226, 210], 0.3 + 0.7 * amt), pan = mixc(PAL.c2, [176, 196, 240], 0.35 + 0.65 * amt), lite = jasnyBrzeg(pan, 0.75), gr, j, side, on = reduce ? 1 : (Math.sin(t * 5 + sd) > 0.2 ? 1 : 0.35);
+    ctx.save(); ctx.translate(X, Y); ctx.rotate(reduce ? 0.1 : 0.1 + Math.sin(t * 0.4 + sd) * 0.25); ctx.scale(k, k); ctx.globalAlpha = a; ctx.lineCap = 'round';
+    for (side = -1; side <= 1; side += 2) {
+      ctx.strokeStyle = rgba(jasnyBrzeg(body, 0.5), 0.8); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(side * 12, 0); ctx.lineTo(side * 22, 0); ctx.stroke();   /* ramię */
+      gr = ctx.createLinearGradient(0, -14, 0, 14); gr.addColorStop(0, rgba(lite, 1)); gr.addColorStop(1, rgba(pan, 1)); ctx.fillStyle = gr;
+      ctx.fillRect(side > 0 ? 22 : -70, -12, 48, 24);
+      ctx.strokeStyle = rgba(lite, 0.75); ctx.lineWidth = 1; ctx.beginPath();
+      for (j = 1; j < 4; j++) { ctx.moveTo((side > 0 ? 22 : -70) + j * 12, -12); ctx.lineTo((side > 0 ? 22 : -70) + j * 12, 12); }
+      ctx.moveTo(side > 0 ? 22 : -70, 0); ctx.lineTo(side > 0 ? 70 : -22, 0); ctx.stroke();
+    }
+    gr = ctx.createLinearGradient(0, -14, 0, 14); gr.addColorStop(0, rgba(jasnyBrzeg(body, 0.6), 1)); gr.addColorStop(1, rgba(tonalEdge(body, 0.6), 1));
+    ctx.fillStyle = gr; rrect(-12, -14, 24, 28, 5); ctx.fill();
+    ctx.strokeStyle = rgba(jasnyBrzeg(body, 0.6), 0.85); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -28); ctx.stroke();   /* antena */
+    ctx.beginPath(); ctx.arc(0, -29, 3.2, 0, TAU); ctx.fillStyle = rgba(mixc(LINE, [255, 206, 140], amt), 0.95 * on); ctx.fill();
+    ctx.restore(); ctx.globalAlpha = 1;
   }
   function torSim(dt) {
     var sp, hold, dec, no, np, n0;
@@ -5350,7 +5463,7 @@ Słońce obiecało wrócić rano.</p>
     var k, z, sp = TOR.V0, dz = Math.max(TOR.DZ_MIN, sp * TOR.T_GAP), u, g;
     torGeom();
     TC = TOR.START_K; TR = TOR.START_W; xF = TC; yF = TR; torP = 0; torLift = 0; torNurk = false; diving = false; diveT = 0; diveRows = 0; torPrzerzut = 0; torTrasa = null;
-    lastBeatT = -9; torBeatT = 9; torBokT = 9; torZjazdT = 9; torPl.length = 0; torKolejka.length = 0; torUczI = 0; torRatT = -99; torMysz = null; torTapCzeka = null; torStick = null; TORW = null;
+    lastBeatT = -9; torBeatT = 9; torBokT = 9; torZjazdT = 9; torPl.length = 0; torKolejka.length = 0; torWid.length = 0; torWidT = 0; torUczI = 0; torRatT = -99; torMysz = null; torTapCzeka = null; torStick = null; TORW = null;
     torLog = torLogNowy(); torBramaN = 0; prady.length = 0;
     bx = torKX(xF); camX = bx * TOR.CAM; h = torH(); minH = h;
     /* tunel od razu wypełniony: puste plastry, a w nich pierwsze wiatry nauki tak, by docierały co ok. UCZ_GAP s (od ok. 2,5 s) */
@@ -5363,8 +5476,12 @@ Słońce obiecało wrócić rano.</p>
     for (k = 0; k < torLog.plastry.length; k++) torLog.plastry[k].tPokaz = 0;
   }
 
-  /* ---------- rysowanie toru (Z14; tymczasowo proste, bez ciemnych obrysów: wypełnienia tonalne, jasne krawędzie; do scalenia ze stylem Z15) ---------- */
-  function torSwiatlo(amt) { return mixc(LINE, mixc(PAL.acc, [255, 244, 226], 0.35), amt); }
+  /* ---------- rysowanie toru (Z14, zintegrowane ze stylem Z15 w Z17) ----------
+     Barwy toru z palety Z15: torKolor('wstega') szyny i ramy plastrów, 'komorka' siatka i komórka Okruszka, 'wiatr' wiatry i trasy przerzutu (ciepłe, zachęta),
+     'uwaga' ostrzeżenie przeszkód (1,5 s). Chmury toru to akwarela Z15 (torChmura / drawTorChmura, kolor = funkcja: CHMURY15 przez TOR_R15), bez ciemnych obrysów.
+     Szyny i cień plastra są wyraźniejsze (brak 1 z Z14): miękka poświata bliskich odcinków, cień nadlatującego plastra z wypełnieniem od 1,5 s przed kontaktem. */
+  function torSwiatlo(amt) { return torKolor('wstega'); }   /* Z17: dawna barwa Z14 zastąpiona paletą toru Z15 */
+  var TOR17 = { A_SZYNA: 0.5, A_SZYNA_WEW: 0.22, A_POSWIATA: 0.14, CIEN_MIN: 0.35, A_CIEN_WYP: 0.1, A_CIEN_RAMA: 0.5, A_SIATKA: 0.3 };
   /* przed rysowaniem: położenie ptaszka (BIRDY = jego wiersz), skrzydła wg akcji */
   function torPrzedRysowaniem(dt) {
     var u, f, dl = 0, dr = 0, A, sw;
@@ -5385,13 +5502,18 @@ Słońce obiecało wrócić rano.</p>
   }
   /* szyny: miękka siatka torów w perspektywie (jasne wstęgi lecące w głąb), z płynącym światłem */
   function drawTorSzyny() {
-    var i, j, xb, yb, z0 = G.ZB, z1 = TOR.Z_SPAWN + 0.8, X0, Y0, X1, Y1, gr, a, amt = cAll(sk + OFF_FAR), col = torSwiatlo(amt * 0.8), inner, chS = torCH / G.ZB, e0 = torRowSY(0) - chS / 2, lw;
+    var i, j, xb, yb, z0 = G.ZB, z1 = TOR.Z_SPAWN + 0.8, X0, Y0, X1, Y1, gr, a, amt = cAll(sk + OFF_FAR), col = torKolor('wstega'), inner, chS = torCH / G.ZB, e0 = torRowSY(0) - chS / 2, lw;
     ctx.save(); ctx.lineCap = 'round';
+    if (!reduce && !lekki) {   /* Z17: miękka poświata bliskich odcinków zewnętrznych szyn (tor czytelny także na jasnym niebie L0) */
+      ctx.beginPath();
+      for (i = 0; i <= TOR.COLS; i += TOR.COLS) for (j = 0; j <= TOR.ROWS; j += TOR.ROWS) { xb = (i - TOR.COLS / 2) * torCW; yb = e0 + j * chS; ctx.moveTo(W / 2 + (xb - camX) / z0, torEY(yb, z0)); ctx.lineTo(W / 2 + (xb - camX) / 2.4, torEY(yb, 2.4)); }
+      ctx.strokeStyle = rgba(col, TOR17.A_POSWIATA); ctx.lineWidth = TOR15.ROZMYCIE; ctx.stroke();
+    }
     /* szyny w ścieżkach (zewnętrzne x trzy odcinki o malejącej jasności, wewnętrzne tylko w dalekiej części): bez gradientów i kreskowania, mało wywołań i krótkie linie
        (w rasteryzacji programowej koszt rośnie z długością linii: pomiar 16 linii po 550 px = ok. 1,7 ms na klatkę) */
     for (inner = 0; inner <= 1; inner++) for (var q = inner; q < 3; q++) {
       var za = [z0, 1.6, 3.4][q], zb = [1.6, 3.4, z1][q];
-      a = inner ? 0.2 : 0.42; lw = inner ? 1 : 1.8; ctx.beginPath();
+      a = inner ? TOR17.A_SZYNA_WEW : TOR17.A_SZYNA; lw = inner ? 1 : TOR15.SZER_WSTEGI; ctx.beginPath();
       for (i = 0; i <= TOR.COLS; i++) for (j = 0; j <= TOR.ROWS; j++) {
         if ((((i > 0 && i < TOR.COLS) || (j > 0 && j < TOR.ROWS)) ? 1 : 0) !== inner) continue;
         xb = (i - TOR.COLS / 2) * torCW; yb = e0 + j * chS;
@@ -5413,26 +5535,30 @@ Słońce obiecało wrócić rano.</p>
   function torRectR(cx, cy, hw, hh, r) { rrect(cx - hw, cy - hh, hw * 2, hh * 2, r); }
   /* podświetlenie komórki Okruszka (na płaszczyźnie ptaszka), tor jego komórki w głąb, zebrany wzlot (kropki machnięć), atak drapieżnika, trasa wiatru */
   function drawTorNaPtaku() {
-    var amt = cAll(sk + OFF_NEAR), col = torSwiatlo(amt), cx = torSX(xF, G.ZB), cy = torRowSY(yF), hw = torCW / 2 / G.ZB, hh = torCH / 2 / G.ZB, gr, k, n, X, Y, a, u, c, pu = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(t * 10);
+    var amt = cAll(sk + OFF_NEAR), col = torKolor('komorka'), cU = torKolor('uwaga'), cW = torKolor('wiatr'), cx = torSX(xF, G.ZB), cy = torRowSY(yF), hw = torCW / 2 / G.ZB, hh = torCH / 2 / G.ZB, gr, k, n, X, Y, a, u, c, pu = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(t * 10);
     ctx.save();
     /* siatka na płaszczyźnie ptaszka: dziewięć miękkich, jasnych komórek (bez ciemnych obrysów); tu kończy się każdy tor */
     ctx.beginPath();   /* jedna ścieżka, same jasne ramki (bez wypełnienia: tańsze) */
     for (k = 0; k < TOR.COLS; k++) for (n = 0; n < TOR.ROWS; n++) { X = torSX(k, G.ZB); Y = torRowSY(n); ctx.rect(X - hw + 5, Y - hh + 5, (hw - 5) * 2, (hh - 5) * 2); }   /* rect (roundRect w rasteryzacji programowej ok. 3 x droższy) */
-    ctx.lineJoin = 'round'; ctx.strokeStyle = rgba(col, 0.24); ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.lineJoin = 'round'; ctx.strokeStyle = rgba(col, TOR17.A_SIATKA); ctx.lineWidth = 1.2; ctx.stroke();
     /* cień nadlatującego plastra na tej siatce (ostatnie OSTRZEZ s przed kontaktem): w której komórce jest przeszkoda, a w której wiatr, bez zgadywania z perspektywy */
     var nb = null, q3, et, ga, ch3, r3, c3;
     for (k = 0; k < torPl.length; k++) { q3 = torPl[k]; if (!q3.puste && !q3.kontakt && q3.z > G.ZB && (!nb || q3.z < nb.z)) nb = q3; }
     if (nb && state === 'gra') {
-      et = (nb.z - G.ZB) / Math.max(0.3, curSpeed); ga = sm(1 - et / TOR.OSTRZEZ);
+      et = (nb.z - G.ZB) / Math.max(0.3, curSpeed); ga = et <= TOR.OSTRZEZ ? TOR17.CIEN_MIN + (1 - TOR17.CIEN_MIN) * sm(1 - et / TOR.OSTRZEZ) : 0;   /* Z17: widoczny od razu 1,5 s przed kontaktem, potem coraz mocniej */
       if (ga > 0.01) {
-        for (var rodz = 0; rodz < 2; rodz++) {   /* 0 = przeszkody (miodowa ramka), 1 = wiatry (jasna ramka) */
+        for (var rodz = 0; rodz < 2; rodz++) {   /* 0 = przeszkody (barwa „uwaga”), 1 = wiatry (barwa „wiatr”); wypełnienie i rama */
           ctx.beginPath();
           for (r3 = 0; r3 < nb.g.length; r3++) for (c3 = 0; c3 < nb.g[r3].length; c3++) {
-            ch3 = nb.g[r3].charAt(c3); if (ch3 === '.' || ch3 === 'o' || (rodz === 0) !== !TOR_WIATRY[ch3]) continue;
+            ch3 = nb.g[r3].charAt(c3); if (ch3 === '.' || ch3 === 'o' || torS0(ch3, r3) || (rodz === 0) !== !TOR_WIATRY[ch3]) continue;
             if (ch3 === 'F' && !(c3 === Math.round(torKC()) && r3 === Math.round(torKR()))) continue;
             X = torSX(c3, G.ZB); Y = torRowSY(r3); ctx.rect(X - hw + 9, Y - hh + 9, (hw - 9) * 2, (hh - 9) * 2);
           }
-          ctx.strokeStyle = rodz === 0 ? rgba(mixc(LINE, [255, 214, 140], 0.25 + 0.6 * amt), 0.6 * ga) : rgba(col, 0.5 * ga); ctx.lineWidth = rodz === 0 ? 2.2 : 1.6; ctx.stroke();
+          ctx.globalCompositeOperation = 'screen';   /* Z17: światło, nie kreska: barwa toru tylko rozjaśnia (bez ciemnego obrysu na jasnym tle) */
+          ctx.fillStyle = rgba(rodz === 0 ? cU : cW, TOR17.A_CIEN_WYP * ga); ctx.fill();
+          ctx.strokeStyle = rgba(rodz === 0 ? cU : cW, TOR17.A_CIEN_RAMA * ga * 0.5); ctx.lineWidth = TOR15.ROZMYCIE; ctx.stroke();
+          ctx.strokeStyle = rgba(rodz === 0 ? cU : cW, TOR17.A_CIEN_RAMA * ga); ctx.lineWidth = rodz === 0 ? 2.4 : 1.8; ctx.stroke();
+          ctx.globalCompositeOperation = 'source-over';
         }
       }
     }
@@ -5454,23 +5580,23 @@ Słońce obiecało wrócić rano.</p>
     /* drapieżnik zaznacza komórkę: pulsująca ramka i kurcząca się obwódka (odliczanie do ataku) */
     if (haw && haw.cel && haw.faza === 'poscig') {
       c = haw.cel; X = torSX(c.c, G.ZB); Y = torRowSY(c.r); u = cl(c.t / TOR.ATAK_ZAP);
-      torRectR(X, Y, hw - 2, hh - 2, 14); ctx.strokeStyle = rgba(mixc(LINE, [255, 214, 140], 0.6), 0.45 + 0.4 * pu); ctx.lineWidth = 2.6; ctx.stroke();
+      ctx.globalCompositeOperation = 'screen'; torRectR(X, Y, hw - 2, hh - 2, 14); ctx.strokeStyle = rgba(cU, 0.45 + 0.4 * pu); ctx.lineWidth = 2.6; ctx.stroke(); ctx.globalCompositeOperation = 'source-over';
       torRect(X, Y, (hw - 2) * (1 - 0.7 * u), (hh - 2) * (1 - 0.7 * u), 10); ctx.strokeStyle = rgba(LINE, 0.55); ctx.lineWidth = 1.4; ctx.stroke();
       gr = ctx.createRadialGradient(X, Y, 4, X, Y, hw); gr.addColorStop(0, rgba([255, 236, 200], 0.16 * pu)); gr.addColorStop(1, rgba([255, 236, 200], 0)); ctx.fillStyle = gr; ctx.fillRect(X - hw, Y - hh, hw * 2, hh * 2);
     }
     /* trasa przerzutu wiatrem: wstęga od komórki wiatru do celu */
     if (torTrasa && torPrzerzut > 0) {
       u = 1 - torPrzerzut / TOR.WIND_T; a = sm(1 - u) * 0.8;
-      ctx.lineCap = 'round'; ctx.strokeStyle = rgba(col, a); ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -t * 90;
+      ctx.lineCap = 'round'; ctx.strokeStyle = rgba(cW, a); ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -t * 90;
       ctx.beginPath(); ctx.moveTo(torSX(torTrasa.od[0], G.ZB), torRowSY(torTrasa.od[1])); ctx.quadraticCurveTo(torSX((torTrasa.od[0] + torTrasa.do[0]) / 2, G.ZB) + 30, (torRowSY(torTrasa.od[1]) + torRowSY(torTrasa.do[1])) / 2, torSX(torTrasa.do[0], G.ZB), torRowSY(torTrasa.do[1])); ctx.stroke(); ctx.setLineDash([]);
     }
     ctx.restore(); ctx.lineDashOffset = 0;
   }
-  function torItems(items) { var k; for (k = 0; k < torPl.length; k++) if (torPl[k].z >= G.ZB) items.push({ typ: 'torPl', pl: torPl[k], z: torPl[k].z }); }
+  function torItems(items) { var k; for (k = 0; k < torPl.length; k++) if (torPl[k].z >= G.ZB) items.push({ typ: 'torPl', pl: torPl[k], z: torPl[k].z }); for (k = 0; k < torWid.length; k++) items.push({ typ: 'torWid', w: torWid[k], z: torWid[k].z }); }
   function torFront() { var k; for (k = torPl.length - 1; k >= 0; k--) if (torPl[k].z < G.ZB && torPl[k].z > 0.2) drawTorPlaster(torPl[k], true); }
   /* plaster: delikatna rama komórek na swojej głębokości i zawartość komórek */
   function drawTorPlaster(pl, front) {
-    var z = pl.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), fade = sm(pl.age / TOR.FADE_IN) * sm((z - 0.2) / 0.35) * sm((TOR.Z_SPAWN + 0.6 - z) / 0.6) * (front ? 0.45 : 1), amt = obAmt(z), col = torSwiatlo(amt), i, j, r, c, ch, x0, x1, y0, y1, chS = torCH / G.ZB, e0 = torRowSY(0) - chS / 2, eta = (z - G.ZB) / Math.max(0.3, curSpeed), pu = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * 9), cx, cy, hw, hh;
+    var z = pl.z, sc = 1 / z, tt = cl((z - NEAR) / (FAR - NEAR)), fade = sm(pl.age / TOR.FADE_IN) * sm((z - 0.2) / 0.35) * sm((TOR.Z_SPAWN + 0.6 - z) / 0.6) * (front ? 0.45 : 1), amt = obAmt(z), col = torKolor('wstega'), cWi = torKolor('wiatr'), cUw = torKolor('uwaga'), i, j, r, c, ch, x0, x1, y0, y1, chS = torCH / G.ZB, e0 = torRowSY(0) - chS / 2, eta = (z - G.ZB) / Math.max(0.3, curSpeed), pu = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * 9), cx, cy, hw, hh;
     if (fade < 0.02) return;
     ctx.save(); ctx.lineCap = 'round';
     if (!front && z > 1.1) {   /* rama plastra: przecięcie toru na tej głębokości; blisko sam obwód, daleko pełna siatka (długie linie są drogie, a płaszczyznę ptaszka pokazuje siatka komórek) */
@@ -5488,8 +5614,8 @@ Słońce obiecało wrócić rano.</p>
       cx = torSX(c, z); cy = torSY(r, z);
       if (cx + hw * 2 < -40 || cx - hw * 2 > W + 40) continue;
       /* zachęta i ostrzeżenie: wiatry delikatnie świecą, przeszkody 1,5 s przed kontaktem pulsują jasną ramką (bez ciemnych obrysów) */
-      if (!front && TOR_WIATRY[ch]) { var gr = ctx.createRadialGradient(cx, cy, 2, cx, cy, Math.max(hw, hh)); gr.addColorStop(0, rgba(col, 0.2 * fade)); gr.addColorStop(1, rgba(col, 0)); ctx.fillStyle = gr; ctx.fillRect(cx - hw, cy - hh, hw * 2, hh * 2); }
-      else if (!front && !torWolna(ch) && eta <= TOR.OSTRZEZ && eta > -0.05) { torRect(cx, cy, hw * 0.92, hh * 0.92, 12 * sc); ctx.strokeStyle = rgba(mixc(LINE, [255, 214, 140], amt * 0.8 + 0.2), (0.25 + 0.4 * pu) * fade); ctx.lineWidth = Math.max(1.2, 2.4 * Math.min(sc, 1.6)); ctx.stroke(); }
+      if (!front && TOR_WIATRY[ch]) { var gr = ctx.createRadialGradient(cx, cy, 2, cx, cy, Math.max(hw, hh)); gr.addColorStop(0, rgba(cWi, TOR15.A_WIATR * fade)); gr.addColorStop(1, rgba(cWi, 0)); ctx.fillStyle = gr; ctx.fillRect(cx - hw, cy - hh, hw * 2, hh * 2); }
+      else if (!front && !torWolna(ch) && !torS0(ch, r) && eta <= TOR.OSTRZEZ && eta > -0.05) { torRect(cx, cy, hw * 0.84, hh * 0.84, 12 * sc); ctx.globalCompositeOperation = 'screen'; ctx.strokeStyle = rgba(cUw, (0.35 + 0.4 * pu) * fade); ctx.lineWidth = Math.max(1.2, 2.4 * Math.min(sc, 1.6)); ctx.stroke(); ctx.globalCompositeOperation = 'source-over'; }
       torRysujKomorke(pl, ch, c, r, z, sc, fade, amt, front);
     }
     ctx.globalAlpha = 1;
@@ -5503,14 +5629,14 @@ Słońce obiecało wrócić rano.</p>
     var cx = torSX(c, z), cy = torSY(r, z), hw = torCW / 2 * sc, hh = torCH / 2 * sc, n, k, eta, u, c0, X;
     if (TOR_WIATRY[ch]) { torRysujWiatr(ch, c, r, z, sc, a, amt); return; }
     if (!torPierwsza(pl.g, ch, c, r)) return;
-    if (CHMURY_TOR[ch]) { torRysujChmure(ch, cx, cy + hh * 0.42, (torCW * 1.1 / 150) * sc, a, amt); if (ch === 'B') torRysujBurze(cx, cy, hw, hh, a, amt, pl.id); if (ch === 'H') torRysujGrad(cx, cy, hw, hh, a, amt); if (ch === 'g' || ch === 'o') torRysujMotyw(ch, cx, cy, hw, hh, a, amt); return; }
+    if (CHMURY_TOR[ch]) { torRysujChmure(ch, cx, cy + hh * 0.42, (torCW * 1.1 / 150) * sc, a, amt, pl.id); if (ch === 'B') torRysujBurze(cx, cy, hw, hh, a, amt, pl.id); if (ch === 'H') torRysujGrad(cx, cy, hw, hh, a, amt); if (ch === 'g' || ch === 'o') torRysujMotyw(ch, cx, cy, hw, hh, a, amt); return; }
     eta = (z - G.ZB) / Math.max(0.3, curSpeed);
     switch (ch) {
       case 'P': case 'M':   /* ptak i motolotnia przylatują z sąsiedniej kolumny; w komórce końcowej najpóźniej 1,6 s przed kontaktem */
         c0 = pl.ruch[c + ',' + r]; if (c0 === undefined) c0 = c; u = sm(1 - (eta - 1.6) / 1.4); X = torSX(lerp(c0, c, u), z);
         if (ch === 'P') { ctx.save(); ctx.translate(X, cy); ctx.scale(0.62, 0.62); ctx.translate(-X, -cy); drawPtak({ x: torKX(lerp(c0, c, u)), z: z, dy: (torSY(r, z) - HORIZON) * z - YP - 7 * Math.sin(t * 9 + pl.id), ph: t * 9 + pl.id, dir: c >= c0 ? 1 : -1, age: 9, typ: 'ptak' }, front); ctx.restore(); }
         else torRysujMotolotnie(X, cy, (torCW * 1.0 / 120) * sc, a, amt, c >= c0 ? 1 : -1);
-        if (!front && u < 0.99) { ctx.save(); ctx.setLineDash([5, 6]); ctx.strokeStyle = rgba(torSwiatlo(amt), 0.5 * a); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(X, cy); ctx.lineTo(cx, cy); ctx.stroke(); ctx.restore(); }   /* zapowiedź: kreska toru lotu */
+        if (!front && u < 0.99) { ctx.save(); ctx.setLineDash([5, 6]); ctx.strokeStyle = rgba(torKolor('uwaga'), 0.55 * a); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(X, cy); ctx.lineTo(cx, cy); ctx.stroke(); ctx.restore(); }   /* zapowiedź: kreska toru lotu */
         break;
       case 'T': torRysujTornado(cx, cy - hh, cy + hh * 3 - 0, hw, a, amt, pl.ruch['T' + c] || 1); break;
       case 'A': case 'a': torRysujSamolot(pl, ch, c, r, z, sc, a, amt); break;
@@ -5522,9 +5648,9 @@ Słońce obiecało wrócić rano.</p>
   }
   /* wiatr: poświata komórki i wstęga trasy przerzutu (płynące jasne kreski), każdy typ inny kształt */
   function torRysujWiatr(ch, c, r, z, sc, a, amt) {
-    var q = torCel(ch, c, r), cx = torSX(c, z), cy = torSY(r, z), tx = torSX(q[0], z), ty = torSY(q[1], z), hw = torCW / 2 * sc, hh = torCH / 2 * sc, col = torSwiatlo(amt), k, off, lw = Math.max(1.2, 2.6 * Math.min(sc, 1.7)), dash = Math.max(6, 18 * Math.min(sc, 1.6));
+    var q = torCel(ch, c, r), cx = torSX(c, z), cy = torSY(r, z), tx = torSX(q[0], z), ty = torSY(q[1], z), hw = torCW / 2 * sc, hh = torCH / 2 * sc, col = mixc(torKolor('wiatr'), [255, 255, 255], 0.2), k, off, lw = Math.max(1.2, 2.6 * Math.min(sc, 1.7)), dash = Math.max(6, 18 * Math.min(sc, 1.6));
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (amt > 0.05) { ctx.globalAlpha = 0.18 * amt * a; ctx.strokeStyle = rgba(col, 1); ctx.lineWidth = lw * 5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo((cx + tx) / 2 + (ty - cy) * 0.15, (cy + ty) / 2, tx, ty); ctx.stroke(); ctx.globalAlpha = 1; }
+    { ctx.globalAlpha = (0.1 + 0.12 * amt) * a;   /* Z17: poświata trasy także w L0 */ ctx.strokeStyle = rgba(col, 1); ctx.lineWidth = lw * 5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo((cx + tx) / 2 + (ty - cy) * 0.15, (cy + ty) / 2, tx, ty); ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.setLineDash([dash, dash * 0.6]); ctx.lineDashOffset = reduce ? 0 : -t * 70;
     if (ch === 'F' || ch === 'X') {   /* na wprost / smuga: tunel światła w głąb (koncentryczne ramki) */
       for (k = 0; k < 3; k++) { off = reduce ? 0.3 * k : md(t * 0.9 + k / 3, 1); torRect(cx, cy, hw * (0.85 - 0.6 * off), hh * (0.85 - 0.6 * off), 10 * sc); ctx.strokeStyle = rgba(col, a * (0.35 + 0.5 * (1 - off))); ctx.lineWidth = lw * 0.8; ctx.stroke(); }
@@ -5544,34 +5670,14 @@ Słońce obiecało wrócić rano.</p>
     }
     ctx.restore(); ctx.lineDashOffset = 0;
   }
-  /* chmura toru: sprite tonalny (L0) i barwny (od etapu koloru), płaty bez obrysu, jasna krawędź u góry */
-  function torChmuraSpr(ch) {
-    var C = CHMURY_TOR[ch] || CHMURY_TOR.s;
-    if (!TORSPR[ch]) TORSPR[ch] = { ton: torMalujChmure(C.ton, ch, 0), kol: torMalujChmure(C.kol, ch, 1) };
-    return TORSPR[ch];
-  }
-  function torMalujChmure(col, ch, kolor) {
-    var Wd = 160, Hd = 112, K = 1.6, S = { c: mkS(Wd * K, Hd * K), spr: K, ox: Wd / 2 * K, oy: Hd * 0.74 * K }, x = S.c.getContext('2d'), r = R32(900 + ch.charCodeAt(0) * 7), L = [], k, gr, l, lite = mixc(col, [255, 255, 255], 0.5), dark = mulc(col, ch === 'B' || ch === 'f' ? 0.7 : 0.82);
-    S.w = S.c.width; S.h = S.c.height;
-    x.setTransform(K, 0, 0, K, S.ox, S.oy);
-    L.push([-44, -16, 24], [-14, -20, 28], [18, -18, 27], [46, -14, 22], [-28, -40, 24], [6, -48, 28], [34, -38, 21], [-6, -66, 17]);
-    for (k = 0; k < L.length; k++) { L[k][0] += (r() - 0.5) * 6; L[k][1] += (r() - 0.5) * 5; L[k][2] *= 0.92 + r() * 0.16; }
-    function cialo(grow) { var q; x.beginPath(); for (q = 0; q < L.length; q++) { x.moveTo(L[q][0] + L[q][2] + grow, L[q][1]); x.arc(L[q][0], L[q][1], L[q][2] + grow, 0, TAU); } x.rect(-60 - grow, -14, 120 + grow * 2, 10 + grow); }
-    if (FILTER_OK) { x.save(); x.filter = 'blur(3px)'; x.globalAlpha = 0.5; cialo(4); x.fillStyle = rgba(col, 1); x.fill(); x.restore(); }   /* miękka krawędź tonalna zamiast obrysu */
-    gr = x.createLinearGradient(0, -86, 0, 0); gr.addColorStop(0, rgba(lite, 1)); gr.addColorStop(0.55, rgba(col, 1)); gr.addColorStop(1, rgba(dark, 1));
-    cialo(0); x.fillStyle = gr; x.fill();
-    x.save(); cialo(0); x.clip();
-    for (k = 0; k < L.length; k++) { l = L[k]; gr = x.createRadialGradient(l[0] - l[2] * 0.3, l[1] - l[2] * 0.45, 1, l[0], l[1], l[2] * 1.1); gr.addColorStop(0, rgba(lite, 0.55)); gr.addColorStop(1, rgba(lite, 0)); x.fillStyle = gr; x.fillRect(l[0] - l[2] * 1.2, l[1] - l[2] * 1.2, l[2] * 2.4, l[2] * 2.4); }   /* płaty światła */
-    gr = x.createLinearGradient(0, -22, 0, 0); gr.addColorStop(0, rgba(dark, 0)); gr.addColorStop(1, rgba(mulc(dark, 0.86), 0.55)); x.fillStyle = gr; x.fillRect(-80, -22, 160, 24);   /* cień przy podstawie (ton, nie kreska) */
-    x.restore();
-    x.lineCap = 'round'; x.strokeStyle = rgba([255, 255, 255], ch === 'B' ? 0.22 : 0.42); x.lineWidth = 2;   /* jasna krawędź od góry */
-    for (k = 0; k < L.length; k++) { l = L[k]; if (l[1] > -30 && k < 4) continue; x.beginPath(); x.arc(l[0], l[1], l[2] - 1.5, Math.PI * 1.15, Math.PI * 1.75); x.stroke(); }
-    return S;
-  }
-  function torRysujChmure(ch, X, Y, k, a, amt) {
-    var S = torChmuraSpr(ch), b = (ch === 'g' || ch === 'o' || ch === 'B' || ch === 'H') ? amt : amt, w = reduce ? 0 : Math.sin(t * 0.8 + X * 0.01) * 1.5;
-    if (b < 0.99) drawSpr(S.ton, X + w, Y, k, a * (1 - b) * (ch === 'b' ? 0.92 : 0.96));
-    if (b > 0.01) drawSpr(S.kol, X + w, Y, k, a * b);
+  /* chmura toru (Z17): akwarela Z15 z puli kulis (torChmura), przemalowywana z porą i etapem koloru; kolor = funkcja (CHMURY15 przez TOR_R15), bez obrysu.
+     Dwa warianty kształtu na rodzaj (TOR_WAR; pamięć: najwyżej 2 x 10 sprite'ów); zielona mgła z ławic mgły. Rozmiar: ok. TOR17_CHMURA szerokości komórki. */
+  var TOR_R15 = { b: 'biala', l: 'lawenda', s: 'szara', f: 'burzowa', g: 'mgla_zielona', o: 'oaza_zielona', B: 'burza', H: 'gradowa' };
+  var TOR_WAR = [3, 6], TOR17_CHMURA = 1.25;   /* kształty z puli o proporcjach 1,25 i 1,46 (kłębiaste, nie płaskie pasma) */
+  function torChmuraSpr(ch, v) { var rodz = TOR_R15[ch] || 'biala', D = CHMURY15[rodz]; return torChmura(rodz, D && D.mgla ? (v || 0) % 2 : TOR_WAR[(v || 0) % TOR_WAR.length]); }
+  function torRysujChmure(ch, X, Y, k, a, amt, v) {
+    var S = torChmuraSpr(ch, v), sz = Math.max(60, S.g.maxx - S.g.minx), kk = k * 150 / 1.1 * TOR17_CHMURA / sz, w = reduce ? 0 : Math.sin(t * 0.8 + X * 0.01) * 1.5;
+    drawTorChmura(S, X + w, Y, kk, a * (ch === 'g' ? 0.92 : 1));
     ctx.globalAlpha = 1;
   }
   function torRysujMotyw(ch, cx, cy, hw, hh, a, amt) {   /* zielona mgła: falujące pasma; oaza: iskierki (żeby funkcję było widać także w L0) */
@@ -5597,7 +5703,7 @@ Słońce obiecało wrócić rano.</p>
   }
   /* tornado: lejek przez dwie komórki (pierścienie zwężające się w dół, wirujące jasne smugi; ton szary, w kolorze lawendowy) */
   function torRysujTornado(cx, y0, y1, hw, a, amt, dir) {
-    var n = 9, k, u, rr, yy, col = mixc([150, 156, 184], [150, 128, 190], amt), lite = mixc(LINE, [244, 238, 255], amt), ph = reduce ? 0 : t * 5 * dir, gr, sw = reduce ? 0 : 1;
+    var n = 6, k, u, rr, yy, col = mixc(mixc(PAL.c2, [150, 156, 184], 0.5), [150, 128, 190], amt), lite = mixc(LINE, [244, 238, 255], amt), ph = reduce ? 0 : t * 5 * dir, gr, sw = reduce ? 0 : 1;   /* Z17: 6 pierścieni (rzadsze jasne smugi: bez ciemnych przerw między nimi), ton z palety pory */
     ctx.save(); ctx.lineCap = 'round';
     /* wypełniony lejek (ton, bez obrysu): szeroko u góry, wąsko u dołu, lekko wije się */
     ctx.beginPath();
@@ -5607,7 +5713,7 @@ Słońce obiecało wrócić rano.</p>
     for (k = 0; k < n; k++) {
       u = k / (n - 1); rr = lerp(hw * 0.95, hw * 0.16, Math.pow(u, 0.8)); yy = lerp(y0, y1, u) + Math.sin(ph * 0.4 + u * 5) * hw * 0.06;
       ctx.beginPath(); ctx.ellipse(cx + Math.sin(u * 4 + ph * 0.3) * hw * 0.12, yy, rr, rr * 0.22, 0, 0, TAU); ctx.fillStyle = rgba(col, 0.16 * a); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(cx + Math.sin(u * 4 + ph * 0.3) * hw * 0.12, yy, rr, rr * 0.22, 0, ph + u * 3, ph + u * 3 + Math.PI * 0.9); ctx.strokeStyle = rgba(lite, 0.55 * a); ctx.lineWidth = Math.max(1, hw * 0.04); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx + Math.sin(u * 4 + ph * 0.3) * hw * 0.12, yy, rr, rr * 0.22, 0, ph + u * 3, ph + u * 3 + Math.PI * 0.9); ctx.strokeStyle = rgba(lite, 0.45 * a); ctx.lineWidth = Math.max(1.5, hw * 0.07); ctx.stroke();
     }
     ctx.restore();
   }
@@ -6024,8 +6130,11 @@ Słońce obiecało wrócić rano.</p>
       O.tor = function () { return { wlaczony: TORON, COLS: TOR.COLS, ROWS: TOR.ROWS, stale: JSON.parse(JSON.stringify(TOR)), wiatry: JSON.parse(JSON.stringify(TOR_WIATRY)), wzorcow: WZORCE.length, kolejka: torKolejka.length, plastrow: torPl.length, komorka: komorka(), sp: curSpeed, CW: torCW, CH: torCH, wiersze: (function () { var a = [], r; for (r = 0; r < TOR.ROWS; r++) a.push(torRowSY(r)); return a; })(), kolumny: (function () { var a = [], c; for (c = 0; c < TOR.COLS; c++) a.push(torSX(c, G.ZB)); return a; })() }; };
       O.torLog = function () { return JSON.parse(JSON.stringify(torLog)); };
       O.torChmury = function () { return JSON.parse(JSON.stringify(CHMURY_TOR)); };
+      O.hudNazwa = function () { return { poziom: lvl, nazwa: LV_NAMES[lvl].toUpperCase(), nazwy: LV_NAMES.slice(), komunikaty: LV_MSG.slice() }; };   /* Z17: nazwa poziomu tak, jak rysuje ją HUD */
+      O.widowiska = function () { return torWid.map(function (o) { return { typ: o.typ, x: o.x, r: o.r, z: o.z, age: o.age }; }); };   /* Z17 */
+      O.torKolory = function () { return { wstega: torKolor('wstega'), komorka: torKolor('komorka'), wiatr: torKolor('wiatr'), uwaga: torKolor('uwaga'), r15: JSON.parse(JSON.stringify(TOR_R15)) }; };   /* Z17 */
       O.skrzydla = function () { torPrzedRysowaniem(0); return TORW ? { f: TORW.f, dl: TORW.dl, dr: TORW.dr } : null; };   /* parametry skrzydeł z toru (machnięcie f, złożenie lewego dl i prawego dr) */
-      O.torSprite = function () { var k; for (k in CHMURY_TOR) torChmuraSpr(k); return Object.keys(TORSPR).length; };   /* wszystkie sprite'y chmur toru od razu (pomiar pamięci) */
+      O.torSprite = function () { var k, v; for (k in CHMURY_TOR) for (v = 0; v < TOR_WAR.length; v++) torChmuraSpr(k, v); return Object.keys(TORS).length; };   /* Z17: chmury toru z akwareli Z15 */   /* wszystkie sprite'y chmur toru od razu (pomiar pamięci) */
       O.torStala = function (k, v) { if (v !== undefined && Object.prototype.hasOwnProperty.call(TOR, k)) TOR[k] = v; return TOR[k]; };
       O.torSymuluj = function (sek, fn, dt) {
         var d = dt || 1 / 60, n = Math.round((+sek || 1) / d), i, A, r;
@@ -6046,6 +6155,10 @@ Słońce obiecało wrócić rano.</p>
       O.zdarzenie = function (nazwa, opt) {
         var ch, g, k, w, z, sp = TOR.V0 + TOR.V1 * s;
         opt = opt || {};
+        if (TORON && String(nazwa).indexOf('nadchmurze:') === 0) {   /* Z17: widowisko nadchmurza (S0): statek, satelita, ufo, samolot, drapieznik */
+          var ty = String(nazwa).slice(11); if (WID_TYPY.indexOf(ty) < 0) return false;
+          var ow = torWidNowe(ty, { k: opt.k, w: opt.w, z: opt.z, dir: opt.dir }); return { typ: ow.typ, z: ow.z, x: ow.x, r: ow.r };
+        }
         if (TORON && nazwa === 'przelot') { return !!O.wzorzec('x01', { z: opt.z !== undefined ? opt.z : G.ZB + TOR.WYM_ZAP * sp }); }
         ch = TORON ? znakZ(nazwa) : null;
         if (!ch) return zd3(nazwa, opt);
@@ -6064,6 +6177,7 @@ Słońce obiecało wrócić rano.</p>
           pl = torPl[k]; if (pl.puste) continue;
           for (r = 0; r < pl.g.length; r++) for (c = 0; c < pl.g[r].length; c++) { ch = pl.g[r].charAt(c); if (ch === '.') continue; out.push({ typ: TOR_NAZWY[ch] || ch, znak: ch, kom: [c, r], plaster: pl.id, z: pl.z, eta: (pl.z - G.ZB) / Math.max(0.3, curSpeed), ex: torSX(c, pl.z), ey: torSY(r, pl.z), faza: pl.z > G.ZB ? 'zapowiedz' : 'minela', wiatr: !!TOR_WIATRY[ch] }); }
         }
+        for (k = 0; k < torWid.length; k++) { pl = torWid[k]; out.push({ typ: 'nadchmurze:' + pl.typ, kolizja: false, x: pl.x, r: pl.r, z: pl.z, ex: torSX(pl.x, pl.z), ey: torSY(pl.r, pl.z) }); }
         out.push({ typ: 'okruszek', kom: [TC, TR], ex: torSX(xF, G.ZB), ey: torRowSY(yF) });
         return out;
       };

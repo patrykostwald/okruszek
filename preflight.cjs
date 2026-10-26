@@ -19,6 +19,7 @@
    słońce, finały i zwiastuny, Rogal, pamięć <= 60 MB, klatki względem Z5). SKIP_Z11=1 pomija go (ok. 8 min).
    Z14: tor 3x3 (?tor=1): hak toru, krótki lot w torze bez błędów konsoli, bez ?tor i z ?swobodny=1 swobodny lot; potem pełny test gra_test_z14.cjs
    (wzorce i generator z gwarancją wolnej ścieżki, boty po torze, łańcuch, zapowiedzi, 400 wymuszeń, trzy tryby dotyku, pamięć, klatki). SKIP_Z14=1 pomija go (ok. 5 min).
+   Z17: integracja toru z grafiką Z15, nadchmurze S0, nazwa L1 „Pastel”: pełny test gra_test_z17.cjs (3 tryby x 120 s czasu gry z rysowaniem). SKIP_Z17=1 pomija go (ok. 4 min).
    Z15: grafika tonalna: pełny test gra_test_z15.cjs (brak ciemnego obrysu, przejścia bez skoków jasności, L0 nie czarny, zieleń tylko z funkcją, pamięć, klatki względem Z11). SKIP_Z15=1 pomija go (ok. 3 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
@@ -280,6 +281,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z14|BŁĄD|^[(]| info (klatki|K[0-9] ziarno)/.test(l));
       lines.forEach(l => console.log('  z14> ' + l.trim()));
       code === 0 && /TEST Z14 OK/.test(out) ? ok('test Z14 (gra_test_z14.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z14 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z17: integracja toru z grafiką Z15 i nadchmurze (S0), pełny test w osobnym procesie */
+  if (process.env.SKIP_Z17) console.log('  info pominięto test Z17 (SKIP_Z17)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z17.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z17.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 900000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z17|BŁĄD|^[(]| info (cienkie|tryb)/.test(l));
+      lines.forEach(l => console.log('  z17> ' + l.trim()));
+      code === 0 && /TEST Z17 OK/.test(out) ? ok('test Z17 (gra_test_z17.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z17 nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');
