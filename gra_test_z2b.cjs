@@ -127,13 +127,18 @@ const CHROME = 'C:/Users/User/AppData/Local/ms-playwright/chromium-1134/chrome-w
       await p2.waitForTimeout(800);
       return p2.evaluate(() => { const c = document.getElementById('g'), sc = c.width / 390, t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0);
         const by = 0.76 * (c.height / sc), box = (x0, x1) => { const X0 = Math.round(x0 * sc), Wd = Math.round((x1 - x0) * sc), Y0 = Math.round((by - 36) * sc), Hd = Math.round(70 * sc); return Array.from(x.getImageData(X0, Y0, Wd, Hd).data.filter((v, i) => i % 4 < 3)); };
-        return { L: box(138, 176), R: box(214, 252), w: Math.round(38 * sc), h: Math.round(70 * sc) }; });
+        const px = __okruszek.ptakEkran ? __okruszek.ptakEkran().x : 195; return { L: box(px - 57, px - 19), R: box(px + 19, px + 57), w: Math.round(38 * sc), h: Math.round(70 * sc) }; });   /* Z15: pola przy ptaszku (w stylu tonalnym jasne ciało liczy się do różnicy, więc pola idą za nim) */
     };
-    const onlyL = await grab([[1, 0.2]]), onlyR = await grab([[2, 0.8]]);
-    /* środek ciężkości jasnych pikseli (kontur skrzydła) w polu: złożone skrzydło zwisa w dół, rozłożone sterczy w górę, więc środek ciężkości jest niżej */
-    const cy = (A, w, h) => { let sy = 0, n = 0; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 3; if (Math.min(A[i], A[i + 1], A[i + 2]) > 140) { sy += y; n++; } } return n ? sy / n : -1; };
-    const w = onlyL.w, h = onlyL.h, cLL = cy(onlyL.L, w, h), cLR = cy(onlyR.L, w, h), cRL = cy(onlyL.R, w, h), cRR = cy(onlyR.R, w, h);
-    console.log('  info środek ciężkości konturu skrzydła (px, w dół = większe): pole lewe: L złożone ' + cLL.toFixed(1) + ', P złożone ' + cLR.toFixed(1) + '; pole prawe: L złożone ' + cRL.toFixed(1) + ', P złożone ' + cRR.toFixed(1));
+    await grab([[1, 0.2]]); await grab([[2, 0.8]]); await p2.evaluate(() => __okruszek.tempo(0.001));   /* Z15: rozgrzewka (ptaszek ustawia się po starcie biegu), potem świat stoi: porównanie z kadrem bez ptaszka nie łapie dryfu chmur */
+    /* Z15: skrzydło nie ma już białego konturu (styl tonalny); piksele skrzydła = różnica względem TEJ SAMEJ klatki bez ptaszka (hak dbg({ bird: 1 })),
+       zrobionej tuż po zrzucie stanu (świat stoi, kamera nie zdąży się przesunąć po skręcie z kciuka); szalik (czerwień) pominięty */
+    const stan = async (acts) => { const a = await grab(acts); await p2.evaluate(() => __okruszek.dbg({ bird: 1 })); await p2.waitForTimeout(150); const r = await p2.evaluate(() => { const c = document.getElementById('g'), sc = c.width / 390, t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0);
+        const by = 0.76 * (c.height / sc), box = (x0, x1) => { const X0 = Math.round(x0 * sc), Wd = Math.round((x1 - x0) * sc), Y0 = Math.round((by - 36) * sc), Hd = Math.round(70 * sc); return Array.from(x.getImageData(X0, Y0, Wd, Hd).data.filter((v, i) => i % 4 < 3)); };
+        const px = __okruszek.ptakEkran ? __okruszek.ptakEkran().x : 195; return { L: box(px - 57, px - 19), R: box(px + 19, px + 57) }; }); await p2.evaluate(() => __okruszek.dbg({})); a.ref = r; return a; };
+    const onlyL = await stan([[1, 0.2]]), onlyR = await stan([[2, 0.8]]);
+    const cy = (A, Rf, w, h) => { let sy = 0, n = 0; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 3; if (A[i] - A[i + 1] < 40 && Math.abs(A[i] - Rf[i]) + Math.abs(A[i + 1] - Rf[i + 1]) + Math.abs(A[i + 2] - Rf[i + 2]) > 45) { sy += y; n++; } } return n ? sy / n : -1; };
+    const w = onlyL.w, h = onlyL.h, cLL = cy(onlyL.L, onlyL.ref.L, w, h), cLR = cy(onlyR.L, onlyR.ref.L, w, h), cRL = cy(onlyL.R, onlyL.ref.R, w, h), cRR = cy(onlyR.R, onlyR.ref.R, w, h);
+    console.log('  info środek ciężkości skrzydła (px, w dół = większe): pole lewe: L złożone ' + cLL.toFixed(1) + ', P złożone ' + cLR.toFixed(1) + '; pole prawe: L złożone ' + cRL.toFixed(1) + ', P złożone ' + cRR.toFixed(1));
     chk(cLL > cLR + 5 && cRR > cRL + 5, 'rysunek: złożone skrzydło zwisa (lewy kciuk obniża kontur lewego skrzydła o ' + (cLL - cLR).toFixed(1) + ' px, prawy prawego o ' + (cRR - cRL).toFixed(1) + ' px)');
     await c2.close();
     if (process.env.ONLY_PIX) { await browser.close(); process.exit(fail ? 1 : 0); }

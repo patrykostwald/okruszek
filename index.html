@@ -1948,7 +1948,7 @@ Słońce obiecało wrócić rano.</p>
     polyP(WING_P); ctx.lineWidth = 1.25; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.92); ctx.lineJoin = 'round'; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(3, 1); ctx.quadraticCurveTo(14, -3.4, 26, -1.6); ctx.moveTo(15, 3.6); ctx.lineTo(19.5, 8); ctx.moveTo(10, 4.5); ctx.lineTo(13.4, 9.4);
     ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.45); ctx.stroke();
-    if (lit > 0.02 && e > 0.05) { ctx.lineCap = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(rimC, 0.8 * e * lit); strokeOpen(WING_LEAD); }
+    if (lit > 0.02) { ctx.lineCap = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(rimC, 0.8 * Math.max(e, 0.6) * Math.max(lit, 0.5)); strokeOpen(WING_LEAD); }   /* Z15: jasna krawędź natarcia także w L0 */
     ctx.restore();
   }
   function ribbonP(c, w0, w1) {
@@ -1994,7 +1994,7 @@ Słońce obiecało wrócić rano.</p>
       chord = 0.8 + 0.2 * Math.abs(Math.cos(fw * 1.2)); under = fw < -0.2 && dv < 0.5;
       lit = cl(0.5 + 0.5 * side * lx);
       ctx.save(); ctx.translate(side * 12.5 - yaw * 2.2, -4.5);
-      birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, mixc(darkC, bodyC, 0.3), mixc(bodyC, liteC, 0.2), rimC, lit);
+      birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, mixc(darkC, bodyC, 0.62 - 0.32 * e), mixc(bodyC, liteC, 0.2), rimC, lit);   /* Z15: w L0 skrzydło jaśniejsze od tła, nieco ciemniejsze od ciała (czytelne tonem) */
       ctx.restore();
     }
     /* ogon: wachlarz trzech piór, rozkłada się przy skręcie, chowa przy nurkowaniu */
@@ -2627,7 +2627,7 @@ Słońce obiecało wrócić rano.</p>
   function updZ15() {
     var P = PAL;
     cpc(NAVY, P.s0); cpc(MONO, P.c1); cpc(STM, mixc(P.c3, P.s0, 0.45)); cpc(HK_MONO, mixc(P.c2, P.c3, 0.5));
-    cpc(BIRD_F0, mixc(P.c0, P.r0, 0.3)); cpc(BIRD_D0, mixc(P.c1, P.c2, 0.4));
+    cpc(BIRD_F0, mixc(P.c0, P.r0, 0.3)); cpc(BIRD_D0, mixc(P.c2, P.c3, 0.55));   /* skrzydła L0 ciemniejsze od ciała i morza: Okruszek czytelny tonem */
   }
   function updLight() {
     /* Z11: kierunek słońca (00-wybor.md: wschód ZA PLECAMI gracza, zachód PRZED Okruszkiem): u = 0 świt (słońce za kamerą, niewidoczne, światło od widza: SUNP.b),
