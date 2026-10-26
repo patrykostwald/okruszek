@@ -63,7 +63,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     pg.on('pageerror', e => errors.push('pageerror: ' + (e.stack || e))); pg.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text()); });
     await pg.goto(base + '?test&tor=1&seed=23'); await pg.waitForFunction(() => !!window.__okruszek);
     const ev = (f, a) => pg.evaluate(f, a);
-    const reset = (o) => ev((o) => { const O = __okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(o.ziarno || 23); O.brama(o.brama || 1); O.odblokuj(); O.ustawEnergie(null); O.nurkuj(false); O.nowyBieg(); O.tempo(1); O.sterowanie(o.tryb || 1); O.ustawPore(o.pora || 'dzien'); O.ustawPoziom(o.L || 0); O.odblokuj(); if (o.s !== undefined) O.ustaw(o.s); O.torSymuluj(0.1); O.idz(o.k === undefined ? 1 : o.k, o.w === undefined ? 1 : o.w, true); O.kadr19(); return O.przewrotStan().stale; }, o || {});
+    const reset = (o) => ev((o) => { const O = __okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(o.ziarno || 23); O.brama(o.brama || 1); O.odblokuj(); O.ustawEnergie(null); O.nurkuj(false); O.nowyBieg(); O.tempo(1); O.sterowanie(o.tryb || 1); O.ustawPore(o.pora || 'dzien'); O.ustawPoziom(o.L || 0); if (o.s !== undefined) O.ustaw(o.s); O.torSymuluj(0.1); O.idz(o.k === undefined ? 1 : o.k, o.w === undefined ? 1 : o.w, true); O.kadr19(); return O.przewrotStan().stale; }, o || {});
 
     /* ---------- (a) przewrót: hak, animacja, odnowienie, koszt ---------- */
     console.log('(a) przewrót: hak, okno niewrażliwości, odnowienie, koszt energii, animacja');
@@ -91,6 +91,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     await reset({});
     const A2 = await ev(() => {
       const O = __okruszek, out = {};
+      O.odblokuj();   /* energia() przy zablokowanej prędkości pokazuje blokadę, nie E */
       /* E bez blokady opada samo (FALL_E po łasce), więc koszt mierzony w tej samej chwili: przed i tuż po przewrocie, bez kroku symulacji między nimi */
       O.ustawEnergie(1); O.ustawEnergie(null); out.e0 = O.energia(); O.przewrot('prawo'); out.e1 = O.energia(); O.torSymuluj(0.3); out.e1b = O.energia();
       O.idz(1, 1, true); O.torSymuluj(1.3); O.ustawEnergie(0.4); O.ustawEnergie(null); out.e2 = O.energia(); O.przewrot('lewo'); out.e3 = O.energia();

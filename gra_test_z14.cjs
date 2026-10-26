@@ -342,12 +342,12 @@ const BOT_TOR = `(function () {
   for (const k of Object.keys(PONOW)) if (!RUCH[k]) { const st = await ev(() => { const L = __okruszek.torLog(), s = __okruszek.stan(); return { tryb: s.tryb, palce: s.palce, ruchy: L.ruchy, nurkowania: L.nurkowania, machniecia: L.machniecia }; }); RUCH[k] = await PONOW[k](); info('ponowiono gest ' + k + ' (stan przed ponowieniem ' + JSON.stringify(st) + '): ' + (RUCH[k] ? 'zadziałał' : 'znów nie')); }
   /* przełączenie trybu w trakcie dotyku: bez ducha */
   await fresh(1, 1, 1); await touch('touchStart', [[1, 200, 600]]); await sleep(300); await ev(() => __okruszek.sterowanie(2)); await touch('touchEnd', []); await sleep(200); RUCH.przelaczenie_bez_ducha = !(await kom()).nurkuje && (await ev(() => __okruszek.stan().palce)) === 0;
-  /* mysz i klawiatura */
+  /* mysz i klawiatura (Z21: dwa kliki w odstępie 320 ms = dwa machnięcia; podwójny klik w oknie 250 ms = przewrót, gra_test_z21.cjs) */
   await fresh(1, 1, 1); await upAll();
   const box = await pg.evaluate(() => { const r = document.getElementById('g').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
   await pg.mouse.move(box.x + box.w * 0.12, box.y + box.h * 0.7); await sleep(150); RUCH.mysz_kolumna = (await kom()).kol === 0;
   await pg.mouse.move(box.x + box.w * 0.88, box.y + box.h * 0.7); await sleep(150); RUCH.mysz_kolumna = RUCH.mysz_kolumna && (await kom()).kol === 2;
-  await ev(() => __okruszek.idz(1, 2, true)); m0 = await mach(); await pg.mouse.down(); await sleep(60); await pg.mouse.up(); await sleep(120); await pg.mouse.down(); await sleep(60); await pg.mouse.up(); await sleep(150); RUCH.mysz_klik = (await mach()) - m0 === 2 && (await kom()).wiersz === 1;
+  await ev(() => __okruszek.idz(1, 2, true)); m0 = await mach(); await pg.mouse.down(); await sleep(60); await pg.mouse.up(); await sleep(320); await pg.mouse.down(); await sleep(60); await pg.mouse.up(); await sleep(150); RUCH.mysz_klik = (await mach()) - m0 === 2 && (await kom()).wiersz === 1;
   await ev(() => __okruszek.idz(1, 0, true)); await pg.mouse.down(); await sleep(450); RUCH.mysz_nurk = (await kom()).nurkuje; await pg.mouse.up(); await sleep(150);
   await fresh(1, 1, 1); await pg.keyboard.press('ArrowLeft'); await sleep(250); RUCH.klaw_lewo = (await kom()).kol === 0; await pg.keyboard.press('d'); await sleep(250); RUCH.klaw_prawo = (await kom()).kol === 1;
   await pg.keyboard.press('ArrowDown'); await sleep(250); RUCH.klaw_dol = (await kom()).wiersz === 2;
