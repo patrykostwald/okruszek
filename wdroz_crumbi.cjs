@@ -9,8 +9,11 @@ if (!/<meta name="robots" content="noindex/.test(html)) { console.error('index.h
 const headers = fs.readFileSync(path.join(root, 'dist', '_headers'), 'utf8'), robots = fs.readFileSync(path.join(root, 'dist', 'robots.txt'), 'utf8');
 if (!/\/crumbi\/\*[\s\S]*X-Robots-Tag: noindex/.test(headers) || !/Disallow: \/crumbi\//.test(robots)) { console.error('brak noindex dla /crumbi w _headers lub robots: przerywam'); process.exit(4); }
 fs.mkdirSync(dest, { recursive: true });
-const SKIP = /^(node_modules|\.git|zrzuty|zrzuty-z\d.*|probki|.*\.cjs|.*\.md|codex-.*|.*\.log|okruszek-.*\.png)$/i;
-function copy(a, b) { for (const f of fs.readdirSync(a)) { if (SKIP.test(f)) continue; const s = path.join(a, f), d = path.join(b, f); if (fs.statSync(s).isDirectory()) { fs.mkdirSync(d, { recursive: true }); copy(s, d); } else fs.copyFileSync(s, d); } }
+/* Lista DOZWOLONYCH plików gry (nic poza nią nie trafia na stronę): index.html, teksty.js, dzwiek.js, sw.js, manifest, ikony, folder dzwieki. */
+const DOZWOLONE = /^(index\.html|teksty\.js|dzwiek\.js|sw\.js|manifest\.webmanifest|ikona-\d+\.png)$/i;
+const DOZWOLONE_FOLDERY = /^(dzwieki)$/i;
+function copy(a, b) { for (const f of fs.readdirSync(a)) { const s = path.join(a, f), d = path.join(b, f), dir = fs.statSync(s).isDirectory(); if (dir ? !DOZWOLONE_FOLDERY.test(f) : !DOZWOLONE.test(f)) continue; if (dir) { fs.mkdirSync(d, { recursive: true }); copyAll(s, d); } else fs.copyFileSync(s, d); } }
+function copyAll(a, b) { for (const f of fs.readdirSync(a)) { const s = path.join(a, f), d = path.join(b, f); if (fs.statSync(s).isDirectory()) { fs.mkdirSync(d, { recursive: true }); copyAll(s, d); } else fs.copyFileSync(s, d); } }
 copy(src, dest);
 console.log('skopiowano do ' + dest + ': ' + fs.readdirSync(dest).join(', '));
 if (dry) { console.log('(bez wdrożenia)'); process.exit(0); }
