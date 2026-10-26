@@ -8,9 +8,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Crumbi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="ikona-192.png">
-<link rel="apple-touch-icon" href="ikona-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="ikona-180.png">
 <title>Okruszek</title>
 <style>
   /* Z18 (P1-7, 15.8): panele jasne i pastelowe (mleczna lawenda) z ciemnym fioletowym tuszem; dawniej granat 93% (rgba(13,18,36,.93)) po jasnym wstępie.
@@ -92,6 +93,28 @@
   #ster .przel:focus-visible, #ster .lnk:focus-visible, #priv button:focus-visible { outline:2px solid var(--tusz); outline-offset:3px; }
   #ster .lnk { display:block; margin:6px auto 0; min-height:46px; padding:0 14px; font:400 13px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--tusz); opacity:.78; background:transparent; border:0;
                text-decoration:underline; text-decoration-skip-ink:none; text-underline-offset:3px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  /* Z20: przycisk „Zainstaluj” (jasny, miękki, bez obrysu; drugorzędny wobec „Leć”) i instrukcja dla iPhone'a (Jakob: znany wzorzec instalacji; Von Restorff: jedno wyróżnienie to „Leć”) */
+  #instal-w { display:none; box-sizing:border-box; min-height:56px; padding-top:10px; }
+  #instal-w.rez { display:block; }   /* miejsce zarezerwowane z góry, gdy przycisk może się pojawić: panel nie przeskakuje, gdy zdarzenie przyjdzie po chwili */
+  #instal { display:flex; align-items:center; justify-content:center; gap:9px; margin:0 auto; min-width:200px; min-height:46px; box-sizing:border-box; padding:0 22px; font:600 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--tusz);
+            background:rgba(var(--tusz-rgb),.07); border:0; border-radius:20px 23px 21px 24px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #instal[hidden] { display:none; }
+  #instal svg { width:18px; height:18px; flex:none; display:block; }
+  #instal:active { background:rgba(var(--tusz-rgb),.16); }
+  @media (hover:hover) { #instal:hover { background:rgba(var(--tusz-rgb),.12); } }
+  #instal:focus-visible, #instr button:focus-visible { outline:2px solid var(--tusz); outline-offset:3px; }
+  #instal:disabled { opacity:.6; cursor:default; }
+  #instal-st { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }   /* tylko dla czytnika ekranu; widoczny komunikat jest w przycisku */
+  #instr { position:absolute; inset:0; z-index:10; display:flex; justify-content:center; align-items:center; box-sizing:border-box; padding:16px; overflow-y:auto; background:rgba(var(--tusz-rgb),.34); color:var(--tusz);
+           font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s linear .25s; -webkit-tap-highlight-color:transparent; }
+  #instr.pokaz { opacity:1; visibility:visible; transition:opacity .25s ease; }
+  #instr .kart { width:min(100%,330px); margin:auto 0; box-sizing:border-box; padding:20px 18px 14px; background:var(--tlo); border-radius:22px 26px 23px 27px; box-shadow:0 10px 36px rgba(var(--tusz-rgb),.22); }
+  #instr h2 { margin:0 0 12px; font:400 22px/28px Georgia,"Times New Roman",serif; text-align:center; }
+  #instr ol { list-style:none; margin:0; padding:0; }
+  #instr li { display:grid; grid-template-columns:76px 1fr; column-gap:12px; align-items:center; min-height:62px; margin:0 0 8px; padding:0; }
+  #instr li svg { width:76px; height:56px; display:block; }
+  #instr li span { font-size:14.5px; line-height:20px; }
+  #instr .ok { display:block; margin:6px auto 0; min-width:160px; min-height:46px; padding:0 26px; font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--tusz); background:rgba(var(--tusz-rgb),.07); border:0; border-radius:23px 25px 24px 26px; cursor:pointer; touch-action:manipulation; }
   #priv { position:absolute; inset:0; z-index:9; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box; padding:max(14px,env(safe-area-inset-top)) 16px 0; overflow-y:auto;
           background:var(--tlo); color:var(--tusz); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s linear .25s; }
   #priv.pokaz { opacity:1; visibility:visible; transition:opacity .25s ease; }
@@ -177,7 +200,48 @@ Słońce obiecało wrócić rano.</p>
       <button type="button" class="przel" id="snd-m" aria-pressed="true"><span class="nz">Muzyka<kbd>N</kbd></span><span class="st" id="snd-m-s">włączona</span></button>
     </div>
     <button type="button" class="ok" id="ster-ok">Leć</button>
+    <div id="instal-w"><button type="button" id="instal" hidden aria-label="Zainstaluj Crumbi jako aplikację na tym urządzeniu"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 1.8 H13.5 C14.3 1.8 14.9 2.4 14.9 3.2 V14.8 C14.9 15.6 14.3 16.2 13.5 16.2 H4.5 C3.7 16.2 3.1 15.6 3.1 14.8 V3.2 C3.1 2.4 3.7 1.8 4.5 1.8 Z" stroke-opacity=".5"/><path d="M9 5.2 V11.2 M6.4 8.8 L9 11.4 L11.6 8.8"/></svg><span id="instal-t">Zainstaluj</span></button><p id="instal-st" role="status" aria-live="polite"></p></div>
     <button type="button" class="lnk" id="ster-priv">Prywatność i regulamin</button>
+  </div>
+</div>
+<!-- Z20: instrukcja instalacji dla iPhone'a / iPada (rysunki kodem; zamykana dotknięciem; teksty z teksty.js) -->
+<div id="instr" role="dialog" aria-modal="true" aria-labelledby="instr-t" aria-hidden="true">
+  <div class="kart">
+    <h2 id="instr-t">Zainstaluj na iPhonie</h2>
+    <ol>
+      <li>
+        <svg viewBox="0 0 76 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 32 H70 C71.5 32 73 33.5 73 35 V50 C73 51.5 71.5 53 70 53 H6 C4.5 53 3 51.5 3 50 V35 C3 33.5 4.5 32 6 32 Z" stroke-opacity=".55"/>
+          <path d="M14 39.5 L9.5 43.5 L14 47.5" stroke-opacity=".55"/><path d="M23 39.5 L27.5 43.5 L23 47.5" stroke-opacity=".3"/>
+          <path d="M28 38 C34 33 45 33 49 39 C52 45 46 52 38 51.5 C30 51 24 43 28 38 Z" fill="currentColor" fill-opacity=".16" stroke="none"/>
+          <path d="M32.5 41 V48 H44.5 V41" stroke-width="1.8"/><path d="M38.5 44 V31 M34.2 35.2 L38.5 31 L42.8 35.2" stroke-width="1.8"/>
+          <path d="M57 39 H64 M57 43.5 H64 M57 48 H61" stroke-opacity=".4"/>
+          </svg>
+        <span id="instr-k1"></span>
+      </li>
+      <li>
+        <svg viewBox="0 0 76 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 6 H68 C70 6 71 7 71 9 V13 H5 V9 C5 7 6 6 8 6 Z" stroke-opacity=".3"/>
+          <path d="M6 17 H70 C71 17 72 18 72 19 V34 C72 35 71 36 70 36 H6 C5 36 4 35 4 34 V19 C4 18 5 17 6 17 Z" fill="currentColor" fill-opacity=".12" stroke="none"/>
+          <path d="M10 26.5 H46" /><path d="M10 31 H34" stroke-opacity=".5"/>
+          <path d="M55 20.5 H64 C65.6 20.5 66.5 21.4 66.5 23 V32 C66.5 33.6 65.6 34.5 64 34.5 H55 C53.4 34.5 52.5 33.6 52.5 32 V23 C52.5 21.4 53.4 20.5 55 20.5 Z"/><path d="M59.5 24.2 V30.8 M56.2 27.5 H62.8"/>
+          <path d="M6 42 H70" stroke-opacity=".3"/><path d="M6 49 H48" stroke-opacity=".3"/>
+        </svg>
+        <span id="instr-k2"></span>
+      </li>
+      <li>
+        <svg viewBox="0 0 76 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 6 H68 C70 6 71 7 71 9 V50 C71 52 70 53 68 53 H8 C6 53 5 52 5 50 V9 C5 7 6 6 8 6 Z" stroke-opacity=".3"/>
+          <path d="M10 13 H22" stroke-opacity=".5"/><path d="M50 13 H64" stroke-width="2.2"/>
+          <path d="M46 8 C54 5 66 6 69 11 C71 16 62 19 54 18.5 C47 18 42 12 46 8 Z" fill="currentColor" fill-opacity=".14" stroke="none"/>
+          <path d="M12 27 C12 24 14 22 17 22 H27 C30 22 32 24 32 27 V37 C32 40 30 42 27 42 H17 C14 42 12 40 12 37 Z"/>
+          <g transform="translate(22 32.5) rotate(8)"><path d="M-4 6 C-5 0 -4 -6 0 -7 C4 -6 5 0 4 6"/><path d="M-2 -3 C-0.8 -4.2 0.8 -4.2 2 -3"/></g>
+          <path d="M40 28 H64 M40 35 H56" stroke-opacity=".4"/>
+        </svg>
+        <span id="instr-k3"></span>
+      </li>
+    </ol>
+    <button type="button" class="ok" id="instr-ok">Rozumiem</button>
   </div>
 </div>
 <!-- Z5: SZKIC DO PRAWNIKA. Treść wymaga przeglądu prawnego przed publicznym ogłoszeniem gry. Dane operatora skopiowane z regulaminu Kociłapek (potwierdzone w KRS). -->
@@ -1281,6 +1345,7 @@ Słońce obiecało wrócić rano.</p>
   window.addEventListener('keydown', function (e) {
     var k = e.key;
     if (introOn) { if (!e.repeat && k !== 'Shift' && k !== 'Control' && k !== 'Alt' && k !== 'Meta' && k !== 'Tab') introEnd(true); return; }   /* Z5: dowolny klawisz pomija wstęp */
+    if (instrOn) { if (k === 'Escape') { instrZamknij(); e.preventDefault(); } return; }   /* Z20 */
     if (privWidoczny) { if (k === 'Escape') { privZamknij(); e.preventDefault(); } return; }
     if ((k === 'm' || k === 'M') && !e.repeat) { przelEfekty(true); return; }   /* Z5: M = efekty, N = muzyka */
     if ((k === 'n' || k === 'N') && !e.repeat) { przelMuzyka(true); return; }
@@ -3294,6 +3359,90 @@ Słońce obiecało wrócić rano.</p>
   document.getElementById('priv-nie').addEventListener('click', function () { elPrivPyt.hidden = true; elPrivBar.hidden = false; try { document.getElementById('priv-usun').focus({ preventScroll: true, focusVisible: false }); } catch (_) { } });
   document.getElementById('priv-tak').addEventListener('click', wyczyscZapis);
 
+  /* ---------- Z20: przycisk „Zainstaluj” (PWA) ----------
+     Jeden przycisk w oknie #ster, więc widać go i na ekranie startu (Leć), i w panelu sterowania w trakcie lotu (Wróć do lotu). Drugorzędny: jasny, bez obrysu, pod „Leć”.
+     Scenariusze: android (zdarzenie beforeinstallprompt: przycisk dopiero po nim; klik = prompt() i wynik), ios (iPhone / iPad Safari: brak okna systemowego, więc mała instrukcja
+     z rysunkami), standalone (już zainstalowana: ukryty), brak (przeglądarka bez instalacji, np. Firefox na komputerze: ukryty, żeby nie było martwego przycisku).
+     W ?test przycisk jest ukryty i nic nie nasłuchuje, dopóki nie ma ?instaluj=android|ios|standalone|brak (reszta testów nie dostaje nowego elementu). Nic w pętli klatek. */
+  var elInstal = document.getElementById('instal'), elInstalT = document.getElementById('instal-t'), elInstalSt = document.getElementById('instal-st'), elInstalW = document.getElementById('instal-w'), instHold = false;
+  var elInstr = document.getElementById('instr'), instrOn = false, instrPoprz = null;
+  var instScen = '', instOdloz = null, instBusy = false, instStT = 0, TI = TX.instaluj || {}, TIO = TI.ios || {};
+  function instStandalone() {
+    try { if (window.navigator.standalone === true) return true; } catch (_) { }
+    try { return !!(window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.matchMedia('(display-mode: minimal-ui)').matches)); } catch (_) { return false; }
+  }
+  function instIos() {
+    var ua = '', pl = '', mt = 0;
+    try { ua = navigator.userAgent || ''; pl = navigator.platform || ''; mt = navigator.maxTouchPoints || 0; } catch (_) { }
+    return /iPhone|iPad|iPod/.test(ua) || (pl === 'MacIntel' && mt > 1);   /* iPadOS podaje się za Maca, ale ma ekran dotykowy */
+  }
+  function instPokaz() {
+    var v = instScen === 'ios' || (instScen === 'android' && !!instOdloz) || instScen === 'menu';
+    if (instHold) return;   /* trwa komunikat po wyborze: przycisk zostaje, aż minie */
+    elInstal.hidden = !v;
+    elInstalW.classList.toggle('rez', v || instScen === 'android');   /* android czeka na zdarzenie: miejsce już jest (tylko przeglądarki z onbeforeinstallprompt, patrz instInit) */
+  }
+  /* komunikat: widoczny w samym przycisku (zamiast etykiety) na ms milisekund i powtórzony dla czytnika ekranu; potem wraca etykieta i wykonuje się "potem" */
+  function instKomunikat(txt, ms, potem) {
+    clearTimeout(instStT);
+    elInstalT.textContent = txt || (TI.przycisk || 'Zainstaluj'); elInstalSt.textContent = txt || '';
+    if (txt) instStT = setTimeout(function () { elInstalT.textContent = TI.przycisk || 'Zainstaluj'; elInstalSt.textContent = ''; if (potem) potem(); }, ms || 3000);
+  }
+  function instrOtworz() {
+    instrPoprz = document.activeElement; instrOn = true; elInstr.classList.add('pokaz'); elInstr.setAttribute('aria-hidden', 'false'); elInstr.scrollTop = 0;
+    setTimeout(function () { try { if (instrOn) document.getElementById('instr-ok').focus({ preventScroll: true, focusVisible: false }); } catch (_) { } }, 60);
+  }
+  function instrZamknij() {
+    var was = document.activeElement;
+    instrOn = false; elInstr.classList.remove('pokaz'); elInstr.setAttribute('aria-hidden', 'true');
+    if (was && elInstr.contains(was)) { try { was.blur(); } catch (_) { } }
+    try { if (instrPoprz && !elInstal.hidden) instrPoprz.focus({ preventScroll: true, focusVisible: false }); } catch (_) { }
+  }
+  function instZainstalowano() {
+    instOdloz = null; instBusy = false; instScen = 'standalone'; elInstal.disabled = true; instHold = true;
+    instKomunikat(TI.ok || '', 2600, function () { instHold = false; elInstal.disabled = false; instPokaz(); });   /* „Zainstalowano” w przycisku, potem znika */
+  }
+  function instKoniecWyboru(przyjeto) {
+    instOdloz = null; instBusy = false; elInstal.disabled = false;
+    if (przyjeto) { instZainstalowano(); return; }
+    instScen = 'menu'; instPokaz(); instKomunikat(TI.pozniej || '', 3200);   /* po odrzuceniu Chrome da nowe zdarzenie dopiero później: przycisk zostaje, a klik pokaże wskazówkę zamiast być martwy */
+  }
+  function instKlik() {
+    var o;
+    if (instScen === 'ios') { instrOtworz(); return; }
+    if (instBusy) return;
+    if (instScen === 'menu') { instKomunikat(TI.menu || '', 3600); return; }
+    if (instScen !== 'android' || !instOdloz) return;
+    o = instOdloz; instBusy = true; elInstal.disabled = true;
+    try {
+      o.prompt();
+      Promise.resolve(o.userChoice).then(function (w) { instKoniecWyboru(!!(w && w.outcome === 'accepted')); }, function () { instKoniecWyboru(false); });
+    } catch (_) { instKoniecWyboru(false); }
+  }
+  (function instInit() {
+    var q = Q.get('instaluj'), k, el, mq;
+    if (TI.przycisk) elInstalT.textContent = TI.przycisk;
+    if (TI.aria) elInstal.setAttribute('aria-label', TI.aria);
+    if (TIO.tytul) document.getElementById('instr-t').textContent = TIO.tytul;
+    if (TIO.zamknij) document.getElementById('instr-ok').textContent = TIO.zamknij;
+    if (TIO.aria) elInstr.setAttribute('aria-label', TIO.aria);
+    for (k = 0; k < 3; k++) { el = document.getElementById('instr-k' + (k + 1)); if (el && TIO.kroki && TIO.kroki[k]) el.textContent = TIO.kroki[k]; }
+    elInstal.addEventListener('click', instKlik);
+    elInstr.addEventListener('click', instrZamknij);   /* zamykana dotknięciem gdziekolwiek */
+    if (TEST && !q) return;   /* w ?test bez parametru: przycisk ukryty, bez nasłuchu */
+    instScen = TEST ? (q === 'android' || q === 'ios' || q === 'standalone' ? q : 'brak') : (instStandalone() ? 'standalone' : (instIos() ? 'ios' : 'android'));
+    if (instScen === 'android') {
+      window.addEventListener('beforeinstallprompt', function (e) {
+        if (instScen !== 'android' && instScen !== 'menu') return;
+        e.preventDefault(); instOdloz = e; instScen = 'android'; instBusy = false; elInstal.disabled = false; instPokaz();   /* przechwycone: własny przycisk zamiast paska przeglądarki */
+      });
+    }
+    window.addEventListener('appinstalled', function () { if (instHold) return; if (elInstal.hidden) { instOdloz = null; instBusy = false; instScen = 'standalone'; instPokaz(); } else instZainstalowano(); });
+    try { mq = window.matchMedia('(display-mode: standalone)'); if (mq.addEventListener) mq.addEventListener('change', function (e) { if (e.matches && !instHold) { instScen = 'standalone'; instPokaz(); } }); } catch (_) { }
+    if (instScen === 'android' && !TEST && !('onbeforeinstallprompt' in window)) instScen = 'brak';   /* Firefox, Safari na komputerze: nie ma czego czekać, ukryty i bez rezerwacji miejsca */
+    instPokaz();
+  })();
+
   /* ---------- wstęp „Gdzie śpi słońce”: cisza, sam kontur, trzy zdania, Okruszek wlatuje w kadr, kolor budzi się z pierwszym prądem ----------
      Świat jest prawdziwy (te same kulisy co w grze, s = 0 = same kreski), przykryty granatowym welonem; prąd jest prawdziwy i trafia idealnie,
      więc kolor budzi się z energii E (Z3c) i prędkości, nie z nagrania. Po wstępie reset() zaczyna czysty bieg, a ekran startu (Z2b) pokazuje wybór sterowania.
@@ -3307,7 +3456,7 @@ Słońce obiecało wrócić rano.</p>
   document.addEventListener('keydown', function (e) {
     var dlg, f, i;
     if (e.key !== 'Tab') return;
-    dlg = document.querySelector('#priv.pokaz') || document.querySelector('#ster.pokaz') || document.querySelector('#wynik.pokaz');
+    dlg = document.querySelector('#instr.pokaz') || document.querySelector('#priv.pokaz') || document.querySelector('#ster.pokaz') || document.querySelector('#wynik.pokaz');
     if (!dlg) return;
     f = Array.prototype.filter.call(dlg.querySelectorAll('button, input, a[href]'), function (el) { return !el.disabled && el.offsetParent !== null && !el.closest('[hidden]'); });
     if (!f.length) return;
@@ -6551,6 +6700,7 @@ Słońce obiecało wrócić rano.</p>
     window.__okruszek.introPomin = function () { introEnd(true); return !introOn; };
     window.__okruszek.introCzas = function (x) { if (introOn) intro.t = Math.max(0, +x || 0); return introOn ? intro.t : -1; };
     window.__okruszek.zapisPodglad = function () { return JSON.parse(JSON.stringify(ZAP)); };
+    window.__okruszek.instaluj = function () { return { scenariusz: instScen, widoczny: !elInstal.hidden, dialog: instrOn, maOdlozone: !!instOdloz, komunikat: elInstalSt.textContent }; };   /* Z20 */
     window.__okruszek.prywatnosc = function (v) { if (v === undefined ? !privWidoczny : v) privOtworz(); else privZamknij(); return privWidoczny; };
     window.__okruszek.rysujPtaka = function (c, x, y, k, s2, tilt, tt) { var old = ctx, ot = t; ctx = c; if (tt !== undefined) t = tt; try { c.save(); c.translate(x, y); c.scale(k, k); drawBird(0, 0, s2, tilt || 0, 0, 0, 0, 1); c.restore(); } finally { ctx = old; t = ot; } return true; };   /* ikony PWA: rysunek ptaszka Z4 na innym canvasie */
   }
