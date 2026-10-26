@@ -250,7 +250,7 @@ Słońce obiecało wrócić rano.</p>
   var FOGC = mixc(SKYMID0, SKYHOR0, 0.5);
   var PORY = [
     { n: 'noc', bg: [9, 12, 28], sT: [11, 16, 48], sM: [24, 22, 74], sH: [42, 32, 96], sL: [52, 42, 112], cT: [200, 212, 255], cM: [152, 142, 228], cB: [84, 72, 162], rim: [232, 236, 255], sh: [40, 30, 100], fog: [66, 60, 130],
-      sea: [[98, 106, 178], [64, 62, 134], [42, 40, 102]], warm: [196, 150, 236], glow: [204, 214, 255], acc: [150, 190, 255], ht: [92, 100, 196], ha: 0.52, hl: 0.66, st: 1 },
+      sea: [[98, 106, 178], [64, 62, 134], [42, 40, 102]], warm: [196, 150, 236], glow: [204, 214, 255], acc: [150, 190, 255], ht: [146, 150, 228], ha: 0.5, hl: 0.8, st: 1 },   /* Z15: ht/hl nocy jaśniejsze (bez brudnego brązu w chmurach) */
     { n: 'swit', bg: [20, 26, 52], sT: [34, 48, 110], sM: [120, 96, 170], sH: [250, 160, 170], sL: [255, 214, 190], cT: [255, 236, 240], cM: [226, 198, 226], cB: [168, 150, 210], rim: [255, 244, 240], sh: [120, 90, 150], fog: [196, 160, 200],
       sea: [[226, 184, 206], [160, 120, 176], [104, 84, 144]], warm: [255, 170, 150], glow: [255, 206, 170], acc: [255, 190, 210], ht: [255, 188, 204], ha: 0.24, hl: 0.94, st: 0.55 },
     { n: 'dzien', bg: [24, 32, 62], sT: [46, 110, 214], sM: [96, 160, 236], sH: [170, 208, 248], sL: [226, 240, 252], cT: [255, 255, 255], cM: [226, 238, 252], cB: [168, 196, 232], rim: [255, 255, 255], sh: [110, 140, 196], fog: [186, 214, 244],
@@ -264,25 +264,85 @@ Słońce obiecało wrócić rano.</p>
     { n: 'błękit pastelowy', c: [166, 204, 242], enter: 0.20 },
     { n: 'krem', c: [255, 243, 222], enter: 0.26 },
     { n: 'lawenda', c: [200, 182, 240], enter: 0.32 },
-    { n: 'mięta', c: [176, 232, 208], enter: 0.38 },
+    { n: 'perła różana', c: [242, 214, 228], enter: 0.38 },   /* Z15: zamiast mięty (15.7: zieleń tylko w chmurach z funkcją) */
     { n: 'róż pudrowy', c: [246, 196, 212], enter: 0.44 },
     { n: 'brzoskwinia', c: [255, 208, 178], enter: 0.50 },
     { n: 'morela', c: [255, 184, 136], enter: 0.56 },
     { n: 'miód', c: [250, 214, 140], enter: 0.62 },
     { n: 'koral', c: [250, 152, 142], enter: 0.68 },
     { n: 'śliwka pastelowa', c: [190, 152, 216], enter: 0.73 },
-    { n: 'turkus', c: [148, 224, 228], enter: 0.78 },
+    { n: 'błękit lodowy', c: [172, 210, 246], enter: 0.78 },   /* Z15: zamiast turkusu (bez zieleni w chmurach dekoracyjnych) */
     { n: 'malina pastelowa', c: [240, 162, 198], enter: 0.82 },
     { n: 'złoty pomarańcz', c: [255, 172, 104], enter: 0.86 }
   ];
   var NHUE = HUES.length, HUEW = 0.09;
   /* chmura deszczowa, gęś, jastrząb, sowa: przy s=0 wypełnienie ciemne (MONO), kolor wchodzi z prędkością jak wszędzie */
   var STM = [8, 10, 22];
-  var GS_BODY = [92, 88, 124], GS_NECK = [46, 42, 74], GS_WING = [128, 124, 164], GS_BEAK = [255, 170, 84];
+  var GS_BODY = [138, 132, 168], GS_NECK = [104, 98, 138], GS_WING = [168, 164, 200], GS_BEAK = [255, 178, 96];   /* Z15: jaśniejsza, szaro-lawendowa gęś (bez ciemnej sylwetki) */
   var HK_MONO = [30, 34, 60], HK_WING = [128, 92, 72], HK_BODY = [156, 116, 90], HK_TAIL = [172, 132, 100], HK_DARK = [78, 56, 48];
   var OW_BODY = [118, 108, 140], OW_WING = [92, 86, 118], OW_FACE = [200, 192, 214], OW_EYE = [255, 226, 120];
   var SCARF = [226, 64, 72], BODY = [96, 150, 200], BODY_D = [60, 100, 150];
   var MOON = [204, 214, 255], SUN = [255, 190, 110];
+
+  /* ---------- Z15: styl tonalny, bez ciemnych konturów (PROJEKT.md 15.5 i 15.7, właściciel 26.10) ----------
+     Krawędź wyznacza RÓŻNICA TONU, nie obrys: chmury, wieże, przeszkody, morze chmur i Okruszek są malowane warstwami tonów
+     (płaty światła i cienia, miękki brzeg, mgiełka między warstwami), a kontur, jeśli jest, to jasny brzeg albo półprzezroczysty, ciemniejszy odcień TEGO SAMEGO wypełnienia.
+     L0 (15.8, właściciel 26.10): JASNY, spokojny, delikatnie pokolorowany świat (blady róż, krem, jasny błękit, lawenda, ciepły piasek); noc i zachód to granat i lawenda ze światłem, nie czerń.
+     Chroma tonów L0 jest niska (pastel bazowy) i nie przekracza wyraźnie chromy tła pory; więcej barw i nasycenia dochodzi z energią koloru E (etapy stageCol).
+     Pola (interpolowane w palAt jak reszta palety pory): bg = niebo u góry, h0 = jasny horyzont, c0..c3 = tony chmur (światło, ciało, cień płata, podstawa),
+     s0 = cień (zastępuje dawny granat NAVY), r0 = jasny brzeg (światło na krawędzi), f0 = mgiełka powietrzna, m0 = trzy tony morza chmur (góra, środek, głębia).
+     Etapy koloru (stageCol) nakładają się na te tony: base = ton L0, etap g (L1) to pierwsze blade barwy, potem pastel, ciepło i pełnia. */
+  var Z15L0 = [   /* 15.8: L0 jasny i delikatnie pokolorowany (niska chroma); noc = granat ze światłem i barwnymi warstwami, nie czerń */
+    { bg: [46, 54, 100], h0: [120, 114, 170], c0: [194, 190, 228], c1: [162, 158, 206], c2: [132, 130, 184], c3: [106, 106, 160], s0: [76, 78, 128], r0: [224, 222, 246], f0: [122, 120, 172], m0: [[142, 140, 192], [114, 114, 168], [90, 92, 146]] },
+    { bg: [172, 186, 224], h0: [252, 224, 216], c0: [255, 247, 241], c1: [246, 228, 228], c2: [229, 209, 216], c3: [208, 191, 208], s0: [184, 172, 200], r0: [255, 252, 246], f0: [240, 224, 228], m0: [[238, 218, 224], [216, 200, 216], [192, 182, 206]] },
+    { bg: [176, 206, 240], h0: [238, 240, 244], c0: [255, 255, 252], c1: [244, 242, 244], c2: [224, 226, 236], c3: [202, 208, 226], s0: [182, 194, 220], r0: [255, 255, 255], f0: [228, 236, 244], m0: [[238, 238, 244], [216, 222, 238], [192, 202, 228]] },
+    { bg: [96, 96, 152], h0: [240, 202, 188], c0: [250, 228, 226], c1: [230, 204, 214], c2: [198, 178, 200], c3: [166, 152, 184], s0: [128, 116, 162], r0: [255, 238, 226], f0: [216, 190, 202], m0: [[222, 200, 212], [188, 170, 196], [152, 140, 178]] }
+  ];
+  (function () { var k, f; for (k = 0; k < 4; k++) for (f in Z15L0[k]) PORY[k][f] = Z15L0[k][f]; })();
+  /* tony dynamiczne: dawne stałe "ciemnego L0" (NAVY, MONO, STM, HK_MONO) śledzą teraz paletę L0 pory doby (updZ15 co klatkę, w miejscu, bez nowych tablic) */
+  var Z15 = {
+    K_KRAWEDZ: 0.3,        /* tonalEdge: o ile ciemniejszy jest odcień krawędzi (0..1 = ułamek jasności) */
+    A_KRAWEDZ: 0.42,       /* zalecana alfa tonalnego konturu (kontur nigdy nie jest pełny) */
+    A_JASNY: 0.6,          /* zalecana alfa jasnego brzegu */
+    CHMURA_CIEN_L0: 0.42, CHMURA_CIEN_KOLOR: 0.3,   /* siła cienia płatów chmur w L0 i w pełnym kolorze (głębia z różnicy tonów) */
+    CHMURA_BRZEG_L0: 0.62, CHMURA_BRZEG_KOLOR: 0.86, /* siła jasnego brzegu chmur w L0 i w kolorze */
+    MGIELKA_L0: 0.6,       /* mgiełka powietrzna na dalekich chmurach (zawsze, także w L0): alfa przy tt = 1 */
+    A_PTAK: 0.62,          /* alfa tonalnej kreski Okruszka (dawniej pełny tusz) */
+    TOR_MIN_KOLOR: 0.3     /* chmury toru (Z14) mają kolor-funkcję czytelny także w L0: najmniejszy udział barwy funkcji */
+  };
+  function cpc(dst, src) { dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; return dst; }
+  /* tonalny kontur: ciemniejszy odcień TEJ SAMEJ barwy (lekko chłodniejszy), do rysowania z alfą Z15.A_KRAWEDZ; k = 1 to pełna siła */
+  function tonalEdge(c, k) { k = (k === undefined ? 1 : k) * Z15.K_KRAWEDZ; return mixc(mulc(c, 1 - k), [c[0] * 0.92, c[1] * 0.95, Math.min(255, c[2] * 1.04 + 4)], 0.5); }
+  /* jasny brzeg: rozjaśnienie tej barwy ku światłu sceny (LIGHTC), k = 0..1 */
+  function jasnyBrzeg(c, k) { return mixc(c, mixc(LIGHTC, [255, 255, 255], 0.45), k === undefined ? 0.55 : k); }
+  /* Z14: paleta toru (wstęgi światła w głąb, podświetlenia komórek); same jasne barwy, bez ciemnych obrysów; alfa do strojenia.
+     torKolor(nazwa) zwraca barwę bieżącej pory i etapu koloru: 'wstega' (siatka torów), 'komorka' (komórka Okruszka), 'wiatr' (zachęta), 'uwaga' (ostrzeżenie przed przeszkodą 1,5 s). */
+  var TOR15 = {
+    WSTEGA: [228, 234, 252], KOMORKA: [255, 246, 226], WIATR: [255, 228, 168], UWAGA: [255, 176, 170],
+    A_WSTEGA: 0.22, A_WSTEGA_L0: 0.3, A_KOMORKA: 0.28, A_WIATR: 0.34, A_UWAGA: 0.32, SZER_WSTEGI: 2.2, ROZMYCIE: 7
+  };
+  function torKolor(nazwa) {
+    var base = { wstega: TOR15.WSTEGA, komorka: TOR15.KOMORKA, wiatr: TOR15.WIATR, uwaga: TOR15.UWAGA }[nazwa] || TOR15.WSTEGA;
+    return mixc(mixc(PAL.r0 || base, base, 0.35), base, 0.25 + 0.75 * ST.g);   /* L0: jasny ton L0 z odrobiną barwy; kolor wchodzi z etapami */
+  }
+  /* Z14: chmury toru: kolor = rodzaj efektu (15.4, 15.7). Zieleń TYLKO dla chmur z funkcją: 'mgla_zielona' (nerf: zatruta mgła spowalnia i gasi energię),
+     'oaza_zielona' (buff: odnawia wysokość). Pozostałe bez zieleni. Tony [światło, ciało, cień płata, podstawa] w pełnym kolorze;
+     torTony(rodzaj) daje tony na bieżącym etapie (L0: tony L0 z udziałem barwy >= Z15.TOR_MIN_KOLOR, żeby funkcja była czytelna). */
+  var CHMURY15 = {
+    biala:        { tony: [[255, 252, 246], [244, 238, 240], [222, 216, 230], [198, 194, 216]], opis: 'lekko spowalnia' },
+    lawenda:      { tony: [[238, 228, 252], [214, 198, 242], [186, 168, 226], [160, 142, 206]], opis: 'średnio spowalnia' },
+    szara:        { tony: [[214, 214, 226], [182, 184, 200], [152, 154, 176], [126, 128, 152]], opis: 'mocno spowalnia' },
+    burzowa:      { tony: [[176, 156, 214], [138, 116, 182], [108, 88, 152], [84, 68, 126]], opis: 'bardzo spowalnia, błysk' },
+    roz:          { tony: [[255, 232, 238], [248, 206, 220], [230, 178, 200], [206, 156, 184]], opis: 'dekoracyjna' },
+    brzoskwinia:  { tony: [[255, 238, 222], [255, 214, 190], [244, 186, 164], [222, 160, 150]], opis: 'dekoracyjna' },
+    mgla_zielona: { tony: [[214, 240, 214], [178, 222, 186], [146, 198, 162], [120, 172, 142]], opis: 'NERF: zatruta mgła (spowalnia, gasi energię koloru)', mgla: true },
+    oaza_zielona: { tony: [[236, 255, 226], [196, 240, 184], [156, 218, 150], [124, 194, 126]], opis: 'BUFF: oaza (odnawia wysokość)', blask: true }
+  };
+  function torTony(rodzaj) {
+    var D = CHMURY15[rodzaj] || CHMURY15.biala, L0 = [PAL.c0, PAL.c1, PAL.c2, PAL.c3], u = Math.max(Z15.TOR_MIN_KOLOR, cAll(sk + 0.02)), out = [], k;
+    for (k = 0; k < 4; k++) out.push(mixc(L0[k], mulc(D.tony[k], 0.94 + 0.06 * PAL.hl), u));
+    return out;
+  }
 
   /* ---------- poziomy i kolor z prędkości ----------
      s = prędkość 0..1. Poziomy: L0 Kontur 0-0,15; L1 Szarość 0,15-0,35; L2 Kolor 0,35-0,6; L3 Złoto 0,6-0,8; L4 Turbo 0,8-0,95; L5 Hiper (>= 0,95 przez 2 s, łańcuch >= 5).
@@ -650,6 +710,7 @@ Słońce obiecało wrócić rano.</p>
     x.restore(); if (soft) blurInPlace(S, 3); M.body = S;
     /* etapy wzrostu plamy (kolor rośnie od środków płatów jak malowany obraz): 35% i 65% pokrycia, liczone na pikselach */
     M.st = [growStage(M.body, g, 0.35, zFrame(g, pad, MSL)), growStage(M.body, g, 0.65, zFrame(g, pad, MSL))];
+    blurInPlace(M.st[0], 1.6); blurInPlace(M.st[1], 1.2);   /* Z15: miękki brzeg rosnącej plamy (bez kropek) */
     /* schnący brzeg: ciemniejsza obwódka plamy, zakładki płatów, kalafiory */
     S = fr(MSC); x.save(); shapeClip(1.4); x.strokeStyle = '#000';
     for (k = 0; k < g.runs.length; k++) { x.beginPath(); n = g.runs[k]; x.moveTo(n[0][0], n[0][1]); for (j = 1; j < n.length; j++) x.lineTo(n[j][0], n[j][1]); x.globalAlpha = 0.3; x.lineWidth = 8; x.stroke(); x.globalAlpha = 0.8; x.lineWidth = 2.8; x.stroke(); }
@@ -719,17 +780,35 @@ Słońce obiecało wrócić rano.</p>
   /* przemalowanie w miejscu: alfa zostaje, barwa nowa (kreska tuszu, mgiełka) */
   function recolor(S, col) { var x = S.c.getContext('2d'); x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-in'; x.fillStyle = rgba(col, 1); x.fillRect(0, 0, S.w, S.h); x.restore(); }
   /* akwarela chmury: plama rośnie (etapy), taśmy tonalne (L1) przechodzą w laserunek, mokre w mokre, cień własny, kreskowanie, schnący brzeg, jasny brzeg od światła, granulacja */
-  function paintTint(S, M, C) {
-    var x = S.c.getContext('2d'), g = S.g, w = S.w, hh = S.h, tn = C.tones, bw = 0.09 - 0.04 * C.band, bnd = [0.25, 0.5, 0.75], k, gr, cc, b, rg, cov = C.cov, y0, y1, f;
-    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, hh);
-    if (cov >= 0.999) x.drawImage(M.body.c, 0, 0, w, hh);
-    else if (cov < 0.5) { f = cl(cov / 0.5); x.globalAlpha = sm(f / 0.35); x.drawImage(M.st[0].c, 0, 0, w, hh); x.globalAlpha = f; x.drawImage(M.st[1].c, 0, 0, w, hh); }
-    else { f = (cov - 0.5) / 0.5; x.drawImage(M.st[1].c, 0, 0, w, hh); x.globalAlpha = f; x.drawImage(M.body.c, 0, 0, w, hh); }
-    x.globalAlpha = 1; x.globalCompositeOperation = 'source-in';
-    y0 = S.oy + g.top * S.spr; y1 = S.oy + 2 * S.spr;
-    gr = x.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, rgba(tn[0], 1));
+  /* Z15: gradient pasm tonalnych (światło u góry > podstawa) w pikselach sprite'u S */
+  function bandGrad(x, S, g, tn, band) {
+    var bw = 0.09 - 0.04 * band, bnd = [0.25, 0.5, 0.75], k, gr = x.createLinearGradient(0, S.oy + g.top * S.spr, 0, S.oy + 2 * S.spr);
+    gr.addColorStop(0, rgba(tn[0], 1));
     for (k = 0; k < 3; k++) { gr.addColorStop(bnd[k] - bw, rgba(tn[k], 1)); gr.addColorStop(bnd[k] + bw, rgba(tn[k + 1], 1)); }
-    gr.addColorStop(1, rgba(tn[3], 1)); x.fillStyle = gr; x.fillRect(0, 0, w, hh);
+    gr.addColorStop(1, rgba(tn[3], 1)); return gr;
+  }
+  /* Z15: maska wzrostu plamy koloru (pokrycie cov) narysowana na kontekście y */
+  function growMask(y, M, cov, w, hh) {
+    var f;
+    if (cov >= 0.999) y.drawImage(M.body.c, 0, 0, w, hh);
+    else if (cov < 0.5) { f = cl(cov / 0.5); y.globalAlpha = sm(f / 0.35); y.drawImage(M.st[0].c, 0, 0, w, hh); y.globalAlpha = f; y.drawImage(M.st[1].c, 0, 0, w, hh); }
+    else { f = (cov - 0.5) / 0.5; y.drawImage(M.st[1].c, 0, 0, w, hh); y.globalAlpha = f; y.drawImage(M.body.c, 0, 0, w, hh); }
+    y.globalAlpha = 1;
+  }
+  /* akwarela chmury (Z15: warstwy tonów zamiast konturu): 1) podkład: cała sylwetka w tonach L0/szarości (C.base), 2) plama koloru rośnie od środków płatów (cov) w tonach koloru (C.tones),
+     3) mokre w mokre, 4) cień płatów (głębia z różnicy tonu), 5) jasny brzeg od światła (krawędź wyznacza ton, nie obrys), 6) granulacja */
+  function paintTint(S, M, C) {
+    var x = S.c.getContext('2d'), g = S.g, w = S.w, hh = S.h, tn = C.tones, bs = C.base || tn, k, cc, b, rg, y;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, hh);
+    x.drawImage(M.body.c, 0, 0, w, hh);
+    if (C.cov >= 0.999) bs = tn;   /* plama pokrywa całość: od razu tony koloru, bez drugiej warstwy (taniej) */
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = bandGrad(x, S, g, bs, bs === tn ? C.band * 0.4 - 0.6 : -0.9); x.fillRect(0, 0, w, hh);   /* podkład: płynne przejścia tonów (bez pasków) */
+    if (bs !== tn && C.cov > 0.004) {   /* plama koloru na podkładzie (płótno robocze, przyłożenie source-atop) */
+      y = scratch(w, hh); y.setTransform(1, 0, 0, 1, 0, 0); y.globalCompositeOperation = 'source-over'; y.globalAlpha = 1; y.clearRect(0, 0, w, hh);
+      growMask(y, M, C.cov, w, hh);
+      y.globalCompositeOperation = 'source-in'; y.fillStyle = bandGrad(y, S, g, tn, C.band * 0.4 - 0.6);   /* Z15: pasma tonów miękkie (bez paskowania) */ y.fillRect(0, 0, w, hh); y.globalCompositeOperation = 'source-over';
+      x.globalCompositeOperation = 'source-atop'; x.drawImage(SCR, 0, 0, w, hh, 0, 0, w, hh);
+    }
     x.globalCompositeOperation = 'source-atop';
     if (C.blobA > 0.02) {   /* mokre w mokre: plamy drugiego odcienia wsiąkają w płaty */
       x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
@@ -765,6 +844,7 @@ Słońce obiecało wrócić rano.</p>
     else if (S.kind === 'tint') paintTint(S, S.M, C);
     else if (S.kind === 'stint') paintTint(S, S.M, C.storm);
     else if (S.kind === 'sea') paintSea(S, C);
+    else if (S.kind === 'tor') paintTint(S, S.M, C);
     else if (S.kind === 'ftint') paintBank(S, S.M, C);
     else if (S.kind === 'fog') recolor(S, C.fog);
     else if (S.kind === 'ln') recolor(S, C.lineC);
@@ -780,20 +860,18 @@ Słońce obiecało wrócić rano.</p>
     for (k = 0; k < POOLN; k++) {
       g = enrichGeom(makeCloudGeom(240 + rnd() * 340, 85 + rnd() * 115), 1000 + k * 37);
       M = makeMasks(g, 5000 + k * 13, false);
-      P = { g: g, mono: [], ol: [], M: M, tint: makeTint(g, M, 'tint', k), fog: addReg(makeFogSpr(M), 'fog', k) };
-      for (b = 0; b < BUCKETS.length; b++) P.mono.push(makeInk(g, 'mono', BUCKETS[b].lw, BUCKETS[b].spr));
-      for (b = 0; b < 2; b++) P.ol.push(addReg(makeInk(g, 'ln', BUCKETS[b].lw, b ? BUCKETS[1].spr : 0.9), 'ln', k));
+      P = { g: g, M: M, tint: makeTint(g, M, 'tint', k), fog: addReg(makeFogSpr(M), 'fog', k) };   /* Z15: bez sprite'ów konturu (mono, ln): L0 to podkład tonalny tej samej akwareli */
       POOL.push(P);
     }
     /* dwie chmury deszczowe / burzowe: szerokie, niskie, ciemne */
     for (k = 0; k < 2; k++) {
       g = enrichGeom(makeCloudGeom(310, 132 + k * 14), 2000 + k * 41); M = makeMasks(g, 6000 + k, false);
-      STORM.push({ g: g, M: M, mono: [makeInk(g, 'smono', 1.6, 0.9), makeInk(g, 'smono', 4.2, 0.5)], tint: makeTint(g, M, 'stint', 0) });
+      STORM.push({ g: g, M: M, tint: makeTint(g, M, 'stint', 0) });
     }
     /* dwie ławice mgły: szerokie, miękkie */
     for (k = 0; k < 2; k++) {
       g = enrichGeom(makeCloudGeom(340, 100 + k * 12), 3000 + k * 43); M = makeMasks(g, 7000 + k, true);
-      FOGS.push({ g: g, M: M, mono: [makeInk(g, 'mono', 1.6, 0.9), makeInk(g, 'mono', 4.2, 0.5)], tint: withPrev(addReg(zFrame(g, M.body.pad, MSC), 'ftint', 0)) });
+      FOGS.push({ g: g, M: M, tint: withPrev(addReg(zFrame(g, M.body.pad, MSC), 'ftint', 0)) });
       FOGS[k].tint.M = M;
     }
     buildSea();
@@ -900,14 +978,15 @@ Słońce obiecało wrócić rano.</p>
     for (k = 0; k < 2; k++) {
       t = makeSeaTile(8100 + k * 57); M = makeSeaMasks(t);
       S = withPrev(addReg(seaFrame(t, MSC), 'sea', k)); S.M = M; S.far = seaFrame(t, MFAR);
-      SEA_T.push({ t: t, ink: makeSeaInk(t, 0.72), inkHi: makeSeaInk(t, 1.25), tint: S });   /* inkHi: ostry tusz dla najbliższych rzędów */
+      SEA_T.push({ t: t, tint: S });   /* Z15: bez tuszu (L0 to podkład tonalny akwareli morza) */
     }
   }
   function paintSea(S, C) { paintTint(S, S.M, C); }
   /* barwy morza: tony z palety morza pory doby (etapy koloru jak wszędzie) i odcień palety */
   function seaParams(v) {
-    var P = PAL, C = cloudParams(9 + v * 2, false), s0 = stageCol(P.bg, P.sea[0], P.warm, 0, 0.3), s1 = stageCol(P.bg, P.sea[1], P.warm, 0, 0.2), s2 = stageCol(P.bg, P.sea[2], P.warm, 0, 0.1);
+    var P = PAL, C = cloudParams(9 + v * 2, false), s0 = stageCol(P.m0[0], P.sea[0], P.warm, 0, 0.3), s1 = stageCol(P.m0[1], P.sea[1], P.warm, 0, 0.2), s2 = stageCol(P.m0[2], P.sea[2], P.warm, 0, 0.1), bs = C.base;
     C.tones = [mixc(C.tones[0], s0, 0.35), mixc(C.tones[1], s0, 0.55), mixc(C.tones[2], s1, 0.6), mixc(C.tones[3], s2, 0.7)];
+    C.base = [mixc(bs[0], mixc(s0, P.r0, 0.18 * (1 - ST.g)), 0.6), mixc(bs[1], s0, 0.7), mixc(bs[2], s1, 0.75), mixc(bs[3], s2, 0.8)];   /* Z15: morze w L0: tony m0 z jasnymi grzbietami kłębów */
     C.cov = Math.min(1, C.cov * 1.1); C.wL = 0.5; C.wR = 0.5; C.granA = 0;   /* bez granulacji na kaflu (wzór nie jest okresowy z kaflem) */
     return C;
   }
@@ -934,8 +1013,7 @@ Słońce obiecało wrócić rano.</p>
     x0 = W / 2 + (-camX * (1 - tt * 0.5) - row.shift) * sc; x0 = md(x0, tw) - tw;
     a = fade * (1 - tt * 0.35); far = tt > 0.45 ? sm((tt - 0.45) / 0.2) : 0;
     for (x = x0; x < W + 1; x += tw) {
-      if (gA < (lekki ? 0.6 : 0.97) || z < 2.2) drawTile(sc > 1.5 ? T.inkHi : T.ink, x, y, sc, a * (1 - gA * 0.8), row.ymax);
-      if (gA > 0.01) { if (far < 0.99) drawTileS(T.tint, x, y, sc, gA * fade, row.ymax); if (far > 0.01) drawTile(T.tint.far, x, y, sc, gA * fade * far, row.ymax); }
+      if (far < 0.99) drawTileS(T.tint, x, y, sc, fade, row.ymax); if (far > 0.01) drawTile(T.tint.far, x, y, sc, fade * far, row.ymax);   /* Z15: warstwy tonów w każdym etapie */
     }
     /* cień chmury wędrujący po morzu (jeden na rząd, dryfuje z czasem; granat w L0, cień pory w kolorze) */
     {
@@ -985,7 +1063,7 @@ Słońce obiecało wrócić rano.</p>
   var Ec = 0, Egoal = 0, eReachT = -99, bloomOn = false, bloomT = 0, bloomE0 = 0, bloomN = 0, bloomLog = [], lockE = null, zPrevRaw = 0, eFullT = 0, eFullRun = 0, eFullMax = 0, seriaLog = [], wlotIdeal = 0, wlotBrzeg = 0, sparkPulse = 0;
   var lvlFirst = [-1, -1, -1, -1, -1, -1], chainN = 0, lastHitT = -99, hitLog = [], cI = 0, inC = 0, lvl = 0, lvlMax = 0, lvlTime = [0, 0, 0, 0, 0, 0], l5bez = 0, l5czas = 0, hiperRazy = 0, hiperTrwa = [], lvMsg = null;
   var hyLeft = 0, hyHold = 0, hyCool = false, hyK = 0, hyForce = false, hyFlash = 0, hyRun = 0, hyLog = [];
-  var PHI0 = 0.75, phi = PHI0, poraLock = false, dayRate = 1 / 240;
+  var PHI0 = 0.42, phi = PHI0,   /* 15.8: start o poranku (świt > dzień), dawniej 0,75 zachód */ poraLock = false, dayRate = 1 / 240;
   var nightK = 0, PAL = {}, ST = { g: 0, p: 0, w: 0, f: 0 }, hueW = [], odcieni = 0;
   var stumbleT = 0, fogT = 0, windDX = 0, gradHit = 0, mglaHit = 0, burzaHit = 0, latHit = 0, stadoHit = 0, flashK = 0, boltT = 0, dbgL = [], predLog = { jastrzab: [], sowa: [] };
   var nextEv = {}, lastBR = -99, lastNew = -99, reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1515,11 +1593,12 @@ Słońce obiecało wrócić rano.</p>
 
   /* ---------- doba w tle ----------
      phi 0..1: 0 noc, 0,25 świt, 0,5 dzień, 0,75 zachód (start). Tempo: spokojny lot ok. 240 s na dobę, L3-L4 ok. 40 s, L5 ok. 15 s. */
-  var PFIELDS = ['bg', 'sT', 'sM', 'sH', 'sL', 'cT', 'cM', 'cB', 'rim', 'sh', 'fog', 'warm', 'glow', 'acc', 'ht'];
+  var PFIELDS = ['bg', 'sT', 'sM', 'sH', 'sL', 'cT', 'cM', 'cB', 'rim', 'sh', 'fog', 'warm', 'glow', 'acc', 'ht', 'h0', 'c0', 'c1', 'c2', 'c3', 's0', 'r0', 'f0'];   /* Z15: + tony L0 */
   function palAt(ph, out) {
     var f = ph * 4, i0 = Math.floor(f) % 4, u = sm(f - Math.floor(f)), A = PORY[i0], B = PORY[(i0 + 1) % 4], k, nm;
     for (k = 0; k < PFIELDS.length; k++) { nm = PFIELDS[k]; out[nm] = mixc(A[nm], B[nm], u); }
     out.sea = [mixc(A.sea[0], B.sea[0], u), mixc(A.sea[1], B.sea[1], u), mixc(A.sea[2], B.sea[2], u)];
+    out.m0 = [mixc(A.m0[0], B.m0[0], u), mixc(A.m0[1], B.m0[1], u), mixc(A.m0[2], B.m0[2], u)];
     out.st = lerp(A.st, B.st, u); out.ha = lerp(A.ha, B.ha, u); out.hl = lerp(A.hl, B.hl, u);
     out.nightW = (i0 === 0 ? 1 - u : (i0 === 3 ? u : 0)); out.dayW = (i0 === 1 ? u : (i0 === 2 ? 1 - u : 0));
     return out;
@@ -1663,10 +1742,10 @@ Słońce obiecało wrócić rano.</p>
 
   /* ---------- kolor: etapy, odcienie, paleta światła ---------- */
   /* kolor etapu: baza (kontur/granat) -> szarość/błękit -> pastel -> ciepło pory -> pełnia; warstwy nakładają się (etapy rozciągnięte) */
-  var PASTEL_WARM = 0.2, PASTEL_SAT = 1.55, SAT_FULL = 0.35;
+  var PASTEL_WARM = 0.2, PASTEL_SAT = 1.55, SAT_FULL = 0.35, PASTEL_BIEL = 0.2, BLADE_BIEL = 0.5;   /* Z15 (15.8): BLADE_BIEL = ile bieli w etapie L1 (pierwsze blade barwy zamiast szarości), PASTEL_BIEL (dawniej 0,42) = ile bieli w pastelu L2; mniej bieli = mniejszy skok jasności L1 > L2 i mniej mgły zamiast pastelu */
   function satc(c, k) { var l = lumOf(c); return [Math.max(0, Math.min(255, l + (c[0] - l) * k)), Math.max(0, Math.min(255, l + (c[1] - l) * k)), Math.max(0, Math.min(255, l + (c[2] - l) * k))]; }
   function stageCol(base, F, warm, hz, ww) {
-    var l = lumOf(F), Gc = [l * 0.9, l * 0.98, Math.min(255, l * 1.1 + 6)], Pc = mixc(mixc(F, [238, 232, 252], 0.42), [196, 210, 248], 0.18), Wc = mixc(F, warm, ww === undefined ? 0.5 : ww), c;
+    var Gc = mixc(mixc(F, [246, 242, 250], BLADE_BIEL), base, 0.25), Pc = mixc(mixc(F, [238, 232, 252], PASTEL_BIEL), [196, 210, 248], 0.18), Wc = mixc(F, warm, ww === undefined ? 0.5 : ww), c;
     Pc = satc(mixc(Pc, warm, PASTEL_WARM + (hz || 0)), PASTEL_SAT);   /* Z3c: pastel jest ciepły i baśniowy, nie szaro-lawendowy (zrzut żywego podglądu przy poziomie Kolor) */
     c = mixc(base, Gc, ST.g); c = mixc(c, Pc, ST.p); c = mixc(c, Wc, ST.w); return satc(mixc(c, F, ST.f), 1 + SAT_FULL * ST.f);   /* Z3c: pełnia (E = 1 / Turbo) jest wyraźnie bardziej nasycona niż etap ciepły */
   }
@@ -1679,40 +1758,44 @@ Słońce obiecało wrócić rano.</p>
   }
   function updStage() {
     var se = sk + 0.02, k, w, n = 0;
-    ST.g = sg(se); ST.p = sp_(se); ST.w = sw_(se); ST.f = sf(se);
+    ST.g = sm((se - 0.09) / 0.42); ST.p = sp_(se);   /* Z15: wizualny etap szarości łagodniejszy niż sg (krzywa koloru cAll i testy kolejności bez zmian) */ ST.w = sw_(se); ST.f = sf(se);
     for (k = 0; k < NHUE; k++) { w = sm((sk + 0.015 - HUES[k].enter) / HUEW); hueW[k] = w; if (w > 0.5) n++; }
     odcieni = n;
   }
   /* paleta koloru chmury nr ci: szare tony (L1) przechodzą w jej własny odcień (wejście jak odcień ci), drugi odcień mieszany w plamach */
   function cloudParams(ci, storm) {
     var P = PAL, se = sk + 0.02, gm = 0.45 + 0.55 * P.hl, pv = lumOf(P.cM) * gm, hk = (ci * 5 + 2) % NHUE, h2 = (hk + 1) % NHUE, wk = hueW[hk], w2 = hueW[h2] * ST.p, C = {}, gB = [], Hc, H2, hT, hM, hB, tones, k;
-    gB[0] = grayTone(P.cT, pv, gm); gB[1] = grayTone(mixc(P.cT, P.cM, 0.55), pv, gm); gB[2] = grayTone(mixc(P.cM, P.cB, 0.5), pv, gm); gB[3] = grayTone(P.cB, pv, gm);
     Hc = hueCz(hk); H2 = hueCz(h2);
     hT = mixc(Hc, [255, 250, 240], 0.42); hM = mixc(Hc, [255, 250, 240], 0.15); hB = mixc(mulc(mixc(Hc, H2, 0.3), 0.86), mixc(P.sh, [176, 156, 220], 0.55), 0.3);
-    var lift = 1.3 * wk * (1 - wk), CRM = [246, 240, 252];   /* Z4: przejście szarość > odcień przez jasny pastel (bez oliwkowego błota) */
+    gB = [mixc(P.c0, hT, 0.3), mixc(P.c1, hM, 0.3), mixc(P.c2, Hc, 0.28), mixc(P.c3, hB, 0.26)];   /* Z15 (15.8): L1 = blady ton L0 z odrobiną własnego odcienia chmury (bez szarości) */
+    var lift = Z15_LIFT * wk * (1 - wk), CRM = [246, 240, 252];   /* Z15: Z15_LIFT 0,6 (dawniej 1,3): mniej bieli w połowie przejścia = mniejszy skok jasności L1 > L2 */   /* Z4: przejście szarość > odcień przez jasny pastel (bez oliwkowego błota) */
     tones = [mixc(mixc(gB[0], CRM, lift), hT, wk), mixc(mixc(gB[1], CRM, lift), hM, wk), mixc(mixc(gB[2], CRM, lift * 0.8), Hc, wk), mixc(mixc(gB[3], CRM, lift * 0.5), hB, wk)];
     for (k = 0; k < 4; k++) tones[k] = satc(tones[k], 1 + SAT_FULL * ST.f);   /* Z3c: nasycenie chmur rośnie w pełni koloru */
-    if (storm) {
-      C.tones = [mixc(tones[0], [104, 108, 156], 0.7), mixc(tones[1], [74, 78, 128], 0.72), mixc(tones[2], [50, 52, 100], 0.74), mixc(tones[3], [34, 36, 76], 0.76)];
-    } else { C.tones = tones; C.tones[3] = mixc(tones[3], tones[2], 0.35 * P.nightW); }
+    /* Z15: podkład tonalny: tony L0 pory (c0..c3) przechodzą w szarości/błękit L1 (gB) z etapem g; plama koloru (tones) rośnie na nim */
+    var B0 = [P.c0, P.c1, P.c2, P.c3], bs = [];
+    for (k = 0; k < 4; k++) bs.push(mixc(mixc(B0[k], gB[k], Math.min(1, ST.g * 1.5)), tones[k], ST.f));   /* podkład dochodzi do szarości szybciej niż plama (bez kropek w L1) */   /* w pełni koloru podkład = barwa (plama pokrywa całość) */
+    if (storm) {   /* burza: ciemniejsza, fioletowo-szara, ale nie czarna (tony średnie) */
+      C.tones = [mixc(tones[0], [150, 146, 190], 0.62), mixc(tones[1], [118, 114, 164], 0.66), mixc(tones[2], [94, 90, 140], 0.7), mixc(tones[3], [74, 70, 118], 0.72)];
+      C.base = [mixc(bs[0], P.s0, 0.22), mixc(bs[1], P.s0, 0.3), mixc(bs[2], P.s0, 0.38), mixc(bs[3], P.s0, 0.46)];
+    } else { C.tones = tones; C.tones[3] = mixc(tones[3], tones[2], 0.35 * P.nightW); bs[3] = mixc(bs[3], bs[2], 0.5 * P.nightW); bs[2] = mixc(bs[2], bs[1], 0.3 * P.nightW); C.base = bs; }   /* Z15: nocą lżejszy spód chmur (bez ciężkiego pasa) */
     C.band = 1 - sm((se - 0.30) / 0.22);
-    C.rim = mixc(stageCol(LINE, P.rim, P.warm), LIGHTC, 0.4 * ST.w * (1 - 0.5 * P.nightW)); C.rimA = storm ? 0.25 : 0.9 * sm((se - 0.30) / 0.3);
-    C.shade = stageCol(NAVY, mixc(P.sh, [190, 166, 228], 0.45 * (1 - 0.5 * P.nightW)), P.warm); C.shadeA = (0.12 + 0.24 * sm((se - 0.3) / 0.4)) * (1 - 0.35 * P.nightW);
-    C.hatchA = (storm ? 0.28 : 0.5) * (1 - sm((se - 0.34) / 0.34)); C.hatchC = mixc(tones[3], [20, 26, 50], 0.5);
+    C.rim = mixc(stageCol(P.r0, P.rim, P.warm), LIGHTC, 0.4 * ST.w * (1 - 0.5 * P.nightW)); C.rimA = storm ? 0.3 : lerp(Z15.CHMURA_BRZEG_L0, Z15.CHMURA_BRZEG_KOLOR, sm((se - 0.30) / 0.3));
+    C.shade = mixc(stageCol(P.s0, mixc(P.sh, [190, 166, 228], 0.45 * (1 - 0.5 * P.nightW)), P.warm), tonalEdge(storm ? tones[3] : mixc(tones[3], bs[3], 1 - ST.g), 1.3), 0.4);   /* Z15: cień = ton tej chmury */ C.shadeA = lerp(Z15.CHMURA_CIEN_L0, Z15.CHMURA_CIEN_KOLOR, sm((se - 0.3) / 0.4)) * (1 - 0.25 * P.nightW);
+    C.hatchA = 0; C.hatchC = tonalEdge(tones[3], 0.5);   /* Z15: bez kreskowania (cień robią płaty tonu) */
     C.blob = mixc(Hc, H2, 0.5); C.blob2 = H2; C.blobA = storm ? 0 : 0.55 * wk * sm((se - 0.22) / 0.3);
-    C.fog = stageCol(PAL.bg, P.fog, P.warm); C.bank = mixc(stageCol(PAL.bg, mixc(P.fog, [210, 226, 246], 0.5), P.warm), [200, 214, 236], 0.3);
+    C.fog = stageCol(P.f0, P.fog, P.warm); C.bank = mixc(stageCol(mixc(P.f0, P.r0, 0.35), mixc(P.fog, [210, 226, 246], 0.5), P.warm), [200, 214, 236], 0.3 * ST.g);
     /* Z4: akwarela: plama rośnie w L1-L2 (pokrycie), schnący brzeg i granulacja mocnieją z pastelami, kreska tuszu przechodzi z białej w ciemny tusz,
        wagi cienia i jasnego brzegu z kierunku światła (słońce / księżyc) */
     C.cov = storm ? 1 : sm((se - 0.12) / 0.32);
-    C.edgeC = mixc(mixc(tones[2], tones[3], 0.5), inkCol(), 0.3); C.edgeA = storm ? 0.3 : 0.1 + 0.4 * ST.p;
-    C.granA = 0.03 + 0.11 * ST.p;
+    C.edgeC = tonalEdge(mixc(tones[2], tones[3], 0.5), 0.6); C.edgeA = storm ? 0.1 : 0.08 * ST.p;   /* Z15: schnący brzeg tylko jako lekki, tonalny ślad akwareli */
+    C.granA = 0.02 + 0.08 * ST.p;
     C.lineC = mixc(LINE, inkCol(), sm((se - 0.3) / 0.22));
     C.wL = LW_L; C.wR = 1 - LW_L;
     return C;
   }
   function keyC(c) { return Math.round(c[0] / 6) + ',' + Math.round(c[1] / 6) + ',' + Math.round(c[2] / 6) + ';'; }
   function keyOf(C) {
-    var k, s2 = '', a = C.tones.concat([C.rim, C.shade, C.hatchC, C.blob, C.blob2, C.bank, C.edgeC]);
+    var k, s2 = '', a = C.tones.concat(C.base || [], [C.rim, C.shade, C.hatchC, C.blob, C.blob2, C.bank, C.edgeC]);
     for (k = 0; k < a.length; k++) s2 += keyC(a[k]);
     return s2 + Math.round(C.band * 14) + Math.round(C.rimA * 14) + Math.round(C.shadeA * 14) + Math.round(C.hatchA * 14) + Math.round(C.blobA * 14) + '/' + Math.round(C.cov * 14) + Math.round(C.edgeA * 12) + Math.round(C.granA * 12) + C.wL;
   }
@@ -1723,12 +1806,12 @@ Słońce obiecało wrócić rano.</p>
     var n = 0, budget, visits = forceTint ? REG.length : 12, k, S, C, key;
     /* Z4: kolor niewidoczny (L0) = nic nie przemalowujemy; ciężkie sprite'y (akwarela) najwyżej ok. 0,6 na klatkę (barwy dryfują wolno), lekkie (kreska, mgiełka) taniej */
     for (k = 0; k < REG.length; k++) if (REG[k].mix < 1) REG[k].mix = forceTint ? 1 : Math.min(1, REG[k].mix + 0.14);
-    if (!forceTint && sg(sk + 0.03) < 0.004) return;
     tintAcc = Math.min(2, tintAcc + (lekki ? 0.2 : 0.35) * (1 - 0.45 * hyK)); budget = forceTint ? 99999 : tintAcc;
     for (k = 0; k < visits && n < budget; k++) {
       S = REG[(regRR + k) % REG.length];
       if (S.z11) { C = S.z11.par(S); key = S.z11.key(C); if (key !== S.key) { S.key = key; paintInto(S, C); n += S.z11.koszt; } continue; }   /* Z11 */
-      if (S.kind === 'sea') C = seaParams(S.ci);
+      if (S.kind === 'tor') C = torParams(S.rodzaj);   /* Z15: chmury toru Z14 (kolor = funkcja) */
+      else if (S.kind === 'sea') C = seaParams(S.ci);
       else if (S.kind === 'stint') { C = cloudParams(S.ci * 3 + 1, false); C.storm = cloudParams(S.ci * 3 + 1, true); }
       else C = cloudParams(S.kind === 'ftint' ? 0 : S.ci, false);
       key = S.kind === 'ln' ? keyC(C.lineC) : (S.kind === 'fog' ? keyC(C.fog) : keyOf(S.kind === 'stint' ? C.storm : C));
@@ -1738,6 +1821,47 @@ Słońce obiecało wrócić rano.</p>
     if (!forceTint) tintAcc = Math.max(0, tintAcc - n);
     else for (k = 0; k < REG.length; k++) REG[k].mix = 1;
     forceTint = false;
+  }
+
+  /* ---------- Z15: chmury toru dla Z14 ----------
+     torChmura(rodzaj, k): sprite akwareli chmury toru (geometria i maski z puli: k = 0..13; mgła z ławic FOGS), zarejestrowany i przemalowywany sam
+     przy zmianie pory i etapu koloru (jak kulisy), pamięć podręczna po (rodzaj, k). Rysowanie: drawTorChmura(S, X, Y, skala, alfa).
+     Rodzaje i barwy: CHMURY15 (biala, lawenda, szara, burzowa, roz, brzoskwinia, mgla_zielona = nerf, oaza_zielona = buff). */
+  var TORS = {};
+  function torParams(rodzaj) {
+    var D = CHMURY15[rodzaj] || CHMURY15.biala, C = cloudParams(0, false), tt = torTony(rodzaj), k;
+    C.tones = tt; C.base = []; for (k = 0; k < 4; k++) C.base.push(mixc(tt[k], [PAL.c0, PAL.c1, PAL.c2, PAL.c3][k], 0.35 * (1 - ST.g)));
+    C.cov = Math.max(0.65, C.cov); C.blobA = 0; C.edgeA = 0;
+    if (D.mgla) { C.rimA *= 0.45; C.shadeA *= 0.5; C.granA = 0; }   /* zatruta mgła: miękka, płaska, bez jasnego brzegu */
+    if (D.blask) { C.rim = mixc(C.rim, [255, 252, 224], 0.6); C.rimA = 1; }   /* oaza: ciepły, jasny brzeg (zachęta) */
+    if (rodzaj === 'burzowa') { C.shadeA = Math.max(C.shadeA, 0.4); C.shade = mixc(C.shade, [72, 58, 112], 0.4); }
+    return C;
+  }
+  function torChmura(rodzaj, k) {
+    var key = rodzaj + ':' + (k || 0), D = CHMURY15[rodzaj] || CHMURY15.biala, src, S;
+    if (TORS[key]) return TORS[key];
+    src = D.mgla ? FOGS[(k || 0) % FOGS.length] : POOL[(k || 0) % POOLN];
+    S = withPrev(addReg(zFrame(src.g, src.M.body.pad, MSC), 'tor', 0)); S.M = src.M; S.rodzaj = rodzaj; S.mix = 1;
+    paintInto(S, torParams(rodzaj)); S.key = keyOf(torParams(rodzaj));
+    TORS[key] = S; return S;
+  }
+  function drawTorChmura(S, X, Y, sc, a) { drawTintS(S, X, Y, sc, a); }
+  /* pokaz palety Z15 (tylko ?test, hak dbg({ tor15: 1 })): rząd chmur toru, wstęgi i podświetlenia toru, przykłady tonalEdge i jasnyBrzeg */
+  function drawTorPokaz() {
+    var R = ['biala', 'lawenda', 'szara', 'burzowa', 'roz', 'brzoskwinia', 'mgla_zielona', 'oaza_zielona'], k, S, X, Y, c, nm;
+    for (k = 0; k < R.length; k++) {
+      S = torChmura(R[k], k + 2); X = 60 + (k % 3) * 135; Y = 230 + Math.floor(k / 3) * 150;
+      drawTorChmura(S, X, Y, 0.36, 1);
+      ctx.globalAlpha = 1; ctx.fillStyle = rgba(LINE, 0.9); ctx.font = '600 10px ' + FONT; ctx.textAlign = 'center'; ctx.fillText(R[k], X, Y + 16); ctx.textAlign = 'left';
+    }
+    nm = ['wstega', 'komorka', 'wiatr', 'uwaga'];
+    for (k = 0; k < 4; k++) {
+      c = torKolor(nm[k]); X = 40 + k * 90; Y = H - 150;
+      ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.strokeStyle = rgba(c, TOR15['A_' + nm[k].toUpperCase().replace('Ę', 'E').replace('Ó', 'O')] || 0.3); ctx.lineCap = 'round';
+      ctx.lineWidth = TOR15.ROZMYCIE; ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + 60, Y - 40); ctx.stroke(); ctx.lineWidth = TOR15.SZER_WSTEGI; ctx.stroke(); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = rgba(LINE, 0.9); ctx.font = '600 10px ' + FONT; ctx.fillText(nm[k], X, Y + 16);
+    }
+    ctx.globalAlpha = 1;
   }
 
   /* ---------- rysowanie ---------- */
@@ -1758,20 +1882,16 @@ Słońce obiecało wrócić rano.</p>
       X = W / 2 + (c.x - camX * (1 - tt * 0.6) + (reduce ? 0 : Math.sin(t * 0.2 + c.ph) * 6)) * sc;
       Y = HORIZON + (c.y + (reduce ? 0 : Math.sin(t * 0.35 + c.ph) * p.g.h * 0.02)) * sc;
       if (X + p.g.maxx * sc < -60 || X + p.g.minx * sc > lim) continue;
-      a = (1 - tt * 0.45) * (1 - gA * 0.8) * fade;
-      if (a > 0.01 && (gA < (lekki ? 0.5 : 0.9) || b === 0)) drawSpr(p.mono[b], X, Y, sc, a);   /* Z4: w pełnym kolorze dalekie chmury bez podkładu tuszu (miękkie, tańsze) */
-      if (gA > 0.01) {
-        if (hy > 0.03 && tt < 0.85) for (q = 1; q >= 1; q--) {   /* hiperprzestrzeń: smuga chmury ku punktowi zbiegu */
-          drawTintS(p.tint, VXc + (X - VXc) * (1 - 0.05 * q * hy), VYc + (Y - VYc) * (1 - 0.05 * q * hy), sc * (1 - 0.05 * q * hy), gA * (1 - tt * 0.35) * fade * 0.2 / q);
-        }
-        /* Z4: akwarela (bliżej ostra kopia, daleko pomniejszona = rozmyta: głębia ostrości), farba "oddycha" względem kreski */
-        tn = gA * (1 - tt * 0.35) * fade; sway = reduce ? 0 : Math.sin(t * 0.3 + c.ph) * 1.4;
-        if (lekki) { drawSpr(far > 0.5 ? p.tint.far : p.tint, X, Y, sc, tn); if (b === 0 && olA > 0.01) drawSpr(p.ol[0], X, Y, sc, olA * fade); continue; }   /* tryb lekki: jedna plama i kreska tylko blisko */
-        if (far < 0.99) drawTintS(p.tint, X + sway * sc, Y, sc, tn);
-        if (far > 0.01) drawSpr(p.tint.far, X, Y, sc, tn * far);
-        if (tt > 0.12) drawSpr(p.fog, X, Y, sc, gA * tt * 0.55 * fade);
-        if (b < 2 && olA > 0.01) drawSpr(p.ol[b], X, Y, sc, olA * (1 - tt * 0.45) * fade);
+      /* Z15: jedna akwarela warstw tonów w każdym etapie (L0 = jej podkład tonalny), bez sprite'ów konturu */
+      if (hy > 0.03 && tt < 0.85) {   /* hiperprzestrzeń: smuga chmury ku punktowi zbiegu */
+        drawTintS(p.tint, VXc + (X - VXc) * (1 - 0.05 * hy), VYc + (Y - VYc) * (1 - 0.05 * hy), sc * (1 - 0.05 * hy), gA * (1 - tt * 0.35) * fade * 0.2);
       }
+      /* Z4: akwarela (bliżej ostra kopia, daleko pomniejszona = rozmyta: głębia ostrości), farba "oddycha" */
+      tn = (1 - tt * 0.35) * fade; sway = reduce ? 0 : Math.sin(t * 0.3 + c.ph) * 1.4;
+      if (lekki) { drawSpr(far > 0.5 ? p.tint.far : p.tint, X, Y, sc, tn); continue; }   /* tryb lekki: jedna plama */
+      if (far < 0.99) drawTintS(p.tint, X + sway * sc, Y, sc, tn);
+      if (far > 0.01) drawSpr(p.tint.far, X, Y, sc, tn * far);
+      if (tt > 0.12) drawSpr(p.fog, X, Y, sc, Z15.MGIELKA_L0 * tt * fade);   /* mgiełka powietrzna także w L0 (głębia z tonu) */
     }
     ctx.globalAlpha = 1;
   }
@@ -1832,12 +1952,12 @@ Słońce obiecało wrócić rano.</p>
     for (k = 2; k >= 0; k--) {
       ctx.save(); ctx.translate(20 + k * 3.2, 3 + k * 2.4); ctx.rotate(0.32 + k * 0.28 + fw * 0.05 * (k + 1));
       ctx.beginPath(); ctx.ellipse(5.5 - wet * 1.5, 0, 7.6 - wet * 2, 2.6, 0, 0, TAU);
-      ctx.fillStyle = rgba(mixc(fl, B_DARK, (under ? 0.2 : 0.55) * e + 0.15), 1); ctx.fill(); if (k === 0) { ctx.lineWidth = 0.75; ctx.strokeStyle = rgba(ink, 0.55); ctx.stroke(); } ctx.restore();
+      ctx.fillStyle = rgba(mixc(fl, B_DARK, (under ? 0.2 : 0.55) * e + 0.15), 1); ctx.fill(); if (k === 0) { ctx.lineWidth = 0.75; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.55); ctx.stroke(); } ctx.restore();
     }
-    polyP(WING_P); ctx.lineWidth = 1.25; ctx.strokeStyle = rgba(ink, 0.92); ctx.lineJoin = 'round'; ctx.stroke();
+    polyP(WING_P); ctx.lineWidth = 1.25; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.92); ctx.lineJoin = 'round'; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(3, 1); ctx.quadraticCurveTo(14, -3.4, 26, -1.6); ctx.moveTo(15, 3.6); ctx.lineTo(19.5, 8); ctx.moveTo(10, 4.5); ctx.lineTo(13.4, 9.4);
-    ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, 0.45); ctx.stroke();
-    if (lit > 0.02 && e > 0.05) { ctx.lineCap = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(rimC, 0.8 * e * lit); strokeOpen(WING_LEAD); }
+    ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.45); ctx.stroke();
+    if (lit > 0.02) { ctx.lineCap = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(rimC, 0.8 * Math.max(e, 0.6) * Math.max(lit, 0.5)); strokeOpen(WING_LEAD); }   /* Z15: jasna krawędź natarcia także w L0 */
     ctx.restore();
   }
   function ribbonP(c, w0, w1) {
@@ -1861,8 +1981,9 @@ Słońce obiecało wrócić rano.</p>
   function drawBird(x, y, s2, tilt, dive, wet, spinA, bs, dl, dr) {
     var e = sm((s2 - 0.13) / 0.55), ph = t * (9 + s2 * 8), flap0 = TORW ? TORW.f : (reduce ? 0.3 : Math.sin(ph)), flap = flap0 * (1 - 0.85 * dive) * (1 - 0.55 * wet), side, dv, fw, ang, lenK, chord, under, lit;
     var yaw = Math.max(-1, Math.min(1, tilt)), lk = (reduce ? 0 : lookZ(t)) * (1 - dive) * (1 - Math.abs(yaw) * 0.6) + yaw * 0.75, sleep = birdSleep, lx = LIGHTX, nW = PAL.nightW;
-    var ink = mixc(LINE, mixc([44, 32, 60], [30, 34, 82], nW), e), fore = reduce ? 1 : 0.88 + 0.12 * Math.cos(ph);
+    var fore = reduce ? 1 : 0.88 + 0.12 * Math.cos(ph);
     var bodyC = mixc(BIRD_F0, B_BODY, e), darkC = mixc(BIRD_D0, mixc(B_DARK, PAL.sh, 0.15), e), liteC = mixc(BIRD_F0, mixc(B_LITE, LIGHTC, 0.22), e), rimC = mixc(LIGHTC, [255, 255, 255], 0.35);
+    var ink = tonalEdge(mixc(bodyC, darkC, 0.35), 1.2);   /* Z15: kreska = ciemniejszy odcień piór (tonalna, półprzezroczysta), nie biały ani czarny tusz */
     var bounce = mixc(stageCol(PAL.bg, PAL.sea[0], PAL.warm), [255, 214, 196], 0.25 * (1 - nW)), shake = shakeT > 0 && !reduce ? Math.sin(t * 46) * 0.16 * (shakeT / 0.6) : 0;
     var hx, hy, fa, sg, pts, gr, k, ex, ey, rr, sc1, kx, ky, w, c, rb, poly, aL, aS, j, u, bob;
     if (sleep > 0) lk = lerp(lk, 0.8, sleep);
@@ -1882,7 +2003,7 @@ Słońce obiecało wrócić rano.</p>
       chord = 0.8 + 0.2 * Math.abs(Math.cos(fw * 1.2)); under = fw < -0.2 && dv < 0.5;
       lit = cl(0.5 + 0.5 * side * lx);
       ctx.save(); ctx.translate(side * 12.5 - yaw * 2.2, -4.5);
-      birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, mixc(darkC, bodyC, 0.3), mixc(bodyC, liteC, 0.2), rimC, lit);
+      birdWing(side, ang, lenK, chord, under, ink, e, wet, fw, mixc(darkC, bodyC, 0.62 - 0.32 * e), mixc(bodyC, liteC, 0.2), rimC, lit);   /* Z15: w L0 skrzydło jaśniejsze od tła, nieco ciemniejsze od ciała (czytelne tonem) */
       ctx.restore();
     }
     /* ogon: wachlarz trzech piór, rozkłada się przy skręcie, chowa przy nurkowaniu */
@@ -1890,8 +2011,8 @@ Słońce obiecało wrócić rano.</p>
     for (k = -1; k <= 1; k++) {
       ctx.save(); ctx.rotate(k * (0.42 - 0.25 * dive + 0.1 * Math.abs(yaw)));
       ctx.beginPath(); ctx.moveTo(-3.6, 0); ctx.quadraticCurveTo(-4.8, 10, -3.2, 15 - 3 * wet); ctx.quadraticCurveTo(0, 18.5 - 3 * wet, 3.2, 15 - 3 * wet); ctx.quadraticCurveTo(4.8, 10, 3.6, 0); ctx.closePath();
-      ctx.fillStyle = rgba(k ? darkC : mixc(darkC, bodyC, 0.3), 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, 13); ctx.lineWidth = 0.55; ctx.strokeStyle = rgba(ink, 0.4); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = rgba(k ? darkC : mixc(darkC, bodyC, 0.3), 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, 13); ctx.lineWidth = 0.55; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.4); ctx.stroke(); ctx.restore();
     }
     ctx.restore();
     /* ciało: objętość z cieniowania */
@@ -1912,12 +2033,12 @@ Słońce obiecało wrócić rano.</p>
       ctx.beginPath(); for (k = 0; k < w; k++) { c = ex + (k - (w - 1) / 2) * 7.4; ctx.moveTo(c - 3.6, ey + Math.abs(c) * 0.12); ctx.quadraticCurveTo(c, ey + 4.6 + Math.abs(c) * 0.12, c + 3.6, ey + Math.abs(c) * 0.12); } ctx.stroke();
     }
     aS = Math.atan2(0.7, -lx * 0.9);   /* strona cienia: kreskowanie (L0 rysunek, w kolorze słabsze) */
-    ctx.strokeStyle = rgba(ink, 0.32 * (1 - 0.6 * e)); ctx.lineWidth = 0.7; ctx.beginPath();
+    ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.32 * (1 - 0.6 * e)); ctx.lineWidth = 0.7; ctx.beginPath();
     for (k = -3; k <= 3; k++) { c = aS + k * 0.24; ctx.moveTo(Math.cos(c) * 19, 3 + Math.sin(c) * 20); ctx.lineTo(Math.cos(c) * 13 + 2, 3 + Math.sin(c) * 14 - 4); } ctx.stroke();
-    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, 0.92); ctx.stroke();
-    ctx.lineWidth = 2.1; ctx.strokeStyle = rgba(ink, 0.45); strokeOpen(arcOf(pts, aS - 0.9, aS + 0.9, 0.985, 3));   /* cięższa kreska po stronie cienia */
+    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.92); ctx.stroke();
+    ctx.lineWidth = 2.1; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.45); strokeOpen(arcOf(pts, aS - 0.9, aS + 0.9, 0.985, 3));   /* cięższa kreska po stronie cienia */
     aL = Math.atan2(-0.75, lx * 0.9);
-    if (e > 0.03) { ctx.lineWidth = 2; ctx.strokeStyle = rgba(rimC, 0.85 * e); strokeOpen(arcOf(pts, aL - 1.0, aL + 1.0, 0.955, 3)); }
+    ctx.lineWidth = 2; ctx.strokeStyle = rgba(rimC, 0.85 * Math.max(e, 0.45)); strokeOpen(arcOf(pts, aL - 1.0, aL + 1.0, 0.955, 3));   /* Z15: jasny brzeg także w L0 */
     /* głowa */
     hx = yaw * 4.5 + lk * 1.4; hy = -21.5 + dive * 2.5 + sleep * 3;
     ctx.save(); ctx.translate(hx, hy); if (sleep > 0) ctx.rotate(0.22 * sleep);
@@ -1927,33 +2048,33 @@ Słońce obiecało wrócić rano.</p>
     fa = sm((Math.abs(lk) - 0.22) / 0.4); sg = lk < 0 ? -1 : 1;
     if (fa > 0.01 && e > 0.02) { ctx.beginPath(); ctx.ellipse(sg * 9.6, 5, 4.2, 2.9, 0, 0, TAU); ctx.fillStyle = rgba(B_CHEEK, 0.75 * fa * e); ctx.fill(); }   /* rumieniec */
 
-    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, 0.92); ctx.stroke();
-    if (e > 0.03) { ctx.lineWidth = 1.8; ctx.strokeStyle = rgba(rimC, 0.8 * e); strokeOpen(arcOf(pts, aL - 0.9, aL + 0.9, 0.95, 0)); }
-    ctx.beginPath(); ctx.moveTo(-6, 7); ctx.quadraticCurveTo(-yaw * 2, 9.5, 6, 7); ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, 0.35); ctx.stroke();
+    polyP(pts); ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.92); ctx.stroke();
+    ctx.lineWidth = 1.8; ctx.strokeStyle = rgba(rimC, 0.8 * Math.max(e, 0.45)); strokeOpen(arcOf(pts, aL - 0.9, aL + 0.9, 0.95, 0));   /* Z15 */
+    ctx.beginPath(); ctx.moveTo(-6, 7); ctx.quadraticCurveTo(-yaw * 2, 9.5, 6, 7); ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.35); ctx.stroke();
     /* czubek: dwa piórka, podskakują z machnięciem, mokre oklapnięte */
     ctx.save(); ctx.translate(-lk * 2.2, -13); ctx.rotate((reduce ? 0 : Math.sin(t * 3.1) * 0.12 + flap0 * 0.05) - wet * 0.5 * sg);
     for (k = 0; k < 2; k++) {
       ctx.beginPath(); ctx.moveTo(k ? 0.6 : -1.6, 1); ctx.quadraticCurveTo(k ? 2.6 : -4.2, -5 + wet * 3, k ? 6.2 : -1.2, -8.4 + wet * 4); ctx.quadraticCurveTo(k ? 3.6 : 0.4, -3.6 + wet * 2, k ? 2.4 : 1, 1); ctx.closePath();
-      ctx.fillStyle = rgba(k ? bodyC : liteC, 1); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
+      ctx.fillStyle = rgba(k ? bodyC : liteC, 1); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.9); ctx.stroke();
     }
     ctx.restore();
     /* twarz przy zerkaniu przez ramię: duże oko z błyskami, zmartwiona brew, dzióbek; w drzemce oko zamknięte */
     if (fa > 0.01) {
       ctx.globalAlpha = fa; ex = sg * (7.4 + 3 * fa); ey = -1.6;
-      if (sleep > 0.5) { ctx.beginPath(); ctx.moveTo(ex - 2.6, ey); ctx.quadraticCurveTo(ex, ey + 2.4, ex + 2.6, ey); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke(); }
+      if (sleep > 0.5) { ctx.beginPath(); ctx.moveTo(ex - 2.6, ey); ctx.quadraticCurveTo(ex, ey + 2.4, ex + 2.6, ey); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.95); ctx.stroke(); }
       else {
         ctx.beginPath(); ctx.ellipse(ex, ey, 2.25, 3.25, sg * 0.12, 0, TAU); ctx.fillStyle = rgba(B_EYE, 1); ctx.fill();
         if (e < 0.5) { ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(LINE, 0.8 * (1 - e)); ctx.stroke(); }
         ctx.beginPath(); ctx.arc(ex - sg * 0.6, ey - 1.2, 0.95, 0, TAU); ctx.fillStyle = 'rgba(255,253,246,1)'; ctx.fill();
         ctx.beginPath(); ctx.arc(ex + sg * 0.7, ey + 1.3, 0.45, 0, TAU); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(ex - sg * 2.4, ey - 4.4); ctx.quadraticCurveTo(ex, ey - 5.6, ex + sg * 2.6, ey - 6.6); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(ink, 0.85); ctx.stroke();   /* brew uniesiona od strony dzióbka: zmartwienie */
+        ctx.beginPath(); ctx.moveTo(ex - sg * 2.4, ey - 4.4); ctx.quadraticCurveTo(ex, ey - 5.6, ex + sg * 2.6, ey - 6.6); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.85); ctx.stroke();   /* brew uniesiona od strony dzióbka: zmartwienie */
       }
       ctx.beginPath(); ctx.moveTo(sg * 12.4, -0.4); ctx.quadraticCurveTo(sg * (15.6 + 1.8 * fa), 1.2, sg * (16.6 + 1.6 * fa), 2.2); ctx.quadraticCurveTo(sg * 14.8, 3.4, sg * 12.4, 3.6); ctx.closePath();
-      ctx.fillStyle = rgba(mixc(BIRD_F0, B_BEAK, e), 1); ctx.fill(); ctx.lineWidth = 0.9; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+      ctx.fillStyle = rgba(mixc(BIRD_F0, B_BEAK, e), 1); ctx.fill(); ctx.lineWidth = 0.9; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.95); ctx.stroke();
       ctx.globalAlpha = 1;
     }
     if (sleep > 0.6 && !reduce) {   /* "z" nad głową w drzemce */
-      ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, 0.8);
+      ctx.lineWidth = 1; ctx.strokeStyle = rgba(ink, Z15.A_PTAK * 0.8);
       for (k = 0; k < 2; k++) { u = md(t * 0.45 + k * 0.5, 1); rr = 2.2 + u * 2; ex = 15 + u * 8 + k * 3; ey = -16 - u * 18; ctx.globalAlpha = (sleep - 0.6) / 0.4 * Math.sin(u * Math.PI); ctx.beginPath(); ctx.moveTo(ex - rr, ey - rr); ctx.lineTo(ex + rr, ey - rr); ctx.lineTo(ex - rr, ey + rr); ctx.lineTo(ex + rr, ey + rr); ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
@@ -1965,16 +2086,16 @@ Słońce obiecało wrócić rano.</p>
       polyP(poly); ctx.fillStyle = rgba(w ? mixc(sc1, SC_D, 0.25) : sc1, 1); ctx.fill();
       ctx.lineWidth = 1.3; ctx.strokeStyle = rgba(SC_D, 0.5); strokeOpen(offsetPts(rb.rt, -0.7));   /* cień spodu wstęgi (bez clip) */
       for (j = 0; j < 2; j++) { k = Math.round([0.6, 0.74][j] * (c.length - 1)); ctx.beginPath(); ctx.moveTo(lerp(rb.lt[k][0], rb.rt[k][0], 0.12), lerp(rb.lt[k][1], rb.rt[k][1], 0.12)); ctx.lineTo(lerp(rb.lt[k][0], rb.rt[k][0], 0.88), lerp(rb.lt[k][1], rb.rt[k][1], 0.88)); ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(mixc(sc1, [255, 236, 226], 0.6), 0.6); ctx.stroke(); }
-      polyP(poly); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+      polyP(poly); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], SC_D, e), 0.6); ctx.stroke();
       k = c.length - 1; u = Math.atan2(c[k][1] - c[k - 1][1], c[k][0] - c[k - 1][0]);   /* frędzle */
       ctx.beginPath(); for (j = 0; j < 4; j++) { ex = lerp(rb.lt[k][0], rb.rt[k][0], j / 3); ey = lerp(rb.lt[k][1], rb.rt[k][1], j / 3); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(u) * 3.2 + (reduce ? 0 : Math.sin(t * 9 + j) * 0.6), ey + Math.sin(u) * 3.2); }
       ctx.lineWidth = 0.8; ctx.stroke();
     }
     ctx.beginPath(); ctx.moveTo(-14.6 - yaw, -12.4); ctx.quadraticCurveTo(-yaw * 1.5, -9 + dive * 1.5, 14.6 - yaw, -12.4); ctx.lineTo(14 - yaw, -5.6); ctx.quadraticCurveTo(-yaw * 1.5, -2.4 + dive * 1.5, -14 - yaw, -5.6); ctx.closePath();
     gr = ctx.createLinearGradient(0, -12, 0, -3); gr.addColorStop(0, rgba(mixc(sc1, SC_L, 0.5 * (0.4 + 0.6 * e)), 1)); gr.addColorStop(0.55, rgba(sc1, 1)); gr.addColorStop(1, rgba(mixc(sc1, SC_D, 0.6), 1));
-    ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+    ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(mixc([234, 134, 138], SC_D, e), 0.6); ctx.stroke();
     ctx.beginPath(); for (j = -2; j <= 2; j++) { ex = j * 5.4 - yaw * 1.2; ctx.moveTo(ex, -11 + Math.abs(j) * 0.4); ctx.lineTo(ex + 0.5, -4.2 + Math.abs(j) * 0.4); } ctx.lineWidth = 0.6; ctx.strokeStyle = rgba(SC_D, 0.55); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(kx, ky, 4.3, 3.6, -0.4, 0, TAU); ctx.fillStyle = rgba(mixc(sc1, SC_D, 0.3), 1); ctx.fill(); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], [70, 16, 28], e), 0.85); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(kx, ky, 4.3, 3.6, -0.4, 0, TAU); ctx.fillStyle = rgba(mixc(sc1, SC_D, 0.3), 1); ctx.fill(); ctx.lineWidth = 0.95; ctx.strokeStyle = rgba(mixc([234, 134, 138], SC_D, e), 0.6); ctx.stroke();
     /* mokry: krople pod brzuszkiem; otrzepanie: rozprysk */
     if (wet > 0.05) {
       ctx.fillStyle = rgba(mixc(LINE, [176, 206, 246], e), 0.8 * wet);
@@ -2026,7 +2147,9 @@ Słońce obiecało wrócić rano.</p>
   function obAmt(z) { var tt = cl((z - NEAR) / (FAR - NEAR)); return cAll(sk + offAt(tt)); }
   function obG(z) { var tt = cl((z - NEAR) / (FAR - NEAR)); return sg(sk + offAt(tt)); }
   function obY(z, dy) { return HORIZON + (YP + dy) / z; }
-  function nc(mono, col, amt, nt) { return mixc(mixc(mono, col, amt), [150, 162, 232], nt); }
+  /* Z15: ton L0 rozjaśniany razem z etapem szarości (przeszkody idą w parze z chmurami, nie zostają ciemną plamą na pastelu) */
+  function monoEt(c) { return mixc(c, mixc(c, PAL.r0, 0.55), 0.9 * ST.g); }
+  function nc(mono, col, amt, nt) { return mixc(mixc(monoEt(mono), col, amt), [150, 162, 232], nt); }
   function drawWing(rx, ry, ang, L, fill) {
     ctx.save(); ctx.translate(rx, ry); ctx.rotate(ang);
     ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(L * 0.5, -27, L, -4); ctx.lineTo(L * 0.96, 4); ctx.quadraticCurveTo(L * 0.88, 14, L * 0.72, 12); ctx.quadraticCurveTo(L * 0.6, 20, L * 0.46, 16); ctx.quadraticCurveTo(L * 0.25, 19, 0, 9); ctx.closePath();
@@ -2040,23 +2163,23 @@ Słońce obiecało wrócić rano.</p>
     var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, o.dy + Math.sin(o.ph) * 7), amt = obAmt(z), k = sc * 0.95, fade, nt = nightK * 0.3 * amt;
     fade = sm(o.age / 0.7) * sm((z - 0.12) / 0.35) * (front ? 0.92 : 1);
     if (fade <= 0.02 || X < -110 * k - 20 || X > W + 110 * k + 20) return;
-    var ink = mixc(LINE, mixc([30, 26, 50], [196, 204, 248], nightK), amt), cb = nc([40, 46, 78], GS_BODY, amt, nt), cn = nc([30, 36, 64], GS_NECK, amt, nt), cw = nc([48, 54, 88], GS_WING, amt, nt),
-        cwf = nc([30, 36, 62], mixc(GS_WING, GS_NECK, 0.35), amt, nt), cbk = nc([62, 68, 102], GS_BEAK, amt, nt);
+    var cb = nc(PAL.c2, GS_BODY, amt, nt), cn = nc(PAL.c3, GS_NECK, amt, nt), cw = nc(PAL.c1, GS_WING, amt, nt),
+        cwf = nc(PAL.c3, mixc(GS_WING, GS_NECK, 0.35), amt, nt), cbk = nc(PAL.c1, GS_BEAK, amt, nt), ink = tonalEdge(mixc(cb, cn, 0.4), 1.1);   /* Z15: tony L0 i tonalna kreska */
     var a1 = lerp(-2.0, 1.25, 0.5 + 0.5 * Math.sin(o.ph)), a2 = lerp(-2.0, 1.25, 0.5 + 0.5 * Math.sin(o.ph - 0.55));
     ctx.save(); ctx.globalAlpha = fade; ctx.translate(X, Y); ctx.scale(o.dir * k, k);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4);
     drawWing(2, -8, a2, 56, cwf);
     ctx.beginPath(); ctx.moveTo(-36, -2); ctx.lineTo(-62, -9); ctx.lineTo(-66, 2); ctx.lineTo(-60, 11); ctx.lineTo(-36, 8); ctx.closePath(); ctx.fillStyle = rgba(cwf, 1); ctx.fill(); ctx.stroke();
     ctx.save(); ctx.rotate(-0.06); ctx.beginPath(); ctx.ellipse(-6, 2, 36, 16, 0, 0, Math.PI * 2);
     var bg2 = ctx.createLinearGradient(0, -14, 0, 18); bg2.addColorStop(0, rgba(mixc(cb, LIGHTC, 0.22 * amt), 1)); bg2.addColorStop(0.55, rgba(cb, 1)); bg2.addColorStop(1, rgba(mulc(cb, 0.78), 1)); ctx.fillStyle = bg2; ctx.fill(); ctx.stroke();
-    if (amt > 0.05) { ctx.beginPath(); ctx.ellipse(-6, 1, 33, 13, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.lineWidth = 2.2 / k; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95); }   /* jasny brzeg */
+    if (amt > 0.05) { ctx.beginPath(); ctx.ellipse(-6, 1, 33, 13, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.lineWidth = 2.2 / k; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4); }   /* jasny brzeg */
     ctx.restore();
     ctx.beginPath(); ctx.moveTo(24, -4); ctx.quadraticCurveTo(40, -8, 47, -27);
-    ctx.lineWidth = 10 + 3.4 / k; ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke(); ctx.lineWidth = 10; ctx.strokeStyle = rgba(cn, 1); ctx.stroke();
-    ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, 0.95);
+    ctx.lineWidth = 10 + 3.4 / k; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4); ctx.stroke(); ctx.lineWidth = 10; ctx.strokeStyle = rgba(cn, 1); ctx.stroke();
+    ctx.lineWidth = 1.7 / k; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4);
     ctx.beginPath(); ctx.ellipse(51, -31, 9.5, 7.2, -0.15, 0, Math.PI * 2); ctx.fillStyle = rgba(cn, 1); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(58, -34); ctx.lineTo(71, -29); ctx.lineTo(58, -26); ctx.closePath(); ctx.fillStyle = rgba(cbk, 1); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.arc(53, -33, 1.5, 0, Math.PI * 2); ctx.fillStyle = rgba(ink, 1); ctx.fill();
+    ctx.beginPath(); ctx.arc(53, -33, 1.5, 0, Math.PI * 2); ctx.fillStyle = rgba(mulc(cn, 0.55), 1); ctx.fill();
     drawWing(0, -9, a1, 64, cw);
     ctx.restore(); ctx.globalAlpha = 1;
   }
@@ -2065,14 +2188,14 @@ Słońce obiecało wrócić rano.</p>
     var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, o.dy), amt = obAmt(z), k = sc, fade, nt = nightK * 0.3 * amt, i2, q, fa, bxx, byy;
     fade = sm(o.age / 0.7) * sm((z - 0.12) / 0.35) * (front ? 0.92 : 1);
     if (fade <= 0.02 || X < -140 * k - 20 || X > W + 140 * k + 20) return;
-    var ink = mixc(LINE, mixc([30, 26, 50], [196, 204, 248], nightK), amt), cw = nc([48, 54, 88], GS_WING, amt, nt), cb = nc([40, 46, 78], GS_BODY, amt, nt);
+    var cw = nc(PAL.c2, GS_WING, amt, nt), cb = nc(PAL.c3, GS_BODY, amt, nt), ink = tonalEdge(cw, 1.1);   /* Z15 */
     ctx.save(); ctx.globalAlpha = fade; ctx.translate(X, Y); ctx.scale(k, k); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     for (i2 = STADO_OFF.length - 1; i2 >= 0; i2--) {
       q = stadoPos(o, i2); bxx = q[0]; byy = q[1] + Math.sin(o.ph + i2) * 3; fa = 0.45 + 0.55 * Math.sin(o.ph * 1.1 + i2 * 0.7);
       ctx.beginPath(); ctx.moveTo(bxx - 22, byy + 4); ctx.quadraticCurveTo(bxx - 12, byy - 18 * fa - 4, bxx, byy); ctx.quadraticCurveTo(bxx + 12, byy - 18 * fa - 4, bxx + 22, byy + 4);
-      ctx.lineWidth = 7 / Math.max(0.8, k * 0.8); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+      ctx.lineWidth = 7 / Math.max(0.8, k * 0.8); ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4); ctx.stroke();
       ctx.lineWidth = 4.2 / Math.max(0.8, k * 0.8); ctx.strokeStyle = rgba(cw, 1); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(bxx, byy + 3, 6.5, 4.6, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(cb, 1); ctx.fill(); ctx.lineWidth = 1.4 / k; ctx.strokeStyle = rgba(ink, 0.9); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(bxx, byy + 3, 6.5, 4.6, 0, 0, Math.PI * 2); ctx.fillStyle = rgba(cb, 1); ctx.fill(); ctx.lineWidth = 1.4 / k; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.3); ctx.stroke();
       if (amt > 0.05) { ctx.beginPath(); ctx.ellipse(bxx, byy + 2.4, 5, 3.2, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.lineWidth = 1.2 / k; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); }
     }
     ctx.restore(); ctx.globalAlpha = 1;
@@ -2082,8 +2205,7 @@ Słońce obiecało wrócić rano.</p>
     var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, 34), amt = obAmt(z), gA = obG(z), S = STORM[o.gi], b = z < 1.6 ? 0 : 1, nk = nightK, bu = o.typ === 'burza', sx = bu ? 1.2 : 1;
     var fade = sm(o.age / 0.8) * sm((z - 0.12) / (front ? 0.5 : 0.4)), a = (front ? 0.42 : 0.96) * fade, i2, fx, ph, yy, col, xx, ln, nr = bu ? 26 : 18, j, bxp, byp;
     if (fade <= 0.02 || X + 190 * sc * sx < -20 || X - 190 * sc * sx > W + 20) return;
-    drawSpr(S.mono[b], X, Y, sc * sx, a * (1 - gA * 0.85));
-    if (gA > 0.01) drawTintS(S.tint, X, Y, sc * sx, a * gA);
+    drawTintS(S.tint, X, Y, sc * sx, a);   /* Z15: burzowe tony (średnie, fioletowo-szare), bez czarnego konturu */
     if (bu && o.flash > 0.02 && !reduce) { ctx.globalCompositeOperation = 'lighter'; drawSpr(S.tint, X, Y, sc * sx, a * o.flash * 0.5); ctx.globalCompositeOperation = 'source-over'; }
     col = mixc(LINE, mixc([150, 178, 238], [170, 186, 255], nk), amt);
     ctx.strokeStyle = rgba(col, 0.62 * fade * (front ? 0.8 : 1)); ctx.lineWidth = Math.max(1, 1.3 * Math.min(sc, 1.6)); ctx.lineCap = 'round';
@@ -2112,8 +2234,8 @@ Słońce obiecało wrócić rano.</p>
     var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, o.dy), amt = obAmt(z), half = o.half * sc, sag = o.sag * sc, fade, nt = nightK * 0.3 * amt, kx, ky, ks = 24 * sc, i2, u, px, py, ink, kc, kc2;
     fade = sm(o.age / 0.7) * sm((z - 0.12) / 0.35) * (front ? 0.55 : 1);
     if (fade <= 0.02 || X + half + 60 * sc < -10 || X - half - 60 * sc > W + 10) return;
-    ink = mixc(LINE, mixc([40, 34, 60], [210, 216, 255], nightK), amt);
-    kc = nc([60, 66, 100], [255, 120, 140], amt, nt); kc2 = nc([60, 66, 100], [255, 214, 120], amt, nt);
+    ink = inkZ(amt);   /* Z15: jasny w L0, średni w kolorze */
+    kc = nc(PAL.c1, [255, 120, 140], amt, nt); kc2 = nc(PAL.c1, [255, 214, 120], amt, nt);
     ctx.save(); ctx.globalAlpha = fade; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(X - half, Y); ctx.quadraticCurveTo(X, Y + sag * 2, X + half, Y + sag * 0.4);
     ctx.lineWidth = Math.max(1, 1.5 * Math.min(sc, 1.6)); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
@@ -2139,8 +2261,7 @@ Słońce obiecało wrócić rano.</p>
     var z = o.z, sc = 1 / z, X = W / 2 + (o.x - camX) * sc, Y = obY(z, 44), gA = obG(z), F = FOGS[o.gi], b = z < 1.6 ? 0 : 1, k, wob, j, px, py, u, wcol, ww;
     var fade = sm(o.age / 0.9) * sm((z - 0.12) / (front ? 0.5 : 0.4)), a = (front ? 0.45 : 0.9) * fade;
     if (fade <= 0.02 || X + 190 * sc < -20 || X - 190 * sc > W + 20) return;
-    drawSpr(F.mono[b], X, Y, sc, a * 0.6 * (1 - gA * 0.9));
-    if (gA > 0.01) drawTintS(F.tint, X, Y, sc, a * gA);
+    drawTintS(F.tint, X, Y, sc, a * (0.7 + 0.3 * gA));   /* Z15: jasna, miękka ławica także w L0 */
     /* Z4: smugi mgły: kilka pasm o zmiennej grubości, każde płynie z inną prędkością (zimny welon) */
     wcol = mixc(LINE, [206, 222, 244], gA); ctx.lineCap = 'round';
     for (k = 0; k < 6; k++) {
@@ -2156,10 +2277,10 @@ Słońce obiecało wrócić rano.</p>
   /* jastrząb widziany od tyłu z góry: rozpostarte skrzydła z palcami, wachlarz ogona, mała głowa z haczykowatym dziobem */
   var HK_W = [[10, -12], [60, -34], [110, -40], [150, -30], [160, -16], [146, -12], [153, 2], [136, 5], [140, 20], [114, 20], [92, 30], [58, 36], [26, 26], [10, 12]];
   function drawHawk(X, Y, sz, flap, amt, alpha, cien) {
-    var side, j, p, ink = mixc(LINE, [40, 30, 36], amt), cw = mixc(HK_MONO, HK_WING, amt), cbd = mixc(HK_MONO, HK_BODY, amt), ctl = mixc(HK_MONO, HK_TAIL, amt), dk = mixc(HK_MONO, HK_DARK, amt);
-    function F(c) { return cien ? 'rgba(3,5,14,0.62)' : rgba(c, 1); }
+    var side, j, p, cw = mixc(monoEt(HK_MONO), HK_WING, amt), cbd = mixc(monoEt(HK_MONO), HK_BODY, amt), ctl = mixc(monoEt(HK_MONO), HK_TAIL, amt), dk = mixc(monoEt(HK_MONO), HK_DARK, amt), ink = tonalEdge(cbd, 1.2);
+    function F(c) { return cien ? rgba(mulc(NAVY, 0.72), 0.55) : rgba(c, 1); }   /* Z15: cień zapowiedzi tonalny (nie czarny) */
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(X, Y); ctx.scale(sz, sz); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = cien ? 'rgba(236,240,248,0.35)' : rgba(ink, 0.95); if (cien) ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = cien ? 'rgba(236,240,248,0.35)' : rgba(ink, Z15.A_KRAWEDZ * 1.4); if (cien) ctx.setLineDash([6, 5]);
     ctx.beginPath(); ctx.moveTo(-16, 16); ctx.lineTo(-30, 64); ctx.quadraticCurveTo(0, 86, 30, 64); ctx.lineTo(16, 16); ctx.closePath(); ctx.fillStyle = F(ctl); ctx.fill(); ctx.stroke();
     if (!cien) { ctx.save(); ctx.globalAlpha = alpha * 0.55; ctx.strokeStyle = rgba(dk, 1); ctx.beginPath(); ctx.moveTo(-20, 34); ctx.lineTo(20, 34); ctx.moveTo(-24, 48); ctx.lineTo(24, 48); ctx.moveTo(-27, 60); ctx.lineTo(27, 60); ctx.stroke(); ctx.restore(); }
     for (side = -1; side <= 1; side += 2) {
@@ -2171,18 +2292,18 @@ Słońce obiecało wrócić rano.</p>
       if (!cien) { ctx.save(); ctx.globalAlpha = alpha * 0.4; ctx.beginPath(); ctx.moveTo(side * 100, -2 - flap * 15); ctx.lineTo(side * 146, -7 - flap * 28); ctx.moveTo(side * 96, 8 - flap * 14); ctx.lineTo(side * 140, 3 - flap * 25); ctx.moveTo(side * 76, 16); ctx.lineTo(side * 124, 13 - flap * 20); ctx.stroke(); ctx.restore(); }
     }
     ctx.beginPath(); ctx.ellipse(0, 6, 18, 34, 0, 0, Math.PI * 2); ctx.fillStyle = F(cbd); ctx.fill(); ctx.stroke();
-    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, 6, 15, 31, 0, Math.PI * (LIGHTX > 0 ? 1.55 : 1.1), Math.PI * (LIGHTX > 0 ? 1.95 : 1.5)); ctx.lineWidth = 2.6 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, 0.95); }   /* jasny brzeg grzbietu */
+    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, 6, 15, 31, 0, Math.PI * (LIGHTX > 0 ? 1.55 : 1.1), Math.PI * (LIGHTX > 0 ? 1.95 : 1.5)); ctx.lineWidth = 2.6 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.6 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4); }   /* jasny brzeg grzbietu */
     ctx.beginPath(); ctx.ellipse(0, -30, 11, 10, 0, 0, Math.PI * 2); ctx.fillStyle = F(cbd); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-4, -37); ctx.quadraticCurveTo(0, -56, 5, -43); ctx.lineTo(4, -37); ctx.closePath(); ctx.fillStyle = cien ? F(cbd) : rgba(mixc([60, 66, 100], [250, 190, 80], amt), 1); ctx.fill(); ctx.stroke();
-    if (!cien) { ctx.beginPath(); ctx.moveTo(-8, -35); ctx.lineTo(-3, -32); ctx.moveTo(8, -35); ctx.lineTo(3, -32); ctx.lineWidth = 2 / sz; ctx.strokeStyle = rgba(mixc(LINE, [30, 24, 30], amt), 1); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(-4, -37); ctx.quadraticCurveTo(0, -56, 5, -43); ctx.lineTo(4, -37); ctx.closePath(); ctx.fillStyle = cien ? F(cbd) : rgba(mixc(PAL.c1, [250, 190, 80], amt), 1); ctx.fill(); ctx.stroke();
+    if (!cien) { ctx.beginPath(); ctx.moveTo(-8, -35); ctx.lineTo(-3, -32); ctx.moveTo(8, -35); ctx.lineTo(3, -32); ctx.lineWidth = 2 / sz; ctx.strokeStyle = rgba(mixc(PAL.r0, [86, 64, 70], amt), 0.9); ctx.stroke(); }
     ctx.setLineDash([]); ctx.restore();
   }
   /* sowa (nocny drapieżnik) od frontu: szeroko rozpostarte miękkie skrzydła, okrągła twarz z dużymi oczami, uszka z piór; bez makabry */
   function drawOwl(X, Y, sz, flap, amt, alpha, cien) {
-    var side, j, ink = mixc(LINE, [34, 30, 48], amt), cw = mixc(HK_MONO, OW_WING, amt), cbd = mixc(HK_MONO, OW_BODY, amt), cf = mixc(HK_MONO, OW_FACE, amt), ce = mixc(LINE, OW_EYE, amt);
-    function F(c) { return cien ? 'rgba(3,5,14,0.62)' : rgba(c, 1); }
+    var side, j, cw = mixc(monoEt(HK_MONO), OW_WING, amt), cbd = mixc(monoEt(HK_MONO), OW_BODY, amt), cf = mixc(monoEt(HK_MONO), OW_FACE, amt), ce = mixc(LINE, OW_EYE, amt), ink = tonalEdge(cbd, 1.2);
+    function F(c) { return cien ? rgba(mulc(NAVY, 0.72), 0.55) : rgba(c, 1); }   /* Z15 */
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(X, Y); ctx.scale(sz, sz); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = cien ? 'rgba(236,240,248,0.35)' : rgba(ink, 0.95); if (cien) ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = cien ? 'rgba(236,240,248,0.35)' : rgba(ink, Z15.A_KRAWEDZ * 1.4); if (cien) ctx.setLineDash([6, 5]);
     for (side = -1; side <= 1; side += 2) {
       ctx.beginPath(); ctx.moveTo(side * 14, -14);
       ctx.bezierCurveTo(side * 70, -52 - flap * 26, side * 140, -34 - flap * 30, side * 164, -2 - flap * 40);
@@ -2196,14 +2317,14 @@ Słońce obiecało wrócić rano.</p>
     ctx.beginPath(); ctx.ellipse(0, -30, 30, 25, 0, 0, Math.PI * 2);
     if (!cien && amt > 0.05) { var og = ctx.createRadialGradient(LIGHTX * 10, -42, 4, 0, -30, 34); og.addColorStop(0, rgba(mixc(cbd, LIGHTC, 0.35 * amt), 1)); og.addColorStop(1, rgba(mulc(cbd, 0.82), 1)); ctx.fillStyle = og; } else ctx.fillStyle = F(cbd);   /* Z4: objętość głowy */
     ctx.fill(); ctx.stroke();
-    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, -30, 27, 22, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.lineWidth = 2.4 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.55 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, 0.95); }
+    if (!cien && amt > 0.05) { ctx.beginPath(); ctx.ellipse(0, -30, 27, 22, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.lineWidth = 2.4 / sz; ctx.strokeStyle = rgba(mixc(LIGHTC, [255, 255, 255], 0.3), 0.55 * amt); ctx.stroke(); ctx.lineWidth = 1.8 / sz; ctx.strokeStyle = rgba(ink, Z15.A_KRAWEDZ * 1.4); }
     if (!cien) {
       for (side = -1; side <= 1; side += 2) {
         ctx.beginPath(); ctx.arc(side * 12, -32, 12, 0, Math.PI * 2); ctx.fillStyle = rgba(cf, 1); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(side * 12, -32, 7.5, 0, Math.PI * 2); ctx.fillStyle = rgba(ce, 1); ctx.fill();
         ctx.beginPath(); ctx.arc(side * 12 + side * 0.5, -32, 3.4, 0, Math.PI * 2); ctx.fillStyle = rgba(mixc([20, 18, 30], [20, 18, 30], 0), 1); ctx.fill();
       }
-      ctx.beginPath(); ctx.moveTo(-4, -24); ctx.lineTo(0, -14); ctx.lineTo(4, -24); ctx.closePath(); ctx.fillStyle = rgba(mixc([60, 66, 100], [250, 190, 80], amt), 1); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-4, -24); ctx.lineTo(0, -14); ctx.lineTo(4, -24); ctx.closePath(); ctx.fillStyle = rgba(mixc(PAL.c1, [250, 190, 80], amt), 1); ctx.fill(); ctx.stroke();
     }
     ctx.setLineDash([]); ctx.restore();
   }
@@ -2242,11 +2363,11 @@ Słońce obiecało wrócić rano.</p>
     ctx.fillStyle = rgba(LINE, b); ctx.font = '700 15px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('!', cx, cy + 8); ctx.restore();
   }
   function drawParts() {
-    var k, p, e = sm((sk - 0.13) / 0.55), body = mixc(BIRD_F0, B_BODY, e), ink = mixc(LINE, [44, 32, 60], e), dc = mixc(LINE, [150, 180, 240], e);
+    var k, p, e = sm((sk - 0.13) / 0.55), body = mixc(BIRD_F0, B_BODY, e), ink = tonalEdge(body, 1.2), dc = mixc(LINE, [150, 180, 240], e);   /* Z15: tonalna kreska */
     for (k = 0; k < plumki.length; k++) {
       p = plumki[k]; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = cl(p.life / 0.6);
       ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-2, -3.6, 7.5, -0.6); ctx.quadraticCurveTo(8.6, 0.6, 7, 1); ctx.quadraticCurveTo(-1, 3.2, -8, 0); ctx.closePath();
-      ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.strokeStyle = rgba(ink, 0.9); ctx.lineWidth = 1; ctx.stroke();   /* Z4: pióro z chorągiewką */
+      ctx.fillStyle = rgba(body, 1); ctx.fill(); ctx.strokeStyle = rgba(ink, 0.6); ctx.lineWidth = 1; ctx.stroke();   /* Z4: pióro z chorągiewką */
       ctx.beginPath(); ctx.moveTo(-10, 0.4); ctx.quadraticCurveTo(0, -0.6, 7.6, 0); ctx.lineWidth = 0.7; ctx.stroke(); ctx.restore();
     }
     ctx.strokeStyle = rgba(dc, 0.65); ctx.lineWidth = 1.4; ctx.lineCap = 'round'; ctx.beginPath();
@@ -2260,8 +2381,7 @@ Słońce obiecało wrócić rano.</p>
     col = mixc(LINE, [214, 232, 255], amt);
     ctx.save();
     /* Z4: chmura gradowa w stylu kulis (tusz w L0, akwarela burzowa w kolorze), lekko kołysze się */
-    drawSpr(S.mono[1], X0 + (reduce ? 0 : Math.sin(t * 1.3) * 3), top + 26, 0.72, env * (1 - gA * 0.85));
-    if (gA > 0.01) drawTintS(S.tint, X0 + (reduce ? 0 : Math.sin(t * 1.3) * 3), top + 26, 0.72, env * gA);
+    drawTintS(S.tint, X0 + (reduce ? 0 : Math.sin(t * 1.3) * 3), top + 26, 0.72, env);   /* Z15: tony burzowe w każdym etapie */
     if (o.faza === 'zapowiedz') {
       a = (0.25 + 0.2 * (reduce ? 0.5 : 0.5 + 0.5 * Math.sin(t * 9))) * env;
       for (k = 0; k < 3; k++) {   /* miękkie pasy cienia tam, gdzie spadnie grad */
@@ -2280,7 +2400,7 @@ Słońce obiecało wrócić rano.</p>
           ctx.strokeStyle = rgba(col, 0.35); ctx.lineWidth = rr * 0.9; ctx.beginPath(); ctx.moveTo(xc + jx, yy - rr * 4.5); ctx.lineTo(xc + jx, yy - rr); ctx.stroke();   /* smuga spadania */
           ctx.save(); ctx.translate(xc + jx, yy); ctx.rotate(rot);
           ctx.beginPath(); ctx.moveTo(rr, 0); ctx.quadraticCurveTo(rr * 0.9, rr * 0.9, 0, rr * 1.05); ctx.quadraticCurveTo(-rr * 1.05, rr * 0.8, -rr, 0); ctx.quadraticCurveTo(-rr * 0.8, -rr * 1.05, 0, -rr); ctx.quadraticCurveTo(rr * 1.0, -rr * 0.8, rr, 0); ctx.closePath();
-          ctx.fillStyle = rgba(mixc(MONO, mixc([196, 220, 250], LIGHTC, 0.2), amt), 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(mixc(LINE, inkCol(), amt * 0.7), 0.95); ctx.stroke();
+          var hc = mixc(mixc(PAL.c0, PAL.r0, 0.4), mixc([196, 220, 250], LIGHTC, 0.2), amt); ctx.fillStyle = rgba(hc, 1); ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = rgba(tonalEdge(hc, 1.3), 0.55); ctx.stroke();   /* Z15: lód jasny, krawędź tonalna */
           ctx.beginPath(); ctx.arc(-rr * 0.3, -rr * 0.35, rr * 0.28, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();   /* połysk lodu */
           ctx.restore();
         }
@@ -2501,7 +2621,7 @@ Słońce obiecało wrócić rano.</p>
       u = pos[k];
       F = u < 0.5 ? mixc(P.sT, P.sM, u / 0.5) : (u < 0.85 ? mixc(P.sM, P.sH, (u - 0.5) / 0.35) : mixc(P.sH, P.sL, (u - 0.85) / 0.15));
       hz = u > 0.7 ? 0.4 * (u - 0.7) / 0.3 : 0;
-      base = stageCol(P.bg, F, P.warm, hz, 0.1 + 0.4 * sm((u - 0.45) / 0.55));   /* ciepło pory głównie przy horyzoncie (u góry nie psuje błękitu) */
+      base = stageCol(mixc(P.bg, P.h0, Math.pow(u, 1.5)), F, P.warm, hz, 0.1 + 0.4 * sm((u - 0.45) / 0.55));   /* Z15: L0 = miękki gradient tonów, nie płaski granat */   /* ciepło pory głównie przy horyzoncie (u góry nie psuje błękitu) */
       hi = (3 + k * 5) % NHUE; hw = hueW[hi] * sm(u * 1.15) * 0.5 * ST.p;
       out.push(mixc(base, hueC(hi), hw));
     }
@@ -2512,7 +2632,14 @@ Słońce obiecało wrócić rano.</p>
      lekki = tryb lekki (automatycznie przy < 50 kl/s poza ?test; w ?test przełącznik __okruszek.lekki()): bez papieru, laserunku nieba, promieni, drobin i poświaty, jedna warstwa mgiełki. */
   var DBG = {};
   var LIGHTX = 0, LW_L = 0.5, LIGHTC = [255, 226, 170], SUNP = { x: 0, y: 0, a: 0, e: 0, mx: 0, my: 0, ma: 0 }, lekki = Q.get('lekki') === '1', hazeCol = [13, 18, 36], TCACHE = {}, PAT = {};
-  function inkCol() { return mixc([62, 46, 80], [38, 44, 100], PAL.nightW); }
+  /* Z15: dawny ciemny tusz koloru jest teraz tonem średnim (tonalny, nie czarny) */
+  function inkCol() { return mixc(PAL.c1, mixc(PAL.sh, [176, 160, 206], 0.35), 0.5); }
+  /* Z15: tony dynamiczne L0 (dawne stałe ciemnego L0) śledzą paletę pory doby; w miejscu, bez nowych tablic */
+  function updZ15() {
+    var P = PAL;
+    cpc(NAVY, P.s0); cpc(MONO, P.c1); cpc(STM, mixc(P.c3, P.s0, 0.45)); cpc(HK_MONO, mixc(P.c2, P.c3, 0.5));
+    cpc(BIRD_F0, mixc(B_BODY, [236, 240, 250], 0.42)); cpc(BIRD_D0, mixc(B_DARK, [200, 206, 230], 0.4));   /* 15.8: Okruszek w L0 pastelowo niebieski (czytelny na jasnym świecie) */
+  }
   function updLight() {
     /* Z11: kierunek słońca (00-wybor.md: wschód ZA PLECAMI gracza, zachód PRZED Okruszkiem): u = 0 świt (słońce za kamerą, niewidoczne, światło od widza: SUNP.b),
        u = 0,5 dzień (słońce wysoko u góry kadru), u = 1 zachód (słońce na wprost nad horyzontem). Kąt wzniesienia liczony od przodu: th = (1 - u) * pi. */
@@ -2706,7 +2833,7 @@ Słońce obiecało wrócić rano.</p>
     var qd, k, j, hold = isHold() && state === 'gra', nk = nightK, hy = hyK, f4 = sm((sk - 0.78) / 0.15);
     var c0z = performance.now();   /* Z4: czas rysowania świata (hak cpu()) */
     if (TORON) torPrzedRysowaniem(dt);   /* Z14: ptaszek na wysokości swojego wiersza (BIRDY), skrzydła wg akcji */
-    updStage(); updLight(); if (!DBG.tint) updTint();
+    updStage(); updLight(); updZ15(); if (!DBG.tint) updTint();
     if (!paused) seaD += dt * tempo * curSpeed * 0.55;   /* Z4: droga morza chmur (czysto wizualna); morze leży nisko pod ptaszkiem, więc płynie wolniej niż kulisy (paralaksa) */
     updSeaRows();
     var cSky = cAll(sk + OFF_NIEBO + bloomLag(1.15)), aStr = streakC(sk + bloomLag(0));   /* smugi są najbliżej: w rozkwicie wchodzą jako ostatnie */
@@ -2741,9 +2868,9 @@ Słońce obiecało wrócić rano.</p>
     var gr;
     drawSunMoon(cSky);
     ctx.globalAlpha = 1;
-    hazeCol = mixc(sk2.col[6], stageCol(PAL.bg, PAL.fog, warmP), 0.45);
+    hazeCol = mixc(sk2.col[6], stageCol(PAL.f0, PAL.fog, warmP), 0.45);
 
-    var seaBase = stageCol(PAL.bg, mixc(PAL.sea[2], PAL.sM, 0.3), warmP, 0, 0.15), seaTop = mixc(seaBase, sk2.col[6], 0.4 * ST.p), sgr = ctx.createLinearGradient(0, HORIZON + seaDY, 0, H + 20);
+    var seaBase = stageCol(PAL.m0[2], mixc(PAL.sea[2], PAL.sM, 0.3), warmP, 0, 0.15), seaTop = mixc(seaBase, sk2.col[6], 0.3 + 0.1 * ST.p), sgr = ctx.createLinearGradient(0, HORIZON + seaDY, 0, H + 20);
     sgr.addColorStop(0, rgba(seaTop, 1)); sgr.addColorStop(1, rgba(seaBase, 1));
     ctx.fillStyle = sgr; ctx.fillRect(-70, HORIZON + seaDY, W + 140, H - HORIZON - seaDY + 70);
     /* Z4: mgiełka nad dalekim morzem (pas przy horyzoncie) */
@@ -2833,7 +2960,7 @@ Słońce obiecało wrócić rano.</p>
       var top = lerp(H + 30, BIRDY + 14, near); top = lerp(top, BIRDY + 34, lad);
       for (k = 1; k >= 0; k--) {   /* Z4: bliskie kłęby (te same kafle co morze, w dużej skali) */
         var nT = SEA_T[k], nsc = 2.3 - k * 0.45, nY = top + 14 + k * 16 - nT.t.top * nsc * 0.55, ntw = SEA_TW * nsc, nx0 = md(W / 2 + (-camX * 0.9 - 170 * k) * nsc + (reduce ? 0 : Math.sin(t * 0.6 + k) * 8), ntw) - ntw, nx;
-        for (nx = nx0; nx < W + 1; nx += ntw) { drawTile(nT.ink, nx, nY, nsc, 1 - ST.g * 0.8); if (ST.g > 0.01) drawTileS(nT.tint, nx, nY, nsc, ST.g); }
+        for (nx = nx0; nx < W + 1; nx += ntw) drawTileS(nT.tint, nx, nY, nsc, 1);   /* Z15: tony, bez tuszu */
       }
       ctx.globalAlpha = 1;
     }
@@ -2847,17 +2974,22 @@ Słońce obiecało wrócić rano.</p>
       else darkK = Math.max(darkK, sm((bz.z - 0.1) / (G.ZB - 0.1)));
       if (bz.flash > 0.02 && !reduce) flashK = Math.max(flashK, bz.flash * 0.9);
     }
-    if (darkK > 0.01) { ctx.fillStyle = 'rgba(4,6,18,' + (0.5 * darkK).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (darkK > 0.01) { ctx.fillStyle = rgba(mixc(NAVY, [46, 38, 72], 0.5), 0.45 * darkK); ctx.fillRect(0, 0, W, H); }   /* Z15: ściemnienie burzy fioletowo-szare, nie czarne */
     z11Nakladki();   /* Z11: cień samolotu nad głową (olbrzym przykrywa ekran), kierunek spojrzenia Okruszka */
     for (k = 0; k < obst.length; k++) if (obst[k].typ === 'wiatr') drawWiatr(obst[k]);
     drawEdgeGlow(); drawHyper(); drawRozkwit();
     if (flashK > 0.02 && !reduce) { ctx.fillStyle = 'rgba(232,238,255,' + (0.55 * Math.min(1, flashK)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (DBG.tor15) drawTorPokaz();   /* Z15: pokaz palety toru (tylko ?test) */
     if (!DBG.bloom) drawBloom(bloomAmt(cSky, f4));
     cpuMs.push(performance.now() - c0z); if (cpuMs.length > DTN) cpuMs.shift();   /* Z4: faktura papieru i poświata (bloom) */
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
     if (!introOn) {   /* Z5: we wstępie sam świat, bez wskaźników */
-      if (state !== 'koniec') drawHUD();
+      if (state !== 'koniec') {   /* Z15 (15.8): na jasnym niebie pod białym tekstem HUD miękki, tonalny welon u góry ekranu (czytelność; jeden gradient, bez cieni tekstu) */
+        var hk = sm((lumOf(PAL.bg) - 120) / 60);
+        if (hk > 0.01) { if (!HUDW || HUDW.key !== Math.round(hk * 20)) { HUDW = ctx.createLinearGradient(0, 0, 0, 120); HUDW.addColorStop(0, rgba([58, 66, 108], 0.34 * hk)); HUDW.addColorStop(1, rgba([58, 66, 108], 0)); HUDW.key = Math.round(hk * 20); } ctx.fillStyle = HUDW; ctx.fillRect(0, 0, W, 120); }
+        drawHUD();
+      }
       drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
       drawLvMsg();
     }
@@ -2870,6 +3002,14 @@ Słońce obiecało wrócić rano.</p>
     drawIntro(dt);   /* Z5: welon i zdania wstępu; po wstępie krótkie rozjaśnienie */
   }
 
+  /* Z15: przejście etapów koloru w czasie: rysowanie używa wygładzonego etapu skV (stała czasu Z15_TAU s, ok. 0,3 s do 95%),
+     żeby kolor po wlocie w prąd napływał falą zamiast skakać w jednej klatce. Logika (E, sk, kolory() w haku) bez zmian; przy blokadzie (ustaw, ustawPoziom, ustawEnergie) bez wygładzania. */
+  var skV = 0, Z15_TAU = 0.11, Z15_LIFT = 0.6, HUDW = null;
+  function skWidok(dt) {
+    if (lockS !== null || lockE !== null || gameT < 0.05 || state !== 'gra') skV = sk;
+    else if (!paused) skV += (sk - skV) * (1 - Math.exp(-dt * tempo / Z15_TAU));
+    return skV;
+  }
   function frame(now) {
     var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j, tf0 = performance.now(); last = now; frames++;
     dts.push(dt); if (dts.length > DTN) dts.shift();
@@ -2879,7 +3019,7 @@ Słońce obiecało wrócić rano.</p>
       var dtg = dt * tempo, n = Math.max(1, Math.ceil(dtg / 0.034));
       for (k = 0; k < n; k++) sim(dtg / n);
     }
-    render(dt);
+    var skLogika = sk; sk = skWidok(dt); render(dt); sk = skLogika;   /* Z15: rysowanie z wygładzonym etapem koloru */
     dzwiekKlatka();   /* Z5: prędkość i nurkowanie do dźwięku, tanio, raz na klatkę */
     if (TEST) { k = performance.now() - tf0; ftAll.push(k); if (ftAll.length > 600) ftAll.shift(); if (kurt && !kurt.scena) { kurtFt.push(k); if (kurtFt.length > 2000) kurtFt.shift(); } }   /* Z10: czas pracy klatki (ogółem i przy bramie) */
 
@@ -2924,7 +3064,7 @@ Słońce obiecało wrócić rano.</p>
      nBaza = napięcie na start krainy; final = id finału (Z11); zwiastun = element krainy pokazywany 300 m przed jej bramą. Teksty (nazwy, tablice) w teksty.js. */
   var V_TYP = 18.3;   /* m/s: mediana prędkości bota "70%" w K1 z 10 ziaren (pomiar Z10, raporty/z10-pomiar.md) */
   var KRAINY = [
-    { id: 1, czasTyp: 90, pora: 0.75, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
+    { id: 1, czasTyp: 90, pora: 0.42, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
       drapieznik: { jastrzab: 0, sowa: 0 }, nBaza: 0.10, final: 'trzy_w_rytmie' },
     { id: 2, czasTyp: 120, pora: 0.92, akcent: [200, 196, 240], sink: 0.036, pradCo: 1.05, pradTyp: 'tecza_ks', przeszkody: { ptak: 0.5, deszcz: 1, grad: 0.4 }, debiut: ['deszcz', 'grad', 'sowa', 'tecza'],
       drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.20, final: 'ulewa_i_luk', zwiastun: 'tecza' },
@@ -3528,14 +3668,12 @@ Słońce obiecało wrócić rano.</p>
     se = sk + offAt(tt); gA = sg(se); olA = gA * lerp(1, 0.4, sm((se - 0.35) / 0.5)); bk = bucketOf(z);
     fade = sm((z - NEAR) / 0.35) * sm((FAR - z) / 1.0);
     if (fade <= 0.01) return;
-    am = (1 - tt * 0.45) * (1 - gA * 0.8) * fade; at = gA * (1 - tt * 0.35) * fade; ao = olA * (1 - tt * 0.45) * fade;
+    at = (1 - tt * 0.35) * fade;   /* Z15: tony w każdym etapie (bez tuszu i podwójnego konturu) */
     for (k = 0; k < kurtFlat.clouds.length; k++) {
       c = kurtFlat.clouds[k]; p = POOL[c.p];
       Xc = W / 2 + (c.x - camX * (1 - tt * 0.6)) * sc; Yc = HORIZON + c.y * sc;
       if (Xc + p.g.maxx * sc < -60 || Xc + p.g.minx * sc > W + 60 || Yc < -20 || Yc + p.g.top * sc > H + 20) continue;
-      if (am > 0.01) drawSpr(p.mono[bk], Xc, Yc, sc, am);
       if (at > 0.01) drawSpr(p.tint, Xc, Yc, sc, at);
-      if (ao > 0.05 && gA < 0.5) drawSpr(p.ol[bk], Xc, Yc, sc, ao);   /* podwójny kontur tylko w etapie szarości */
     }
     ctx.globalAlpha = 1;
   }
@@ -3766,7 +3904,7 @@ Słońce obiecało wrócić rano.</p>
     gr = x.createLinearGradient(0, -60, 0, L); gr.addColorStop(0, rgba(C.top, 1)); gr.addColorStop(0.28, rgba(C.mid, 1)); gr.addColorStop(0.62, rgba(C.bot, 1)); gr.addColorStop(1, rgba(C.fog, 1));
     x.fillStyle = gr; wFillAll(x, d, R32(77 + d.k));
     x.save(); x.beginPath(); polyPath(x, d.fill, true); x.clip(); x.globalCompositeOperation = 'source-atop';
-    var sd = C.wShR >= C.wShL ? 1 : -1, xb = sd * hw * 0.26, mc = mixc([255, 255, 255], C.shade, 0.85);   /* bryła: ściana boczna w cieniu od wyraźnej krawędzi (jak narożnik budynku); mnożenie barwy, więc kontrast w każdym etapie koloru */
+    var sd = C.wShR >= C.wShL ? 1 : -1, xb = sd * hw * 0.26, mc = mixc([255, 255, 255], C.shade, C.mulK);   /* Z15: siła cienia boku C.mulK (L0 łagodnie, kolor mocniej) */   /* bryła: ściana boczna w cieniu od wyraźnej krawędzi (jak narożnik budynku); mnożenie barwy, więc kontrast w każdym etapie koloru */
     x.globalCompositeOperation = 'multiply';
     gr = x.createLinearGradient(xb, 0, sd * hw * 1.05, 0); gr.addColorStop(0, rgba(mixc([255, 255, 255], mc, 0.6), 1)); gr.addColorStop(0.08, rgba(mc, 1)); gr.addColorStop(1, rgba(mixc(mc, C.shade, 0.5), 1));
     x.fillStyle = gr; x.fillRect(Math.min(xb, sd * hw * 1.3), -150, Math.abs(sd * hw * 1.3 - xb), L + 160);
@@ -3787,14 +3925,14 @@ Słońce obiecało wrócić rano.</p>
   }
   function wiezaParams(S) {
     var P = PAL, F = TOWER_F[S.ci], C = {};
-    C.top = stageCol(MONO, mixc(F, [255, 250, 244], 0.18), P.warm); C.mid = stageCol(MONO, mixc(F, P.sh, 0.22), P.warm); C.bot = stageCol(MONO, mixc(F, P.sh, 0.5), P.warm); C.fog = stageCol(MONO, mixc(P.fog, P.cM, 0.45), P.warm);
-    C.shade = stageCol(NAVY, mixc(P.sh, [92, 84, 146], 0.55), P.warm); C.shadeA = 0.62 + 0.2 * ST.p;
-    C.rim = mixc(stageCol(LINE, P.rim, P.warm), LIGHTC, 0.35 * ST.w); C.rimA = 0.85 * sm((sk + 0.02 - 0.3) / 0.3);
+    C.top = stageCol(mixc(P.c0, P.c1, 0.3), mixc(F, [255, 250, 244], 0.18), P.warm); C.mid = stageCol(P.c1, mixc(F, P.sh, 0.22), P.warm); C.bot = stageCol(P.c2, mixc(F, P.sh, 0.5), P.warm); C.fog = stageCol(P.f0, mixc(P.fog, P.cM, 0.45), P.warm);
+    C.shade = stageCol(P.s0, mixc(P.sh, [92, 84, 146], 0.55), P.warm); C.shadeA = 0.62 + 0.2 * ST.p; C.mulK = lerp(0.42, 0.85, sm((sk + 0.02 - 0.3) / 0.4));
+    C.rim = mixc(stageCol(P.r0, P.rim, P.warm), LIGHTC, 0.35 * ST.w); C.rimA = lerp(0.55, 0.85, sm((sk + 0.02 - 0.3) / 0.3));   /* Z15: jasna krawędź od światła także w L0 */
     C.wShL = 1 - LW_L; C.wShR = LW_L; C.wRimL = LW_L; C.wRimR = 1 - LW_L;
-    C.glass = stageCol(MONO, mixc(P.sL, [236, 244, 255], 0.5), P.warm); C.glassA = 0.42;
-    C.okno = stageCol(MONO, mixc(P.sh, [112, 128, 182], 0.45), P.warm); C.oknoA = 0.72 * (1 - 0.6 * P.nightW);
-    C.mint = stageCol(MONO, [168, 217, 184], P.warm); C.drew = stageCol(MONO, [206, 176, 146], P.warm); C.granA = 0.1 + 0.08 * (1 - ST.p);
-    C.key = keyC(C.top) + keyC(C.mid) + keyC(C.bot) + keyC(C.fog) + keyC(C.shade) + keyC(C.rim) + keyC(C.glass) + keyC(C.okno) + Math.round(C.rimA * 10) + '/' + Math.round(C.oknoA * 10) + C.wShR;
+    C.glass = stageCol(P.c0, mixc(P.sL, [236, 244, 255], 0.5), P.warm); C.glassA = 0.42;
+    C.okno = stageCol(P.c2, mixc(P.sh, [112, 128, 182], 0.45), P.warm); C.oknoA = 0.72 * (1 - 0.6 * P.nightW) * (0.45 + 0.55 * ST.g);   /* Z15: w L0 okna jaśniejsze (bez rzędów ciemnych kresek) */
+    C.mint = stageCol(P.c1, [168, 217, 184], P.warm); C.drew = stageCol(P.c1, [206, 176, 146], P.warm); C.granA = 0.1 + 0.08 * (1 - ST.p);
+    C.key = keyC(C.top) + keyC(C.mid) + keyC(C.bot) + keyC(C.fog) + keyC(C.shade) + keyC(C.rim) + keyC(C.glass) + keyC(C.okno) + Math.round(C.rimA * 10) + '/' + Math.round(C.oknoA * 10) + C.wShR + '/' + Math.round(C.mulK * 20);
     return C;
   }
   var WIEZA_REG = { par: wiezaParams, key: function (C) { return C.key; }, paint: paintWieza, koszt: 1 };
@@ -3809,9 +3947,9 @@ Słońce obiecało wrócić rano.</p>
     if (!WD.length) wiezaDefs();
     d = WD[k]; M = WB[k] || (WB[k] = { k: k, mono: null, monoF: null, oknaB: null, okna: null, tint: null, ln: null });
     return [
-      function () { if (!M.mono) M.mono = flushS(wiezaMono(d, 0.62, 2.6)); },
-      function () { if (!M.monoF) M.monoF = flushS(wiezaMono(d, 0.3, 6)); },
-      function () { if (!M.ln) { M.ln = addReg(flushS(wiezaMono(d, 0.5, 3.6, true)), 'lnw', k); M.ln.z11 = INK_REG; M.ln.mix = 1; paintInto(M.ln, INK_REG.par()); flushS(M.ln); } },
+      function () { },   /* Z15: bez sprite'ów tuszu (mono, monoF, ln); kroki zostają, żeby kolejka krain miała ten sam rytm */
+      function () { },
+      function () { },
       function () { if (!M.okna) { M.oknaB = flushS(wiezaOkna(d, MSL)); M.okna = addReg(wiezaOkna(d, MSL), 'okna', k); M.okna.z11 = OKNA_REG; M.okna.mix = 1; paintInto(M.okna, OKNA_REG.par(M.okna)); flushS(M.okna); } },
       function () { var S; if (!M.tint) { S = withPrev(addReg(wRama(d, MSC), 'wieza', k)); S.z11 = WIEZA_REG; S.far = wRama(d, MFAR); paintInto(S, wiezaParams(S)); S.mix = 1; flushS(S); flushS(S.far); M.tint = S; } WS[k] = M; }
     ];
@@ -3883,9 +4021,9 @@ Słońce obiecało wrócić rano.</p>
   }
   function samolotParams() {
     var P = PAL, C = {}, n = P.nightW;
-    C.kadlub = stageCol(MONO, mixc([222, 226, 238], P.cM, 0.2), P.warm); C.jasny = stageCol(MONO, mixc([255, 252, 246], LIGHTC, 0.25), P.warm); C.cien = stageCol(NAVY, mixc([150, 150, 196], P.sh, 0.4), P.warm);
-    C.skrzydlo = stageCol(MONO, mixc([176, 178, 214], P.sh, 0.25), P.warm); C.skrzydloJ = stageCol(MONO, [214, 216, 234], P.warm); C.silnik = stageCol(MONO, [198, 204, 224], P.warm); C.wlot = stageCol(NAVY, [92, 96, 140], P.warm);
-    C.szyba = stageCol(MONO, mixc([120, 138, 186], [255, 214, 140], n * 0.8), P.warm); C.koralik = stageCol(MONO, mixc([236, 222, 196], [255, 214, 140], n), P.warm); C.nos = stageCol(MONO, [250, 236, 214], P.warm);
+    C.kadlub = stageCol(P.c1, mixc([222, 226, 238], P.cM, 0.2), P.warm); C.jasny = stageCol(mixc(P.c0, P.r0, 0.4), mixc([255, 252, 246], LIGHTC, 0.25), P.warm); C.cien = stageCol(mixc(P.c3, P.s0, 0.4), mixc([150, 150, 196], P.sh, 0.4), P.warm);   /* Z15: tony L0 */
+    C.skrzydlo = stageCol(P.c2, mixc([176, 178, 214], P.sh, 0.25), P.warm); C.skrzydloJ = stageCol(P.c1, [214, 216, 234], P.warm); C.silnik = stageCol(P.c1, [198, 204, 224], P.warm); C.wlot = stageCol(P.c3, [92, 96, 140], P.warm);
+    C.szyba = stageCol(P.c3, mixc([120, 138, 186], [255, 214, 140], n * 0.8), P.warm); C.koralik = stageCol(mixc(P.c0, P.r0, 0.5), mixc([236, 222, 196], [255, 214, 140], n), P.warm); C.nos = stageCol(P.c0, [250, 236, 214], P.warm);
     C.granA = 0.2 + 0.15 * (1 - ST.p);
     C.key = keyC(C.kadlub) + keyC(C.jasny) + keyC(C.cien) + keyC(C.skrzydlo) + keyC(C.szyba) + keyC(C.koralik) + Math.round(LIGHTX * 4);
     return C;
@@ -3897,9 +4035,9 @@ Słońce obiecało wrócić rano.</p>
     if (!PL.length) { PL.push(samolotDef(0)); PL.push(samolotDef(1)); }
     d = PL[v]; M = PB[v] || (PB[v] = { mono: null, monoF: null, tint: null, ln: null });
     return [
-      function () { if (!M.mono) M.mono = flushS(samolotMono(d, 0.62, 3.2)); },
-      function () { if (!M.monoF) M.monoF = flushS(samolotMono(d, 0.26, 7)); },
-      function () { if (!M.ln) { M.ln = addReg(flushS(samolotMono(d, 0.45, 3.2, true)), 'lnp', v); M.ln.z11 = INK_REG; M.ln.mix = 1; paintInto(M.ln, INK_REG.par()); flushS(M.ln); } },
+      function () { },   /* Z15: bez sprite'ów tuszu */
+      function () { },
+      function () { },
       function () { var S; if (!M.tint) { S = withPrev(addReg(plRama(d, 0.5), 'samolot', v)); S.z11 = SAMOLOT_REG; S.far = plRama(d, 0.16); paintInto(S, samolotParams()); S.mix = 1; flushS(S); flushS(S.far); M.tint = S; } PLS[v] = M; }
     ];
   }
@@ -4153,9 +4291,9 @@ Słońce obiecało wrócić rano.</p>
 
   /* ---------- Z11: rysowanie ---------- */
   var KITE_C = [[250, 152, 142], [176, 232, 208], [250, 214, 140], [200, 182, 240], [166, 204, 242]];
-  function inkZ(amt) { return mixc(LINE, mixc([44, 36, 64], [196, 204, 248], nightK), amt); }
+  function inkZ(amt) { return mixc(mixc(PAL.r0, LINE, 0.3), mixc(mixc(PAL.sh, [150, 140, 180], 0.4), [196, 204, 248], nightK), amt); }   /* Z15: jasny w L0, tonalny (średni) w kolorze; nigdy ciemny */
   /* barwa przedmiotu na głębokości z: L0 granat (sam kontur), etap szarości jasny szaro-błękitny, potem jego własny pastel (jak chmury) */
-  function kolZ(base, z) { var g = obG(z), c = obAmt(z), l = lumOf(base), jas = mixc([l * 0.92, l * 0.97, Math.min(255, l * 1.06 + 8)], [236, 240, 248], 0.3); return mixc(MONO, mixc(jas, base, cl(c * 1.6)), g); }
+  function kolZ(base, z) { var g = obG(z), c = obAmt(z), l = lumOf(base), jas = mixc([l * 0.92, l * 0.97, Math.min(255, l * 1.06 + 8)], [236, 240, 248], 0.3); return mixc(monoEt(MONO), mixc(jas, base, cl(c * 1.6)), g); }
   function drawKite(X, Y, s1, rodzaj, kol, zk, a, rot) {
     var amt = obAmt(zk), col = kolZ(KITE_C[kol % 5], zk), col2 = kolZ(KITE_C[(kol + 2) % 5], zk), ink = inkZ(amt), k, by;
     if (a < 0.01) return;
@@ -4169,7 +4307,7 @@ Słońce obiecało wrócić rano.</p>
     }
     ksztalt(1.6, 1.2); ctx.fillStyle = rgba(col, 0.9); ctx.fill();   /* plama koloru przesunięta względem kreski (akwarela) */
     if (amt > 0.05) { ctx.save(); ksztalt(1.6, 1.2); ctx.clip(); ctx.fillStyle = rgba(col2, 0.55 * amt); ctx.fillRect(0, -40, 40, 80); ctx.fillStyle = rgba([255, 250, 240], 0.25 * amt); ctx.fillRect(-40, -40, 40, 30); ctx.restore(); }
-    ksztalt(0, 0); ctx.lineWidth = 1.7 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.95); ctx.stroke();
+    ksztalt(0, 0); ctx.lineWidth = 1.7 / Math.max(0.6, s1); ctx.strokeStyle = rgba(amt > 0.05 ? tonalEdge(col, 1.2) : ink, 0.7); ctx.stroke();   /* Z15: w kolorze krawędź = ciemniejszy odcień latawca */
     ctx.lineWidth = 1 / Math.max(0.6, s1); ctx.strokeStyle = rgba(ink, 0.5); ctx.beginPath();
     if (rodzaj < 2) { ctx.moveTo(0, -24); ctx.lineTo(0, rodzaj ? 8 : 30); if (!rodzaj) { ctx.moveTo(-17, -3); ctx.lineTo(17, -3); } } else if (rodzaj === 2) { ctx.moveTo(-5, -10); ctx.arc(-5, -10, 1.6, 0, TAU); }
     ctx.stroke();
@@ -4184,7 +4322,7 @@ Słońce obiecało wrócić rano.</p>
     var L = Math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) * frac, ux = (x1 - x0) / (L / frac || 1), uy = (y1 - y0) / (L / frac || 1), xe = x0 + ux * L, ye = y0 + uy * L, d, px, py, ink = inkZ(amt), k = 0;
     if (a < 0.01 || L < 1) return;
     ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(13,18,36,0.45)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xe, ye); ctx.stroke();
+    ctx.strokeStyle = rgba(NAVY, 0.28); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xe, ye); ctx.stroke();   /* Z15: miękki cień sznura (tonalny) */
     ctx.strokeStyle = rgba(ink, 0.95); ctx.lineWidth = 3; ctx.stroke();
     for (d = 26; d < L; d += 40) {
       px = x0 + ux * d; py = y0 + uy * d; k++;
@@ -4290,9 +4428,7 @@ Słońce obiecało wrócić rano.</p>
     fade = sm((o.age + 0.4) / 0.8) * sm((z - 0.12) / 0.35) * sm((FAR + 0.6 - z) / 1.2) * (1 - tt * 0.4) * (front ? 0.45 : 1) * (o.zw ? 0.9 : 1);
     if (fade < 0.02 || X + (d.w / 2 + 80) * sc < -30 || X - (d.w / 2 + 80) * sc > W + 30 || Y > H + 30) return;
     M = wiezaS(w.k);
-    drawSpr(z < 1.8 ? M.mono : M.monoF, X, Y, sc, fade * (1 - gA * 0.82));
-    if (gA > 0.01) { far = tt > 0.4 ? sm((tt - 0.4) / 0.22) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, fade * gA); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, fade * gA * far); }
-    b = gA * lerp(1, 0.5, sm((se - 0.35) / 0.5)); if (b > 0.01) drawSpr(M.ln, X, Y, sc, fade * b * (1 - tt * 0.3));   /* kontur tuszem także w kolorze */
+    far = tt > 0.4 ? sm((tt - 0.4) / 0.22) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, fade); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, fade * far);   /* Z15: bryła z tonów (cień boku, jasna krawędź), bez tuszu */
     la = fade * (0.12 + 0.88 * PAL.nightW) * (1 - 0.6 * PAL.dayW);   /* okna nocą: konstelacje */
     if (la > 0.02) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; if (gA < 0.99) drawSpr(M.oknaB, X, Y, sc, la * 0.55 * (1 - gA)); if (gA > 0.01) drawSpr(M.okna, X, Y, sc, la * 0.8 * gA); ctx.restore(); }
     if (d.antena) {   /* światło anteny: białe w L0, miodowe w kolorze; pulsuje */
@@ -4314,8 +4450,7 @@ Słońce obiecało wrócić rano.</p>
     /* kołnierz chmury: dolna część trzonu chowa się w chmurze (sprite z puli Z1/Z4) */
     p = POOL[w.ci]; Yc = zY(SEA_YS + 36, z); b = bucketOf(z); k = sc * 0.62 * Math.max(0.8, d.w / 110);
     if (Yc - 40 * sc < H + 20) {
-      drawSpr(p.mono[b], X, Yc, k, fade * (1 - gA * 0.8));
-      if (gA > 0.01) drawTintS(p.tint, X, Yc, k, fade * gA);
+      drawTintS(p.tint, X, Yc, k, fade);   /* Z15 */
     }
     ctx.globalAlpha = 1;
   }
@@ -4376,8 +4511,7 @@ Słońce obiecało wrócić rano.</p>
     if (a < 0.02 || X + d.maxx * sc < -40 || X + d.minx * sc > W + 40 || Y + d.bot * sc < -40) return;
     M = samolotS(v);
     ctx.save(); ctx.translate(X, Y); ctx.rotate(reduce ? 0 : Math.sin(t * 0.7 + o.id) * 0.03); ctx.translate(-X, -Y);
-    drawSpr(z < 2.2 ? M.mono : M.monoF, X, Y, sc, a * (1 - gA * 0.82));
-    if (gA > 0.01) { far = tt > 0.45 ? sm((tt - 0.45) / 0.2) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, a * gA); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, a * gA * far); e = gA * lerp(1, 0.55, sm((se - 0.35) / 0.5)); if (e > 0.01) drawSpr(M.ln, X, Y, sc, a * e); }
+    far = tt > 0.45 ? sm((tt - 0.45) / 0.2) : 0; if (far < 0.99) drawTintS(M.tint, X, Y, sc, a); if (far > 0.01) drawSpr(M.tint.far, X, Y, sc, a * far);   /* Z15: tony, bez tuszu */
     R = d.R * sc;
     if (R > 9) {   /* pilot w kokpicie robi „o” i macha */
       kx = X + d.R * 0.17 * sc; ky = Y - d.R * 0.43 * sc; ps = d.R * sc;
@@ -5611,7 +5745,7 @@ Słońce obiecało wrócić rano.</p>
         return false;
       },
       /* noc() = ustawienie pory doby na noc (i zatrzymanie doby); noc(false) = zachód (dawna paleta startowa), też zatrzymany */
-      noc: function (v) { poraLock = true; phi = (v === undefined || v) ? 0 : PHI0; palAt(phi, PAL); nightK = PAL.nightW; forceTint = true; },
+      noc: function (v) { poraLock = true; phi = (v === undefined || v) ? 0 : 0.75; palAt(phi, PAL); nightK = PAL.nightW; forceTint = true; },
       bezPrzeszkod: function (v) { noObst = v === undefined ? true : !!v; },
       ustawDystans: function (m) { dist = Math.max(0, +m || 0); },
       gdzie: function () {
@@ -5685,6 +5819,9 @@ Słońce obiecało wrócić rano.</p>
       cpu: function () { var a = cpuMs.slice().sort(function (x, y) { return x - y; }), n = a.length, sum = 0, q; for (q = 0; q < n; q++) sum += a[q]; return n ? { n: n, sr: Math.round(sum / n * 100) / 100, p50: Math.round(a[Math.floor(n / 2)] * 100) / 100, p95: Math.round(a[Math.floor(n * 0.95)] * 100) / 100 } : null; },
       zerujCpu: function () { cpuMs.length = 0; },
       dbg: function (o) { DBG = o || {}; return DBG; },
+      /* Z15: styl tonalny. z15() = stałe i barwy (paleta L0 bieżącej pory, tonalEdge/jasnyBrzeg przykładowej barwy, kolory toru, rodzaje chmur toru, etap rysowania skV) */
+      z15: function () { var c = [200, 180, 230]; return { stale: JSON.parse(JSON.stringify(Z15)), L0: { bg: PAL.bg, h0: PAL.h0, c0: PAL.c0, c1: PAL.c1, c2: PAL.c2, c3: PAL.c3, s0: PAL.s0, r0: PAL.r0, f0: PAL.f0 }, tonalEdge: tonalEdge(c), jasnyBrzeg: jasnyBrzeg(c), tor: { wstega: torKolor('wstega'), komorka: torKolor('komorka'), wiatr: torKolor('wiatr'), uwaga: torKolor('uwaga') }, chmury: Object.keys(CHMURY15), torTony: torTony('mgla_zielona'), skV: skV, sk: sk }; },
+      torChmura: function (r, k) { var S = torChmura(r, k); return { w: S.w, h: S.h, MB: Math.round(SPRMEM / 1048576 * 10) / 10 }; },
       swiatlo: function () { return { x: LIGHTX, wL: LW_L, slonce: SUNP.a, ksiezyc: SUNP.ma }; }
     };
   }

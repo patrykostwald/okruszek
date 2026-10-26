@@ -4,7 +4,7 @@
        bot-średniak (ok. 50% prądów) ma szczyt L2-L3; bot losowy i bierny nigdy nie osiągają L4
    (c) L5: hiperprzestrzeń tylko po łańcuchu >= 5 prądów w 12 s plus nurkowaniu, trwa ok. 6 s i wygasa
    (d) kolor: kolejność niebo >= daleko >= blisko >= smugi na każdym poziomie i o każdej porze doby (też w narysowanych warstwach), 14 odcieni wchodzi po kolei
-       w całym zakresie L1-L4, w L0 sam kontur, nasycenie obrazu rośnie z poziomem
+       w całym zakresie L1-L4, w L0 bez koloru (Z15: szaroniebieskie tony zamiast konturu), nasycenie obrazu rośnie z poziomem
    (e) doba: płynne przejścia (analitycznie i na klatkach), tempo doby maleje z poziomem (pomiar), kolejność pór, noc() = pora noc
    (f) nowe przeszkadzajki: każda wymuszalna hakiem i widoczna w gdzie(), zapowiedź >= 2 s, efekt kolizji, sowa tylko w nocy, harmonogram
    Czas gry jest przyspieszany hakiem tempo() (tylko ?test). Kończy się kodem 0 tylko gdy wszystko przeszło. */
@@ -180,7 +180,7 @@ const FAST = !!process.env.FAST;   /* FAST=1: krótsze biegi botów (do prób); 
   console.log('  info liczba odcieni (wagi > 0,5) od s: ' + odc.filter((x, i) => i % 5 === 0).map(x => x[0] + ':' + x[1]).join(' '));
   chk(mono && maxJump <= 1 && odc[0][1] === 0 && n015 === 0, 'odcienie dochodzą po jednym (nigdy 2 naraz w kroku 0,02), nigdy nie ubywają; w L0 zero (s=0,14: ' + n015 + ')', 'odcienie: mono=' + mono + ' maxJump=' + maxJump + ' ' + JSON.stringify(odc.slice(0, 8)));
   chk(n02 >= 1 && n02 <= 3 && n05 >= 5 && n05 <= 9 && n09 === 14 && firstAt[14] >= 0.8 && firstAt[14] <= 0.9, 'rozciągnięte po L1-L4: s=0,2 -> ' + n02 + ', 0,5 -> ' + n05 + ', 0,9 -> ' + n09 + ' z 14 (czternasty od s=' + firstAt[14] + ')', 'rozkład odcieni: ' + JSON.stringify({ n02, n05, n09, c14: firstAt[14] }));
-  /* nasycenie obrazu rośnie z poziomem; w L0 sam kontur. Miara: nadwyżka chroma (max-min kanału) ponad chroma tła L0 danej pory (granat ma własną chroma),
+  /* nasycenie obrazu rośnie z poziomem; w L0 bez koloru (Z15: tony L0 o chromie tła zamiast białego konturu). Miara: nadwyżka chroma (max-min kanału) ponad chroma tła L0 danej pory (granat ma własną chroma),
      średnia po obrazie bez paska HUD i bez okolicy ptaszka; kol = ułamek pikseli z chroma > tło + 10 */
   const metr = () => ev(() => { const bgb = __okruszek.tlo(), bgc = Math.max(...bgb) - Math.min(...bgb), c = document.getElementById('g'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0);
     const d = x.getImageData(0, 0, t.width, t.height).data, sc = c.width / 390, bw = 90 * sc, bcx = c.width / 2, bcy = 0.76 * c.height; let ex = 0, tot = 0, col = 0;
@@ -190,12 +190,13 @@ const FAST = !!process.env.FAST;   /* FAST=1: krótsze biegi botów (do prób); 
   /* Z3c: świat zamrożony (tempo 0,02), żeby każdy poziom był mierzony na TEJ SAMEJ scenie; bez tego liczba barwnych pikseli zależała od przypadkowego układu chmur w chwili pomiaru (ten sam rozrzut ma baza sprzed Z3c) */
   for (let n = 0; n <= 4; n++) { await fresh(1); await ev(() => { __okruszek.tempo(0.02); __okruszek.ustawPore('zachod'); }); await ev((q) => __okruszek.ustawPoziom(q), n); await sleep(900); chr.push(await metr()); }
   console.log('  info nadwyżka chroma / ułamek barwnych pikseli, zachód, L0..L4: ' + chr.map(c => c.ex.toFixed(1) + '/' + c.kol.toFixed(2)).join('  '));
-  chk(chr[0].ex < 5 && chr[0].kol < 0.05, 'L0: sam kontur (nadwyżka chroma ' + chr[0].ex.toFixed(1) + ' < 5, barwnych pikseli ' + (100 * chr[0].kol).toFixed(0) + '%)', 'L0 ma kolor: ' + JSON.stringify(chr[0]));
-  chk(chr[1].ex < 8 && chr[1].kol < 0.25, 'L1: szarości i błękit, nasycenie niskie (nadwyżka ' + chr[1].ex.toFixed(1) + ' < 8)', 'L1 nasycenie: ' + JSON.stringify(chr[1]));
+  chk(chr[0].ex < 5 && chr[0].kol < 0.05, 'L0: delikatny pastel bazowy, bez koloru ponad tło (15.8) (nadwyżka chroma ' + chr[0].ex.toFixed(1) + ' < 5, barwnych pikseli ' + (100 * chr[0].kol).toFixed(0) + '%)', 'L0 ma kolor: ' + JSON.stringify(chr[0]));
+  chk(chr[1].ex < 8 && chr[1].kol < 0.25, 'L1: pierwsze blade barwy (15.8), nasycenie niskie (nadwyżka ' + chr[1].ex.toFixed(1) + ' < 8)', 'L1 nasycenie: ' + JSON.stringify(chr[1]));
   chk(chr[2].ex >= chr[1].ex && chr[3].ex > chr[2].ex && chr[4].ex >= chr[3].ex * 0.9 && chr[2].kol > chr[1].kol && chr[3].kol > chr[2].kol && chr[4].kol >= chr[3].kol - 0.03, 'nasycenie i liczba barwnych pikseli rosną z poziomem (nadwyżka ' + chr.map(c => c.ex.toFixed(0)).join(' < ') + '; barwnych pikseli ' + chr.map(c => (100 * c.kol).toFixed(0) + '%').join(' < ') + ')', 'etapy koloru: ' + JSON.stringify(chr));
   const chrP = {};
   for (const p of PN) { await fresh(1); await ev((q) => { __okruszek.tempo(0.02); __okruszek.ustawPore(q); }, p); await ev(() => __okruszek.ustawPoziom(0)); await sleep(800); const a0 = await metr(); await ev(() => __okruszek.ustawPoziom(1)); await sleep(800); const a1 = await metr(); await ev(() => __okruszek.ustawPoziom(4)); await sleep(900); const a4 = await metr(); chrP[p] = [a0.ex, a1.ex, a4.ex]; }
-  chk(PN.every(p => chrP[p][0] < 5 && chrP[p][2] > 10 && chrP[p][2] > chrP[p][1] + 8), 'każda pora doby: L0 sam kontur (< 5), L4 pełna paleta (> 10 i o ponad 8 nad L1): ' + PN.map(p => p + ' ' + chrP[p].map(v => v.toFixed(1)).join('/')).join(', '), 'pory: ' + JSON.stringify(chrP));
+  /* Z15 (15.8): tło L0 jest pastelowe (chroma tła 20-54 zamiast ok. 23 granatu), więc nadwyżka ponad tło liczy się od wyższego zera: próg bezwzględny L4 10 -> 8, warunek „o ponad 8 nad L1” bez zmian */
+  chk(PN.every(p => chrP[p][0] < 5 && chrP[p][2] > 8 && chrP[p][2] > chrP[p][1] + 8), 'każda pora doby: L0 bez koloru ponad pastel tła (< 5), L4 pełna paleta (> 8 i o ponad 8 nad L1): ' + PN.map(p => p + ' ' + chrP[p].map(v => v.toFixed(1)).join('/')).join(', '), 'pory: ' + JSON.stringify(chrP));
   await fresh(1); await ev(() => { __okruszek.ustawPore('noc'); __okruszek.ustaw(1); }); await sleep(600); const gn = (await st()).gwiazdy;
   await ev(() => { __okruszek.ustawPore('dzien'); __okruszek.ustaw(1); }); await sleep(600); const gdz = (await st()).gwiazdy;
   chk(gn > 0.9 && gdz < 0.05, 'gwiazdy: w nocy widoczne także przy pełnym kolorze (' + f2(gn) + '), w dzień przy s=1 gasną (' + f2(gdz) + ')', 'gwiazdy ' + gn + ' / ' + gdz);
