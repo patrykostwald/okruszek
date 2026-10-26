@@ -10,7 +10,7 @@ const headers = fs.readFileSync(path.join(root, 'dist', '_headers'), 'utf8'), ro
 if (!/\/crumbi\/\*[\s\S]*X-Robots-Tag: noindex/.test(headers) || !/Disallow: \/crumbi\//.test(robots)) { console.error('brak noindex dla /crumbi w _headers lub robots: przerywam'); process.exit(4); }
 fs.mkdirSync(dest, { recursive: true });
 /* Lista DOZWOLONYCH plików gry (nic poza nią nie trafia na stronę): index.html, teksty.js, dzwiek.js, sw.js, manifest, ikony, folder dzwieki. */
-const DOZWOLONE = /^(index\.html|teksty\.js|dzwiek\.js|sw\.js|manifest\.webmanifest|ikona-\d+\.png)$/i;
+const DOZWOLONE = /^(index\.html|teksty\.js|dzwiek\.js|sw\.js|manifest\.webmanifest|ikona-\d+(-maskable)?\.png)$/i;
 const DOZWOLONE_FOLDERY = /^(dzwieki)$/i;
 function copy(a, b) { for (const f of fs.readdirSync(a)) { const s = path.join(a, f), d = path.join(b, f), dir = fs.statSync(s).isDirectory(); if (dir ? !DOZWOLONE_FOLDERY.test(f) : !DOZWOLONE.test(f)) continue; if (dir) { fs.mkdirSync(d, { recursive: true }); copyAll(s, d); } else fs.copyFileSync(s, d); } }
 function copyAll(a, b) { for (const f of fs.readdirSync(a)) { const s = path.join(a, f), d = path.join(b, f); if (fs.statSync(s).isDirectory()) { fs.mkdirSync(d, { recursive: true }); copyAll(s, d); } else fs.copyFileSync(s, d); } }
