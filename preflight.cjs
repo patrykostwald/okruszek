@@ -323,6 +323,7 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
     fs.writeFileSync(path.join(__dirname, 'preflight-z19-szczegoly.log'), out);
     out.split('\n').filter(l => /FAIL|TEST Z19|BŁĄD/.test(l)).forEach(l => console.log('  z19> ' + l.trim()));
     code === 0 && /TEST Z19 OK/.test(out) ? ok('test Z19 przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z19 nie przeszedł (kod ' + code + ')');
+  }
   /* Z20: przycisk „Zainstaluj” i instalowalność PWA (manifest, ikona maskable, sw.js, getInstallabilityErrors), pełny test w osobnym procesie */
   if (process.env.SKIP_Z20) console.log('  info pominięto test Z20 (SKIP_Z20)');
   else {
