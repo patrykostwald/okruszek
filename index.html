@@ -20,6 +20,11 @@
   body { display:flex; align-items:center; justify-content:center; }
   canvas { display:block; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
   #scena { position:relative; }
+  #ladowanie { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:linear-gradient(#c3cdea, #e8e4f4 70%, #f3eef8);
+               color:var(--tusz); font:italic 400 18px/1.4 Georgia,"Times New Roman",serif; letter-spacing:.02em; }
+  #ladowanie span { animation:ladPuls 1.6s ease-in-out infinite; }
+  @keyframes ladPuls { 0%, 100% { opacity:.55; } 50% { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { #ladowanie span { animation:none; } }
   #wynik { position:absolute; inset:0; display:flex; justify-content:center; padding-top:max(26%,122px); box-sizing:border-box; background:rgba(var(--tlo-rgb),.80);
            color:var(--tusz); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; text-align:center; opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
   #wynik.pokaz { opacity:1; visibility:visible; transition:opacity .6s ease; }
@@ -112,8 +117,9 @@
 <script src="dzwiek.js"></script>
 </head>
 <body>
+<div id="ladowanie" aria-hidden="true"><span>Okruszek się budzi…</span></div>
 <div id="scena">
-<canvas id="g" aria-label="Okruszek: malutki ptaszek leci w głąb ekranu przez warstwy chmur. Przytrzymaj, żeby nurkować i przyspieszyć, przesuń palec w bok, żeby skręcić. Wlatuj w prądy powietrzne jeden po drugim, bo wtedy świat nabiera kolorów, a poziom prędkości rośnie. Omijaj ptaki, grad, burze, sznury latawców i mgłę, a przed jastrzębiem i nocą przed sową uciekaj prędkością albo schowaj się w chmurze."></canvas>
+<canvas id="g" role="img" aria-label="Okruszek: malutki ptaszek leci w głąb ekranu przez warstwy chmur. Przytrzymaj, żeby nurkować i przyspieszyć, przesuń palec w bok, żeby skręcić. Wlatuj w prądy powietrzne jeden po drugim, bo wtedy świat nabiera kolorów, a poziom prędkości rośnie. Omijaj ptaki, grad, burze, sznury latawców i mgłę, a przed jastrzębiem i nocą przed sową uciekaj prędkością albo schowaj się w chmurze."></canvas>
 <div id="intro-sr" class="sr" aria-live="polite"></div>
 <div id="wynik" role="dialog" aria-modal="true" aria-labelledby="w-et" aria-hidden="true">
   <div class="karta">
@@ -1099,7 +1105,9 @@ Słońce obiecało wrócić rano.</p>
   var EVGAP = { wiatr: 70, stado: 64, latawiec: 76, grad: 84, mgla: 90, burza: 100 };
   function isPred(k) { return k === 'jastrzab' || k === 'sowa'; }
 
+  var jakoscOdT = 0;
   function reset() {
+    jakoscOdT = performance.now() + 3000;
     var k;
     releaseAll(); testHold = false; lockS = null; flapCharge = 1; flapReq = 0; flapN = 0; wfL = 0; wfR = 0;
     state = 'gra'; paused = false; h = G.H0; dist = 0; bx = 0; vx = 0; camX = 0; steer = 0; gameT = 0; sHold = 0; boost = 0; s = 0; sk = 0; sRaw = 0; ladT = 0;
@@ -1648,7 +1656,7 @@ Słońce obiecało wrócić rano.</p>
       while (nl > 0 && s < LV_LO[nl] - 0.015) nl--;
       if (nl > 4) nl = 4;
     }
-    if (nl > lvl && state === 'gra') lvMsg = { t: 0, lv: nl };
+    if (nl > lvl && state === 'gra') { lvMsg = { t: 0, lv: nl }; ogloszenie('Poziom: ' + LV_MSG[nl]); }   /* Z18 (P2-9): zmiana poziomu także dla czytnika ekranu */
     lvl = nl; if (lvl > lvlMax) lvlMax = lvl; if (lvlFirst[lvl] < 0) lvlFirst[lvl] = gameT;
     lvlTime[lvl] += dt;
     if (lvl === 5) { l5czas += dt; if (hyLeft <= 0 && !hyForce && lockS === null) l5bez++; }   /* L5 bez trwającej hiperprzestrzeni byłoby błędem */
@@ -2499,16 +2507,18 @@ Słońce obiecało wrócić rano.</p>
   var HUD_INK = [52, 48, 98], HUD_MLEKO = [250, 248, 255], HUD_PROBE = 0.4, HUD_L_DZ = 0.11, HUD_L_NOC = 0.08, HUD_LMIN = 0.62;
   var hudL = 0.1, hudDz = false, hudK = 0, hudPT = 9, hudPlA = 0;
   function linL(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  var hudPrC = null, hudPrX = null;   /* małe płótno CPU (willReadFrequently): strefa HUD zmniejszona do 16 x 8 px, odczyt bez czytania dużego płótna gry */
   function hudProbe(dt) {
-    var d, i, n = 0, sum = 0, Z = [[14, 10, 190, 104], [W - 146, 10, 134, 50]], z, sx, sy, sw, shh;
+    var d, i, n = 0, sum = 0, Z = [[14, 10, 190, 104], [W - 146, 10, 134, 50]], z;
     hudPT += dt;
     if (hudPT >= HUD_PROBE) {
       hudPT = 0;
       try {
+        if (!hudPrC) { hudPrC = document.createElement('canvas'); hudPrC.width = 16; hudPrC.height = 8; hudPrX = hudPrC.getContext('2d', { willReadFrequently: true }); }
         for (z = 0; z < Z.length; z++) {
-          sx = Math.max(0, Math.round(Z[z][0] * SC)); sy = Math.round(Z[z][1] * SC); sw = Math.round(Z[z][2] * SC); shh = Math.round(Z[z][3] * SC);
-          d = ctx.getImageData(sx, sy, sw, shh).data;
-          for (i = 0; i < d.length; i += 4 * 7) { sum += 0.2126 * linL(d[i]) + 0.7152 * linL(d[i + 1]) + 0.0722 * linL(d[i + 2]); n++; }
+          hudPrX.drawImage(cv, Math.max(0, Math.round(Z[z][0] * SC)), Math.round(Z[z][1] * SC), Math.round(Z[z][2] * SC), Math.round(Z[z][3] * SC), 0, 0, 16, 8);
+          d = hudPrX.getImageData(0, 0, 16, 8).data;
+          for (i = 0; i < d.length; i += 4) { sum += 0.2126 * linL(d[i]) + 0.7152 * linL(d[i + 1]) + 0.0722 * linL(d[i + 2]); n++; }
         }
         if (n) hudL = sum / n;
       } catch (e) { hudL = lumOf(PAL.bg) / 255; }
@@ -2521,13 +2531,18 @@ Słońce obiecało wrócić rano.</p>
   function hudTusz(a) { return rgba(mixc(LINE, HUD_INK, hudK), a); }
   function hudPoswiata(blur) { ctx.shadowColor = hudK > 0.5 ? 'rgba(255,252,255,' + (0.9 * hudK).toFixed(3) + ')' : 'rgba(13,18,36,' + (0.75 * (1 - hudK)).toFixed(3) + ')'; ctx.shadowBlur = blur; }
   function hudObrys(a) { return hudK > 0.5 ? rgba(HUD_INK, a * 0.5 * hudK) : 'rgba(13,18,36,' + (a * (1 - hudK)).toFixed(3) + ')'; }
+  var hudPlC = null, hudPlKey = '';
   function drawHudPlakietki() {
-    var a = hudPlA * hudK, ny = napis ? 118 : 96;
+    var a = hudPlA * hudK, ny = napis ? 118 : 96, key, x, m = 16;
     if (a < 0.01) return;
-    ctx.save(); ctx.fillStyle = rgba(HUD_MLEKO, a); ctx.shadowColor = rgba(HUD_MLEKO, a); ctx.shadowBlur = 14;
-    rrect(8, 8, 200, ny - 8, 14); ctx.fill();   /* lewa: dystans, kreska, poziom, iskierki (i nazwa krainy, gdy jest) */
-    rrect(W - 144, 8, 136, 50, 14); ctx.fill();   /* prawa: wysokość */
-    ctx.restore();
+    key = Math.round(a * 40) + ':' + ny + ':' + SC + ':' + W;
+    if (key !== hudPlKey) {   /* lewa: dystans, kreska, poziom, iskierki (i nazwa krainy, gdy jest); prawa: wysokość; rysowane raz do płótna pamięci */
+      hudPlKey = key; if (!hudPlC) hudPlC = document.createElement('canvas');
+      hudPlC.width = Math.ceil(W * SC); hudPlC.height = Math.ceil((ny + m) * SC); x = hudPlC.getContext('2d');
+      x.setTransform(SC, 0, 0, SC, 0, 0); x.clearRect(0, 0, W, ny + m); x.fillStyle = rgba(HUD_MLEKO, Math.round(a * 40) / 40); x.shadowColor = x.fillStyle; x.shadowBlur = 14;
+      x.beginPath(); if (x.roundRect) { x.roundRect(8, 8, 200, ny - 8, 14); x.roundRect(W - 144, 8, 136, 50, 14); } else { x.rect(8, 8, 200, ny - 8); x.rect(W - 144, 8, 136, 50); } x.fill();
+    }
+    ctx.drawImage(hudPlC, 0, 0, W, hudPlC.height / SC);
   }
   function drawHUD() {
     var pad = 18, bw = 112, bl = h < 0.25 && state === 'gra' ? 0.6 + 0.4 * Math.sin(t * 7) : 1, ls = 'letterSpacing' in ctx;
@@ -2609,9 +2624,9 @@ Słońce obiecało wrócić rano.</p>
     var m = lvMsg, env, col, ls = 'letterSpacing' in ctx, txt;
     if (!m) return;
     env = sm(m.t / 0.18) * sm((1.7 - m.t) / 0.5); if (env < 0.01) return;
-    txt = LV_MSG[m.lv].toUpperCase(); col = hudK > 0.5 ? rgba(mixc(HUD_INK, LVCOL[m.lv], m.lv === 5 ? 0.12 : 0.28), env) : (m.lv === 5 ? hsla(hueFlow() + 40, 90, 74, 1).replace(/,[\d.]+\)$/, ',' + env.toFixed(3) + ')') : rgba(mixc(LINE, LVCOL[m.lv], 0.6), env));
+    txt = LV_MSG[m.lv].toUpperCase(); col = hudK > 0.5 ? rgba(mixc(HUD_INK, LVCOL[m.lv], 0.1), env) : (m.lv === 5 ? hsla(hueFlow() + 40, 90, 74, 1).replace(/,[\d.]+\)$/, ',' + env.toFixed(3) + ')') : rgba(mixc(LINE, LVCOL[m.lv], 0.6), env));
     ctx.save(); ctx.textAlign = 'center'; hudPoswiata(10); if (ls) ctx.letterSpacing = '3px';
-    if (hudK > 0.5) { ctx.font = '600 19px ' + FONT; ctx.fillStyle = rgba(HUD_MLEKO, 0.55 * env); ctx.fillText(txt, W / 2, 142); }   /* Z18: w dzień jasna poświata pod napisem (2 przebiegi) */
+    if (hudK > 0.5) { ctx.font = '600 19px ' + FONT; ctx.fillStyle = rgba(HUD_MLEKO, 0.7 * env); ctx.fillText(txt, W / 2, 142); ctx.fillText(txt, W / 2, 142); }   /* Z18: w dzień jasna poświata pod napisem (2 przebiegi) */
     ctx.font = '600 19px ' + FONT; ctx.fillStyle = col; ctx.fillText(txt, W / 2, 142);
     if (ls) ctx.letterSpacing = '0px';
     ctx.shadowBlur = 0; ctx.strokeStyle = hudTusz(0.5 * env); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2 - 24, 152); ctx.lineTo(W / 2 + 24, 152); ctx.stroke();
@@ -3089,12 +3104,13 @@ Słońce obiecało wrócić rano.</p>
     if (TEST) { k = performance.now() - tf0; ftAll.push(k); if (ftAll.length > 600) ftAll.shift(); if (kurt && !kurt.scena) { kurtFt.push(k); if (kurtFt.length > 2000) kurtFt.shift(); } }   /* Z10: czas pracy klatki (ogółem i przy bramie) */
 
     /* adaptacyjna jakość: tylko w dół, nigdy w górę; w trybie ?test wyłączona, żeby pomiar był uczciwy */
-    if (!TEST && dts.length >= 90) {
+    if (!TEST && dts.length >= 90 && performance.now() > jakoscOdT) {   /* Z18 (P2-11): pierwsze 3 s po starcie biegu i po bramie nie liczą się (budowa sprite'ów krainy) */
       lowTimer += dt;
       if (lowTimer > 2) {
         lowTimer = 0; var sum = 0; for (j = dts.length - 90; j < dts.length; j++) sum += dts[j];
         if (90 / sum < 50 && !lekki) { lekki = true; dts.length = 0; }   /* Z4: najpierw tryb lekki (bez papieru, promieni, drobin, poświaty) */
         else if (90 / sum < 48 && quality > 0.7) { quality -= 0.15; resize(); dts.length = 0; }
+        cv.setAttribute('data-jakosc', (lekki ? 'lekki ' : '') + quality.toFixed(2));   /* Z18: stan jakości do odczytu także poza ?test (bez globalnego haka) */
       }
     }
     requestAnimationFrame(frame);
@@ -3275,7 +3291,21 @@ Słońce obiecało wrócić rano.</p>
      Flaga „wstęp obejrzany” (ZAP.intro) zapisuje się przy końcu albo pominięciu. Dotknięcie lub klawisz pomija. W ?test wstęp tylko z ?intro=1 (respektuje flagę) albo ?intro=pokaz (zawsze). */
   var zapBezLicz = false, introZap = '', introOn = false, intro = null, introY = 0, introS = 1, introHide = false, introVeil = 0, introVeilT = 0, introSaved = null;
   var IT = { zd: [0.9, 3.4, 5.9], dl: 2.3, wlot: 7.9, lot: 1.5, prad: 7.6, hit: 9.7, koniec: 12.6, welon: 0.74 };
-  var elIntroSr = document.getElementById('intro-sr');
+  var elIntroSr = document.getElementById('intro-sr'), oglT = -9;
+  /* Z18 (P2-9): krótkie komunikaty dla czytnika ekranu (ten sam region aria-live co wstęp), najwyżej jeden na 1,5 s */
+  function ogloszenie(txt) { var n = performance.now() / 1000; if (introOn || !elIntroSr || n - oglT < 1.5) return; oglT = n; elIntroSr.textContent = txt; }
+  /* Z18 (P2-9): pułapka fokusu w otwartym oknie (sterowanie, koniec biegu, prywatność): Tab i Shift+Tab krążą po przyciskach okna */
+  document.addEventListener('keydown', function (e) {
+    var dlg, f, i;
+    if (e.key !== 'Tab') return;
+    dlg = document.querySelector('#priv.pokaz') || document.querySelector('#ster.pokaz') || document.querySelector('#wynik.pokaz');
+    if (!dlg) return;
+    f = Array.prototype.filter.call(dlg.querySelectorAll('button, input, a[href]'), function (el) { return !el.disabled && el.offsetParent !== null && !el.closest('[hidden]'); });
+    if (!f.length) return;
+    i = f.indexOf(document.activeElement);
+    if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && (i === -1 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); }
+  }, true);
   function introZdania() { return (TX.intro && TX.intro.zdania) || []; }
   function introChce() {
     var q = Q.get('intro');
@@ -3518,7 +3548,7 @@ Słońce obiecało wrócić rano.</p>
       nextPredT = gameT + okres; return true;
     }
     if (!spawnPred(kind, { force: true })) { nextPredT = gameT + 2; return false; }
-    zapowiedzDodaj(null, kind); lastThreatT = gameT; gapLog.push({ t: gameT, typ: kind, N: nTeraz.N });
+    zapowiedzDodaj(null, kind); ogloszenie(kind === 'sowa' ? 'Sowa nadlatuje. Gdy złoży skrzydła nad Okruszkiem, zejdź z jej drogi.' : 'Jastrząb nadlatuje. Gdy złoży skrzydła nad Okruszkiem, zejdź z jego drogi.'); lastThreatT = gameT; gapLog.push({ t: gameT, typ: kind, N: nTeraz.N });
     nextPredT = 1e9; return true;
   }
   function planKrainy() {
@@ -3606,6 +3636,7 @@ Słońce obiecało wrócić rano.</p>
     if (K.id === 6) napiszDodaj(tekst('krainy', 6, 'tablica'));
   }
   function przelotBramy() {
+    jakoscOdT = performance.now() + 3000;
     var K = KRAINY[kIdx + 1];
     kIdx++;
     h = Math.max(h, Z.H_BRAMA);
@@ -4786,7 +4817,7 @@ Słońce obiecało wrócić rano.</p>
        Czytelność (P0-4): plastry rysowane bliżej (głębokość widoku ZV_K, wygładzona prędkość), pojawiają się co najmniej ZAP_T s przed kontaktem.
        Luki (P1-9): najwyżej PUSTE_MAX s samych pustych plastrów, potem wiatr. Gęstość (17, 05 tabela 4.2): GEST_SKALA x tabela TOR_GEST (3 wiersze z 4). */
     NADCH_LANC: 2, NADCH_SINK_T: 2.5, NADCH_MACH: 0, IDEAL_X: 0.24, MOM_LANC: 0.12, S_LANC: [0, 0.3, 0.5, 0.84, 0.88, 0.94, 0.94],
-    KARA_P: 0.35, KARA_DNO: 0.8, SINK_RAMP: 0.45, SINK_RAMP_T: 300, ATAK_LOCK: 0.6, ZV_K: 0.31, ZV_TAU: 0.5, ZAP_T: 3.6, PUSTE_MAX: 4.0, GEST_SKALA: 0.75, MOM_NURK: 0.3, PRESJA: 0.4, PRESJA_T: 420, ATAKI_PO: 240, GEST_OKNO: 20, TROJKA_WZ: 'w02', NADCH_SHOW: 0.6 };
+    KARA_P: 0.35, KARA_DNO: 0.8, SINK_RAMP: 0.45, SINK_RAMP_T: 300, ATAK_LOCK: 0.6, ZV_K: 0.31, ZV_TAU: 0.5, ZAP_T: 3.6, PUSTE_MAX: 3.2, LUKA_MAX: 3.4, LUKA_ZAP: 1.9, GEST_SKALA: 0.75, MOM_NURK: 0.3, PRESJA: 0.4, PRESJA_T: 420, ATAKI_PO: 240, GEST_OKNO: 20, TROJKA_WZ: 'w02', NADCH_SHOW: 0.6 };
   /* Z18: wartości G nadpisywane tylko w trybie toru (swobodny lot zostaje bez zmian): okno łańcucha, łaska i opadanie energii koloru, sufit skoku prędkości */
   var TOR_G = { CHAIN_W: 1.6, GRACE_E: 0.9, FALL_E: 0.5, BOOSTMAX: 0.95 };   /* Z17 (17.1): górny wiersz = nadchmurze; widowiska S0 co ok. WID_CO s, nie bliżej niż WID_MIN_Z; drapieżnik odlatuje po NADCH_ODLOT s czekania */   /* prąd ratunkowy (Z10) w torze: winda w komórce Okruszka, gdy h < RAT_H */
   /* wiatry: dr / dc = przerzut (wiersze / kolumny), srodek = działa tylko w komórce środkowej, ds = mnożnik skoku prędkości (jednostka G.PRAD_S; zawsze JEDEN prąd w łańcuchu) */
@@ -4854,7 +4885,7 @@ Słońce obiecało wrócić rano.</p>
   function torLiczKomorki(g) { var r, c, ch, seen = {}, o = { w: 0, p: 0, s2: 0 }, key; for (r = 0; r < g.length; r++) for (c = 0; c < g[r].length; c++) { ch = g[r].charAt(c); if (ch === '.') continue; key = ch + ('AaSKT'.indexOf(ch) >= 0 ? '' : r + ',' + c); if (seen[key]) continue; seen[key] = 1; if (TOR_WIATRY[ch]) o.w++; else if (ch !== 'o') { o.p++; if ('fBHT'.indexOf(ch) >= 0) o.s2++; } } return o; }
   var WZORCE = [
     /* --- wiatry: łańcuchy (3 = pełny kolor, 5 = szansa na L5 z nurkowaniem) --- */
-    { id: 'w01', faza: 'wiatry', d: 1, pl: [['...', '.F.', '...'], ['...', '.F.', '...'], ['...', '.F.', '...']] },   /* trzy na wprost w środku: nauka łańcucha */
+    { id: 'w01', faza: 'wiatry', d: 1, pl: [['...', '.F.', '...'], ['...', '>..', '...'], ['...', '...', '.U.']] },   /* nauka łańcucha (Z18: dawniej trzy F w środku, łańcuch bez ruchu; 14: wiatry serii rozstawione, trzeba skręcać) */
     { id: 'w02', faza: 'wiatry', d: 1, pl: [['...', '.F.', '...'], ['...', '...', '.U.'], ['.Z.', '...', '...']] },   /* Z18: na wprost, Schody światła (druga z rzędu = nadchmurze), zjazd */
     { id: 'w03', faza: 'wiatry', d: 2, pl: [['...', '.>.', '...'], ['...', '...', '..u'], ['...', '..<', '...']] },   /* zygzak w prawo i z powrotem */
     { id: 'w04', faza: 'wiatry', d: 2, pl: [['...', '..<', '...'], ['...', '...', 'U..'], ['.Z.', '...', '...']] },   /* Z18: prawy poprzeczny, lewe Schody, zjazd w środku */
@@ -4879,7 +4910,7 @@ Słońce obiecało wrócić rano.</p>
     { id: 'm08', faza: 'mieszane', d: 2, pl: [['..o', '.l.', '...']] },
     { id: 'm09', faza: 'mieszane', d: 3, pl: [['T.Z', 'T..', '...']] },
     { id: 'm10', faza: 'mieszane', d: 4, pl: [['.g.', '>.<', '...']] },
-    { id: 'm11', faza: 'mieszane', d: 3, pl: [['...', 'S.S', '.U.']] },   /* K3: winda w alei wież */
+    { id: 'm11', faza: 'mieszane', d: 3, pl: [['...', 'S.S', 'SUS']] },   /* K3: winda w alei wież (Z18, QA P2-10: wieże od dołu, nie wiszące pręty) */
     { id: 'm12', faza: 'mieszane', d: 3, pl: [['.K.', '.K.', 'u.u']] },   /* K4: windy obok sznura */
     /* --- przeszkody --- */
     { id: 'p01', faza: 'przeszkody', d: 1, pl: [['...', '.b.', '...']] },
@@ -4928,7 +4959,7 @@ Słońce obiecało wrócić rano.</p>
   var TC = 1, TR = 1, xF = 1, yF = 1, torP = 0, torLift = 0, torNurk = false, diving = false, diveT = 0, diveRows = 0, diveStartRow = 0, torPrzerzut = 0, torTrasa = null;
   var lastBeatT = -9, torBeatT = 9, torBeatSila = 1, torBokT = 9, torBokDir = 0, torZjazdT = 9, torZjazdDir = 0, TORW = null, torPl = [], torKolejka = [], torPid = 0, torUczI = 0, torRatT = -99;
   var torMysz = null, torMyszK = null, torTapCzeka = null, torStick = null, torFlow = 0, torBramaN = 0, torCW = 84, torCH = 82, BIRDY0 = 0;
-  var torLog = null, torPusteT = 0, torZvSp = 0.8, torTrojkaPo = false;
+  var torLog = null, torPusteT = 0, torOstKontT = 0, torOstKontaktT = 0, torLukaDo = 0, torZvSp = 0.8, torTrojkaPo = false;
   function torLogNowy() { return { plastry: [], kontakty: [], wejscia: [], ataki: [], ruchy: 0, machniecia: 0, wzloty: 0, nurkowania: 0, wybicia: 0, przerzuty: 0, naprawy: 0, wygenerowane: 0, wzorce: {}, zielone: 0, uczciwe: 0, nieuczciwe: 0, konce: [], widowiska: 0, widowiskaKontakty: 0 }; }
   torLog = torLogNowy();
   if (TORON) {   /* panel sterowania i opis dla czytnika ekranu: teksty toru z teksty.js (grupa tor) */
@@ -5133,27 +5164,42 @@ Słońce obiecało wrócić rano.</p>
       torWstawPlaster(g, G.ZB + TOR.RAT_ETA * sp, 'rat', 'ratunek');   /* kontakt za ok. RAT_ETA s przy bieżącej prędkości */ torRatT = gameT;
       ratLog.push({ t: gameT, h: h, pojawil: gameT });
     }
+    torLukaStraz(sp);
     var zs = torZSpawn();
     if (last && zs - last.z < dz) return;
     if (!torKolejka.length) torFraza();
     spec = torKolejka.shift();
-    /* Z18 (P1-9): najwyżej PUSTE_MAX s samych pustych plastrów (pościg, cisza po bramie, oddech): potem pojedynczy wiatr */
+    /* Z18 (P1-9): najwyżej PUSTE_MAX s (w przewidywanym czasie kontaktu) samych pustych plastrów (pościg, cisza po bramie, oddech): potem pojedynczy wiatr albo lekka chmura */
+    var zNowy = last ? Math.min(zs + 0.4, last.z + dz) : zs, tKont = gameT + (zNowy - G.ZB) / sp;
     if (torPustyPlaster(torFiltr(spec.g))) {
-      torPusteT += dz / sp;
+      torPusteT = tKont - torOstKontT;
       if (torPusteT > TOR.PUSTE_MAX && gameT >= UCZ_DO) {   /* wiatr albo (gdy wiatrów już ponad cel tabeli 4.2) lekka chmura */
         var cg2 = torCelGest(), rt2 = torTempo(), gl = torPusta();
         if (!noObst && !haw && (noPrady || (rt2.w - cg2.w) / Math.max(4, cg2.w) > (rt2.p - cg2.p) / Math.max(4, cg2.p))) { torUstaw(gl, Math.floor(rndE() * TOR.COLS), Math.floor(rndE() * TOR.ROWS), rndE() < 0.6 ? 'b' : 'l'); spec = torSpec(gl, 'luka', 'przeszkody'); torPusteT = 0; }
         else if (!noPrady) { spec = torSpec(torGenLancuch(1)[0], 'luka', 'wiatry'); torPusteT = 0; }
       }
     }
-    else torPusteT = 0;
-    torNowy(spec, last ? Math.min(zs + 0.4, last.z + dz) : zs);
+    if (!torPustyPlaster(torFiltr(spec.g))) { torPusteT = 0; torOstKontT = tKont; }
+    torNowy(spec, zNowy);
   }
   /* Z18 (P0-4): plaster pojawia się co najmniej ZAP_T s przed kontaktem także przy dużej prędkości (dawniej stała głębokość Z_SPAWN: 2,75 s przy s = 1) */
   /* Z18 (P0-4): głębokość WIDOKU plastra. Logika (kontakt, zapowiedź) liczy prawdziwe z; rysunek bierze z' = ZB + (z - ZB) * k, k = ZV_K / v^0,75
      (v = wygładzona prędkość świata): plaster 1,5 s przed kontaktem ma skalę ok. 0,55-0,6 (dawniej 0,33), komórki sąsiednie dzieli ok. 70 px (dawniej 38),
      a przy dużej prędkości nadlatuje odrobinę szybciej (poczucie pędu zostaje). */
   function torZV(z) { return z <= G.ZB ? z : G.ZB + (z - G.ZB) * TOR.ZV_K / Math.pow(Math.max(0.5, torZvSp), 0.75); }
+  /* Z18 (P1-9): straż luki w czasie KONTAKTU (prędkość po zaplanowaniu potrafi spaść, więc plan sam nie wystarcza): gdy od ostatniego niepustego plastra
+     minęło >= LUKA_MAX - LUKA_ZAP s, a następny dotarłby później niż po LUKA_MAX s, wstawiany jest plaster z wiatrem albo lekką chmurą, który dotrze za LUKA_ZAP s */
+  function torLukaStraz(sp) {
+    var k, nast = 99, luka = gameT - torOstKontaktT, g, cg, rt;
+    if (gameT < UCZ_DO + 1 || state !== 'gra' || noPrady && noObst || luka < TOR.LUKA_MAX - TOR.LUKA_ZAP || gameT < torLukaDo) return;
+    for (k = 0; k < torPl.length; k++) if (!torPl[k].puste && !torPl[k].kontakt && torPl[k].z > G.ZB) nast = Math.min(nast, (torPl[k].z - G.ZB) / sp);
+    if (luka + nast <= TOR.LUKA_MAX) return;
+    g = torPusta(); cg = torCelGest(); rt = torTempo();
+    if (!noObst && !haw && (noPrady || (rt.w - cg.w) / Math.max(4, cg.w) > (rt.p - cg.p) / Math.max(4, cg.p))) torUstaw(g, Math.floor(rndE() * TOR.COLS), Math.floor(rndE() * TOR.ROWS), rndE() < 0.6 ? 'b' : 'l');
+    else g = torGenLancuch(1)[0];
+    torWstawPlaster(g, G.ZB + sp * TOR.LUKA_ZAP, 'luka', 'luka'); torLog.luki = (torLog.luki || 0) + 1;
+    torLukaDo = gameT + TOR.LUKA_ZAP;   /* nie wstawiaj drugiego, zanim ten dotrze */
+  }
   function torZSpawn() { return Math.max(TOR.Z_SPAWN, G.ZB + (TOR.V0 + TOR.V1 * s) * TOR.ZAP_T); }
   /* wstawienie plastra na głębokości z (hak, ratunek): łączy się z plastrem leżącym bliżej niż 0,25 (komórki nowego wygrywają) */
   function torWstawPlaster(g, z, wz, faza) {
@@ -5365,7 +5411,7 @@ Słońce obiecało wrócić rano.</p>
   function torIdealne() { var ucz = gameT < UCZ_DO, r = ucz ? TOR.IDEAL_UCZ : TOR.IDEAL; return Math.abs(xF - TC) < (ucz ? TOR.IDEAL_UCZ : TOR.IDEAL_X) && Math.abs(torOdchyl()) < r && torPrzerzut <= 0; }
   function torKontakt(pl) {
     var c = TC, r = TR, ch = torZnak(pl.g, c, r), e, k, wiatrJest = /[UuDF<>ZX]/.test(pl.g.join(''));
-    pl.kontakt = true; pl.tKontakt = gameT;
+    pl.kontakt = true; pl.tKontakt = gameT; if (!pl.puste) torOstKontaktT = gameT;
     for (k = torLog.plastry.length - 1; k >= 0; k--) { e = torLog.plastry[k]; if (e.id === pl.id && e.tKontakt === null) { e.tKontakt = gameT; e.czas = Math.round((gameT - e.tPokaz) * 1000) / 1000; } }
     if (TOR_WIATRY[ch]) { torWiatr(pl, ch, c, r); return; }
     if (wiatrJest) chainN = 0;   /* plaster z wiatrem minięty bez wejścia zrywa łańcuch (jak prąd w Z3c) */
@@ -5616,7 +5662,7 @@ Słońce obiecało wrócić rano.</p>
     torGeom();
     TC = TOR.START_K; TR = TOR.START_W; xF = TC; yF = TR; torP = 0; torLift = 0; torNurk = false; diving = false; diveT = 0; diveRows = 0; torPrzerzut = 0; torTrasa = null;
     lastBeatT = -9; torBeatT = 9; torBokT = 9; torZjazdT = 9; torPl.length = 0; torKolejka.length = 0; torWid.length = 0; torWidT = 0; torUczI = 0; torRatT = -99; torMysz = null; torTapCzeka = null; torStick = null; TORW = null;
-    torLog = torLogNowy(); torBramaN = 0; prady.length = 0; torPusteT = 0; torZvSp = TOR.V0; torGestLog.length = 0; torTrojkaPo = false;
+    torLog = torLogNowy(); torBramaN = 0; prady.length = 0; torPusteT = 0; torOstKontT = 0; torOstKontaktT = 0; torLukaDo = 0; torZvSp = TOR.V0; torGestLog.length = 0; torTrojkaPo = false;
     bx = torKX(xF); camX = bx * TOR.CAM; h = torH(); minH = h;
     /* tunel od razu wypełniony: puste plastry, a w nich pierwsze wiatry nauki tak, by docierały co ok. UCZ_GAP s (od ok. 2,5 s) */
     u = 0;
@@ -6429,10 +6475,15 @@ Słońce obiecało wrócić rano.</p>
     window.__okruszek.prywatnosc = function (v) { if (v === undefined ? !privWidoczny : v) privOtworz(); else privZamknij(); return privWidoczny; };
     window.__okruszek.rysujPtaka = function (c, x, y, k, s2, tilt, tt) { var old = ctx, ot = t; ctx = c; if (tt !== undefined) t = tt; try { c.save(); c.translate(x, y); c.scale(k, k); drawBird(0, 0, s2, tilt || 0, 0, 0, 0, 1); c.restore(); } finally { ctx = old; t = ot; } return true; };   /* ikony PWA: rysunek ptaszka Z4 na innym canvasie */
   }
-  buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); initBloom(); resize(); bramyUi();
-  window.addEventListener('resize', resize);
-  if (introChce()) introStart(); else if (firstRun) openPanel(true);   /* Z5: pierwsze uruchomienie = wstęp, potem ekran startu; kolejne = od razu ekran startu (Leć) */
-  requestAnimationFrame(function (n) { last = n; frame(n); });
+  /* Z18 (P1-11): budowa sprite'ów (ok. 1,4 s przy CPU x1) dopiero po pierwszym malowaniu strony, żeby od razu był widoczny jasny ekran ładowania (#ladowanie);
+     w ?test start synchroniczny jak dawniej (testy i hak od razu gotowe). Etapowa budowa samych sprite'ów: nie w tym zleceniu (kolejność losowań i deterministyczne testy). */
+  function startGry() {
+    buildPool(); buildWorld(); palAt(phi, PAL); nightK = PAL.nightW; reset(); initBloom(); resize(); bramyUi();
+    window.addEventListener('resize', resize);
+    if (introChce()) introStart(); else if (firstRun) openPanel(true);   /* Z5: pierwsze uruchomienie = wstęp, potem ekran startu; kolejne = od razu ekran startu (Leć) */
+    requestAnimationFrame(function (n) { var el = document.getElementById('ladowanie'); if (el && el.parentNode) el.parentNode.removeChild(el); last = n; frame(n); });
+  }
+  if (TEST) startGry(); else requestAnimationFrame(function () { setTimeout(startGry, 30); });
 })();
 </script>
 </body>

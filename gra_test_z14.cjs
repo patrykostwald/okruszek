@@ -184,7 +184,7 @@ const BOT_TOR = `(function () {
   const I = await ev(() => {
     /* Z18: łańcuch po nauce (w pierwszych UCZ_DO s najwyżej dwa z rzędu) i z szerokim idealnym wejściem: tu sprawdzana jest mechanika łańcucha, precyzję mierzy gra_test_z18.cjs */
     const O = __okruszek, R = {}; O.pauza(true); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); const ID0 = O.torStala('IDEAL'); O.torStala('IDEAL', 0.5); const poNauce = () => { for (let i = 0; i < 42; i++) { O.idz(1, 1, true); O.torSymuluj(0.5); } }; poNauce(); O.idz(1, 1, true); O.torSymuluj(0.3);
-    O.wzorzec('w01', { z: 1.6 }); let maxE = 0; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E3 = maxE; R.ch3 = O.lancuch().n; R.rozkwit = O.rozkwit().razy;
+    ['wiatr:wprost', 'wiatr:wprost', 'wiatr:wprost'].forEach((n, i) => O.zdarzenie(n, { k: 1, w: 1, z: 1.6 + i * 0.75 })); let maxE = 0;   /* Z18: trzy wiatry na wprost w środku (wzorzec w01 wymaga teraz ruchu) */ for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E3 = maxE; R.ch3 = O.lancuch().n; R.rozkwit = O.rozkwit().razy;
     O.nowyBieg(); poNauce(); O.idz(1, 1, true); O.torSymuluj(0.3); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 1.6 }); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 2.5 }); maxE = 0; for (let i = 0; i < 240; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E2 = maxE;
     /* 5 (i 6.) wiatrów w 12 s z nurkowaniem: poprzeczne wiatry w dolnym wierszu przerzucają Okruszka tam, gdzie czeka następny; nurkowanie trwa cały czas */
     const SEK = [['wiatr:prawo', 0], ['wiatr:prawo', 1], ['wiatr:lewo', 2], ['wiatr:lewo', 1], ['wiatr:prawo', 0], ['wiatr:prawo', 1]];
@@ -231,7 +231,10 @@ const BOT_TOR = `(function () {
   for (const x of F) info('K' + x.br + ' ziarno ' + x.z + ': ' + r2(x.t) + ' s, ' + x.tryb + (x.koniec ? ' (' + x.koniec + ')' : '') + ', wiatry ' + x.wej + ' (idealnie ' + x.ide + '), kary ' + x.kar + ' z ' + x.kont + ' kontaktów, pełny kolor ' + r2(x.Emax) + ' s, poziom max L' + x.lvlMax + ', znaki: ' + x.typy);
   chk(F.every(x => x.t >= 59.9 && x.tryb === 'gra'), 'bot po torze leci 60 s bez lądowania we wszystkich 6 biegach (K1 x2, K2, K3, K4, K5)', 'wylądował: ' + JSON.stringify(F.filter(x => x.t < 59.9).map(x => [x.br, x.z, x.t, x.koniec])));
   chk(F.every(x => x.wej >= 8), 'bot trafia wiatry (>= 8 w 60 s w każdym biegu: ' + F.map(x => x.wej).join(', ') + ')');
-  chk(F.some(x => x.Emax > 0), 'bot po torze osiąga pełny kolor (E = 1) w co najmniej jednym biegu (czasy ' + F.map(x => r2(x.Emax)).join(', ') + ' s)');
+  /* Z18: dawniej „bot po torze osiąga pełny kolor w co najmniej jednym biegu”. Po QA P0-2 idealne wejście wymaga precyzji (środek wstęgi), a ten prosty bot nie celuje
+     machnięciami, więc pełny kolor jest dla niego rzadki (tak ma być: cel sekcji 14). Pełny kolor bota precyzyjnego sprawdza gra_test_z18.cjs (a); tu: łańcuch działa (idealne wejścia są) */
+  info('pełny kolor prostego bota (bez celowania w środek wstęgi): ' + F.map(x => r2(x.Emax)).join(', ') + ' s');
+  chk(F.every(x => x.ide >= 3), 'bot po torze wchodzi idealnie (środkiem wstęgi) w każdym biegu: ' + F.map(x => x.ide + '/' + x.wej).join(', '));
   chk(F.every(x => x.nieucz === 0), 'wszystkie plastry z prawdziwych biegów uczciwe (' + F.reduce((a, x) => a + x.pl, 0) + ' plastrów)');
   chk(F.find(x => x.br === 3).typy.indexOf('S') >= 0 && F.find(x => x.br === 4).typy.indexOf('K') >= 0 && /[AaXv]/.test(F.find(x => x.br === 5).typy), 'przeszkody krain w torze: szpile w K3, latawce w K4, samoloty / Wielki przelot w K5');
 

@@ -47,9 +47,16 @@ const BOT = `(function (P) {
         if (dc || dr) { out.ruch = [dc, dr]; last = A.t; ruszyl = true; }
         else if (cel.r < k.wiersz && pl.eta > 0.25) { if (A.t - last > 0.22) { out.stuk = 0; last = A.t; lastFlap = A.t; } }
         else if (cel.w && chceP && cel.r === k.wiersz && cel.c === k.kol && pl.eta > 0.05 && pl.eta < 1.6 && !(k.wiersz >= A.ROWS - 1 && k.p > 0.7)) {   /* precyzja: w środek wstęgi */
-          var o0 = off(A, k, pl.eta, k.p, k.wzlot, hold), o1 = off(A, k, pl.eta, Math.max(0, k.p - 0.4), k.wzlot + 1, 0.75);
-          var bezpieczne = !(k.wiersz > 0 && k.wzlot + 1 >= (k.koszt || 2) - 1e-6 && !A.sufit);
-          if (Math.abs(o0) > ID * 0.6 && Math.abs(o1) < Math.abs(o0) - 0.01 && bezpieczne && A.t - lastFlap > 0.2) { out.stuk = 0; last = A.t; lastFlap = A.t; }
+          /* najlepsza chwila machnięcia: przewidywane odchylenie w chwili kontaktu dla machnięcia teraz albo za d s (co 0,05 s); bez machnięcia, jeśli to lepsze */
+          var rate = A.opad || (1 / 3.6), ko = k.koszt || 2, o0 = off(A, k, pl.eta, k.p, k.wzlot, hold), best = { d: -1, o: Math.abs(o0) }, d, pf, lf, Tt, pp, ll, oo;
+          for (d = 0; d < pl.eta - 0.05; d += 0.05) {
+            pf = Math.max(0, Math.min(1, k.p + d * rate) - 0.4); lf = Math.max(0, k.wzlot - Math.max(0, d - hold) * 1.6) + 1;
+            if (k.wiersz > 0 && lf >= ko - 1e-6 && !A.sufit) continue;   /* machnięcie podniosłoby o wiersz */
+            Tt = pl.eta - d; pp = Math.min(1, pf + Tt * rate); ll = Math.max(0, lf - Math.max(0, Tt - 0.75) * 1.6);
+            oo = Math.abs(pp * (A.SINK_SHOW || 0.3) - (k.wiersz > 0 ? ll / ko * (A.LIFT_SHOW || 0.5) : 0));
+            if (oo < best.o - 0.005) best = { d: d, o: oo };
+          }
+          if (best.d >= 0 && best.d < 0.05 && Math.abs(o0) > ID * 0.5 && A.t - lastFlap > 0.2) { out.stuk = 0; last = A.t; lastFlap = A.t; }
           return out;
         }
       }
