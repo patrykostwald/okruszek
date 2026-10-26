@@ -227,3 +227,6 @@ Cytat: „mechanika lotu powinna wyglądać tak, że użytkownik trzyma telefon 
 
 ### 16.4 Zlecenie Z16 (po Z14 i Z15)
 Z16 (Opus high): tryb poziomy z gestami skrzydeł (16.1), strefy wysokości i ziemia z znajdźkami i krajobrazem (16.2), układ poziomy HUD i ekranów, prośba o obrót, manifest/orientacja, testy gestów (dotyk dwoma palcami przez CDP, zamach na zewnątrz i do wewnątrz, asymetria), test stref i znajdźek, zrzuty 844x390 (poziomo). Wersjonowanie: ?poziomo=1 obok ?tor=1; po akceptacji właściciela staje się domyślny na telefonach.
+
+### 16.5 Decyzja właściciela: drążek zostaje (26.10)
+Właściciel: „jeśli uważasz, że lepiej z drążkami, to zostawimy drążki, fajnie się nimi gra”. Tryb 3 (drążek) jest PEŁNOPRAWNYM trybem w torze (Z14) i w trybie poziomym (Z16): w poziomie lewy kciuk steruje drążkiem (kierunek = komórka docelowa, także ukosy), prawy kciuk robi zamach (stuknięcie) i nurkowanie (przytrzymanie). Wszystkie cztery sposoby sterowania (jeden kciuk, dwa kciuki jak skrzydła, drążek, w poziomie gesty skrzydeł) pozostają do wyboru w grze; domyślny zostaje wybrany po teście właściciela na telefonie, a do tego czasu domyślny to drążek lub jeden kciuk wg jego wskazania (drążek preferowany jako „fajnie się nim gra”).
