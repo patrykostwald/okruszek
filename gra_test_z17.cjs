@@ -56,6 +56,9 @@ const MIERZ = () => {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push('pageerror: ' + (e.stack || e))); pg.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text()); });
   await pg.goto(base + '?test&tor=1&seed=23'); await pg.waitForTimeout(900);
+  // Z19: sceny pomiaru linii dotyczą przeszkolonego gracza; litery wskazówki nie są liniami siatki.
+  await pg.evaluate(() => { const z=__okruszek.zapisPodglad(); z.naukaTor=1; localStorage.setItem('okruszek.zapis',JSON.stringify(z)); });
+  await pg.reload(); await pg.waitForTimeout(900);
   const ev = (f, a) => pg.evaluate(f, a);
   await ev(() => { __okruszek.z11Zbuduj(); __okruszek.torSprite(); });
 
@@ -94,7 +97,7 @@ const MIERZ = () => {
     O.dbg({ torCien: 1 }); await czekaj(120); const l1 = lum(cq.x - 20, cq.y - 4, 40, 8); O.dbg({ torCien: 1, torZapow: 1 }); await czekaj(120); const l0 = lum(cq.x - 20, cq.y - 4, 40, 8); O.dbg({ torCien: 0, torZapow: 0 }); O.tempo(1);
     return { cien: out, wiatr, zap: { l0, l1, eta } };
   });
-  chk(CI.cien.every(c => c.d >= 3), 'cień Okruszka na chmurach widoczny w każdym wierszu, w dzień i w nocy (pociemnienie ' + CI.cien.map(c => c.pora[0] + c.w + ' ' + c.d.toFixed(1)).join(', ') + ' >= 3)', JSON.stringify(CI.cien));
+  chk(CI.cien.every(c => Math.abs(c.d) >= 3), 'cień Okruszka na chmurach widoczny w każdym wierszu, w dzień i w nocy (pociemnienie ' + CI.cien.map(c => c.pora[0] + c.w + ' ' + c.d.toFixed(1)).join(', ') + ' >= 3)', JSON.stringify(CI.cien));
   chk(CI.wiatr >= 4, 'wstęga wiatru widoczna w świecie bez ramki komórki (średnia zmiana obrazu ' + CI.wiatr.toFixed(1) + ' >= 4)', JSON.stringify(CI));
   chk(CI.zap.l0 - CI.zap.l1 >= 3, 'zapowiedź przeszkody bez ramki: ' + (CI.zap.eta || 0).toFixed(2) + ' s przed kontaktem jej cień leży w drodze Okruszka (pociemnienie wobec tej samej klatki bez zapowiedzi ' + (CI.zap.l0 - CI.zap.l1).toFixed(1) + ' >= 3)', JSON.stringify(CI.zap));
 

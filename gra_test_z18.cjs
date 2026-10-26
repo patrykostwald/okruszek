@@ -128,7 +128,7 @@ const BIEG = ([src, kr, seed, MAXS]) => {
     const O = __okruszek, R = {}, T = O.tor().stale, lock = T.ATAK_ZAP - T.ATAK_LOCK;
     const atak = (kiedy) => { O.pauza(true); O.brama(4); O.bezPrzeszkod(true); O.bezPradow(true); O.idz(1, 1, true); O.ustaw(0.1); O.zdarzenie('jastrzab'); let ruszyl = false, wynik = null;
       for (let i = 0; i < 60 * 10; i++) { const st = O.stan().jastrzab, a = O.torLog().ataki.slice(-1)[0];
-        if (st && st.faza === 'poscig' && a && !a.wynik && !ruszyl) { const ta = O.stan().graCzas - a.t; if (ta >= kiedy) { const k = O.komorka(); O.idz(k.kol === 2 ? 1 : k.kol + 1, k.wiersz); ruszyl = true; } }
+        if (st && st.faza === 'poscig' && a && !a.wynik && !ruszyl) { const ta = O.stan().graCzas - a.t; if (ta >= (kiedy > 0.5 ? a.lockAt + 0.2 : kiedy)) { const k = O.komorka(); const cel = kiedy > 0.5 && a.wyjscie ? a.wyjscie[0] : (k.kol === 2 ? 1 : k.kol + 1); O.idz(cel, k.wiersz); ruszyl = true; } }
         if (a && a.wynik) { wynik = a.wynik; break; } if (O.idz(O.komorka().kol, O.komorka().wiersz) && false) break; O.torSymuluj(1 / 60); }
       O.odblokuj(); return wynik; };
     R.zapas = atak(0.3); R.poNamierzeniu = atak(lock + 0.2); R.lock = lock; O.bezPrzeszkod(false); O.bezPradow(false); O.brama(1); return R; });
@@ -191,9 +191,12 @@ const BIEG = ([src, kr, seed, MAXS]) => {
 
   /* ---------- (i) sterowanie ---------- */
   console.log('(i) sterowanie: kciuk położony w trybie 1, para kciuków w trybie 2');
+  // Poprzednie pomiary otwierały inne karty. Zdarzenie visibilitychange musi dojść przed przygotowaniem gestu, inaczej pierwszy dotyk tylko wznawia pauzę.
+  await pg.bringToFront(); await pg.waitForFunction(() => !document.hidden);
+  await pg.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const cdp = await ctx.newCDPSession(pg);
   const touch = async (type, pts) => { await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(p => ({ x: p[1], y: p[2], id: p[0] })) }); };
-  const fresh = async (mode, c, r) => { try { await touch('touchCancel', []); } catch (_) { } await sleep(60); await ev(([m, c2, r_]) => { const O = __okruszek; O.panel(false); O.odblokuj(); O.nurkuj(false); O.bezPrzeszkod(true); O.bezPradow(true); O.tempo(1); O.czulosc(1); O.sterowanie(m); O.nowyBieg(); O.ustaw(0); O.idz(c2, r_, true); }, [mode, c, r]); await sleep(150); };
+  const fresh = async (mode, c, r) => { try { await touch('touchCancel', []); } catch (_) { } await sleep(60); await ev(([m, c2, r_]) => { const O = __okruszek; O.panel(false); O.odblokuj(); O.nurkuj(false); O.bezPrzeszkod(true); O.bezPradow(true); O.tempo(1); O.czulosc(1); O.sterowanie(m); O.nowyBieg(); O.ustaw(0); O.idz(c2, r_, true); O.pauza(false); }, [mode, c, r]); await sleep(150); };
   const kom1 = () => ev(() => __okruszek.komorka());
   await fresh(1, 1, 1); await touch('touchStart', [[1, 200, 600]]); await sleep(320); for (let i = 1; i <= 6; i++) { await touch('touchMove', [[1, 200 + i * 10, 600]]); await sleep(16); } await touch('touchEnd', []); await sleep(250);
   const t1 = await kom1();

@@ -236,7 +236,9 @@ const BOT_TOR = `(function () {
   info('pełny kolor prostego bota (bez celowania w środek wstęgi): ' + F.map(x => r2(x.Emax)).join(', ') + ' s');
   chk(F.every(x => x.ide >= 3), 'bot po torze wchodzi idealnie (środkiem wstęgi) w każdym biegu: ' + F.map(x => x.ide + '/' + x.wej).join(', '));
   chk(F.every(x => x.nieucz === 0), 'wszystkie plastry z prawdziwych biegów uczciwe (' + F.reduce((a, x) => a + x.pl, 0) + ' plastrów)');
-  chk(F.find(x => x.br === 3).typy.indexOf('S') >= 0 && F.find(x => x.br === 4).typy.indexOf('K') >= 0 && /[AaXv]/.test(F.find(x => x.br === 5).typy), 'przeszkody krain w torze: szpile w K3, latawce w K4, samoloty / Wielki przelot w K5');
+  // Z19: losowe namierzanie zużywa ten sam strumień RNG. Pokrycie typów badamy osobno od decyzji bota i wycinania drogi ucieczki.
+  const typyKrain = await ev(() => [3,4,5].map(kraina => __okruszek.generuj(200, {kraina, ziarno:19, losoweN:true}).map(g=>g.join('')).join('')));
+  chk(typyKrain[0].includes('S') && typyKrain[1].includes('K') && /[AaXv]/.test(typyKrain[2]), 'generator przeszkód krain: szpile w K3, latawce w K4, samoloty / Wielki przelot w K5 (200 plastrów/krainę)');
 
   /* ---------- (g) bot bierny ---------- */
   console.log('(g) bot bierny');
@@ -269,7 +271,7 @@ const BOT_TOR = `(function () {
     /* drapieżnik: stojąc w miejscu zostaje złapany; uciekając z zaznaczonej komórki ucieka */
     O.brama(4); O.bezPrzeszkod(true); O.idz(1, 1, true); O.ustaw(0.1); O.zdarzenie('jastrzab'); for (let i = 0; i < 60 * 12; i++) { O.torSymuluj(1 / 60); if (O.koniec()) break; } R.stoi = { koniec: O.stan().tryb, log: O.torLog().ataki.map(a => a.wynik), konce: O.torLog().konce };
     O.odblokuj(); O.symuluj(2.5); R.endKind = O.torLog().konce.map(k => k.typ);
-    O.brama(4); O.bezPrzeszkod(true); O.idz(1, 1, true); O.ustaw(0.1); O.zdarzenie('jastrzab'); for (let i = 0; i < 60 * 14; i++) { const st = O.stan().jastrzab; if (st && st.faza === 'poscig') { const a = O.torLog().ataki.slice(-1)[0]; const kk = O.komorka(); if (a && !a.wynik && a.k === kk.kol && a.w === kk.wiersz) O.idz(kk.kol === 2 ? 1 : kk.kol + 1, kk.wiersz); } O.torSymuluj(1 / 60); if (O.koniec() || !O.stan().jastrzab) break; }
+    O.brama(4); O.bezPrzeszkod(true); O.idz(1, 1, true); O.ustaw(0.1); O.zdarzenie('jastrzab'); for (let i = 0; i < 60 * 14; i++) { const st = O.stan().jastrzab; if (st && st.faza === 'poscig') { const a = O.torLog().ataki.slice(-1)[0]; const kk = O.komorka(); if (a && a.lock !== undefined && !a.wynik && ((a.k === kk.kol && a.w === kk.wiersz) || (a.drugi && a.drugi[0] === kk.kol && a.drugi[1] === kk.wiersz))) O.idz(a.wyjscie[0], a.wyjscie[1]); } O.torSymuluj(1 / 60); if (O.koniec() || !O.stan().jastrzab) break; }
     R.ucieka = { tryb: O.stan().tryb, log: O.torLog().ataki.map(a => a.wynik), uciekl: O.stan().jastrzabLog };
     O.odblokuj(); O.bezPrzeszkod(false); O.ziarno(0); O.brama(1); O.pauza(false); return R; });
   /* Z18: dawniej górny wiersz; po 17 nr 1 nadchmurze tylko Schodami światła, więc brama stawia Okruszka w chmurach (najwyższy wiersz osiągalny bez wiatru) */

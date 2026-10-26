@@ -313,6 +313,16 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       code === 0 && /TEST Z18 OK/.test(out) ? ok('test Z18 (gra_test_z18.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z18 nie przeszedł (kod ' + code + ')');
     }
   }
+  /* Z19: czucie lotu, kanały, dotyk, wibracje, namierzanie i kontrast. */
+  {
+    const tf = path.join(__dirname, 'gra_test_z19.cjs');
+    let out = '', code = 0;
+    try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 900000, encoding: 'utf8' }); }
+    catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+    fs.writeFileSync(path.join(__dirname, 'preflight-z19-szczegoly.log'), out);
+    out.split('\n').filter(l => /FAIL|TEST Z19|BŁĄD/.test(l)).forEach(l => console.log('  z19> ' + l.trim()));
+    code === 0 && /TEST Z19 OK/.test(out) ? ok('test Z19 przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z19 nie przeszedł (kod ' + code + ')');
+  }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('PRE-FLIGHT BŁĄD: ' + e); process.exit(2); });

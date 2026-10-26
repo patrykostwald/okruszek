@@ -132,9 +132,35 @@
     if (ctx.currentTime - (ostatniEfekt[nazwa] ?? -10) < 0.12) return false;
     ostatniEfekt[nazwa] = ctx.currentTime; return true;
   }
-  function prad() {
-    if (moznaEfekt('prad')) ton(efektyBus, 430, 1100, 0.65, GLOS.prad, 0.09);
+  function prad(idealny) {
+    if (moznaEfekt('prad')) ton(efektyBus, idealny ? 659.25 : 430, idealny ? 1318.5 : 880, 0.65, GLOS.prad, 0.09);
   }
+  // Z19: własne, krótkie głosy w tej samej pentatonice co muzyka.
+  function machniecie(sila = 1) {
+    if (!moznaEfekt('machniecie')) return;
+    const moc = sila >= 1.5;
+    ton(efektyBus, moc ? 180 : 280, moc ? 80 : 140, moc ? 0.32 : 0.18, moc ? 0.16 : 0.09, 0.025, 'triangle');
+  }
+  function uderzenie() { if (moznaEfekt('uderzenie')) ton(efektyBus, 140, 65, 0.3, 0.16, 0.025, 'sine'); }
+  function wybicie() { if (moznaEfekt('wybicie')) ton(efektyBus, 330, 990, 0.42, 0.13, 0.035, 'triangle'); }
+  function lancuch(n = 1) {
+    if (!moznaEfekt('lancuch')) return;
+    const hz = [523.25, 659.25, 783.99, 1046.5, 1318.5][Math.min(4, Math.max(0, n - 1))];
+    ton(efektyBus, hz, hz, 0.55, 0.12, 0.02, 'triangle');
+    // Fraza otoczenia odpowiada na frazę wiatru, bez zmiany całej muzyki.
+    nastepna = ctx.currentTime + 0.65;
+  }
+  function rozkwit() { if (moznaEfekt('rozkwit')) [523.25, 659.25, 783.99].forEach((hz, i) => ton(efektyBus, hz, hz, 1.1, 0.075, 0.06, 'sine', i * 0.09)); }
+  function drapieznik(typ) {
+    if (!moznaEfekt('drapieznik')) return;
+    const hz = typ === 'sowa' ? 320 : 1200;
+    ton(efektyBus, hz, hz * 0.65, 0.42, 0.13, 0.04, 'triangle');
+    ton(efektyBus, hz * 0.85, hz * 0.6, 0.35, 0.08, 0.04, 'sine', 0.22);
+  }
+  function turbo() { if (moznaEfekt('turbo')) ton(efektyBus, 220, 880, 0.75, 0.12, 0.1, 'triangle'); }
+  function hiper() { if (moznaEfekt('hiper')) { ton(efektyBus, 440, 1760, 1, 0.12, 0.1); ton(efektyBus, 660, 1320, 1.2, 0.07, 0.1); } }
+  function schody() { if (moznaEfekt('schody')) [659.25, 783.99, 1046.5].forEach((hz, i) => ton(efektyBus, hz, hz, 0.6, 0.07, 0.03, 'sine', i * 0.1)); }
+  function nurkStart() { if (moznaEfekt('nurkStart')) ton(efektyBus, 550, 160, 0.4, 0.09, 0.03, 'triangle'); }
   function cwir() {
     if (!moznaEfekt('cwir')) return;
     const hz = los(1400, 1800);
@@ -157,5 +183,5 @@
     aktualizuj();
     if (!document.hidden) void wznow(); // Nie kasuje ręcznej pauzy.
   });
-  window.OkruszekDzwiek = Object.freeze({ start, muzyka, dzwiek, predkosc, prad, nurkowanie, cwir, och, ladowanie, pauza });
+  window.OkruszekDzwiek = Object.freeze({ start, muzyka, dzwiek, predkosc, prad, nurkowanie, cwir, och, ladowanie, pauza, machniecie, uderzenie, wybicie, lancuch, rozkwit, drapieznik, turbo, hiper, schody, nurkStart });
 })();
