@@ -829,12 +829,12 @@ Słońce obiecało wrócić rano.</p>
     if (S.far) { var xf = S.far.c.getContext('2d'); xf.setTransform(1, 0, 0, 1, 0, 0); xf.clearRect(0, 0, S.far.w, S.far.h); xf.drawImage(S.c, 0, 0, S.far.w, S.far.h); }
   }
   /* Z17 (brak 2 z Z15): nocą duża bliska chmura miała ciężki, płaski, jednolity spód. Dwie warstwy przy malowaniu (nie co klatkę):
-     odbite światło morza chmur rozjaśnia dolną część (ton jasnego brzegu, nie biel), a podstawa dostaje miękkie, płytkie wcięcia (płaska, lekko falująca, sekcja 2). */
+     odbite światło morza chmur rozjaśnia dolną część (pół jasnego brzegu, pół barwy chmury: nie biel, nie gasi koloru), a podstawa dostaje miękkie, płytkie wcięcia (płaska, lekko falująca, sekcja 2). */
   var SPOD = { H: 0.38, A: 0.5, WCIECIE: 0.8 };
   function spodNocny(x, S, g, C, nb) {
     var gh = Math.max(16, -g.top * SPOD.H), lg, r = R32((g.sd || 7) * 3 + 11), xx, rw, rh, rg;
     x.save(); x.setTransform(S.spr, 0, 0, S.spr, S.ox, S.oy);
-    lg = x.createLinearGradient(0, -gh, 0, 6); lg.addColorStop(0, rgba(C.rim, 0)); lg.addColorStop(1, rgba(mixc(C.rim, PAL.f0 || C.rim, 0.35), SPOD.A * nb));
+    lg = x.createLinearGradient(0, -gh, 0, 6); lg.addColorStop(0, rgba(C.rim, 0)); lg.addColorStop(1, rgba(mixc(C.rim, C.tones[1], 0.5), SPOD.A * nb));   /* światło w barwie tej chmury (nie blednie: kolor nocą zostaje) */
     x.globalCompositeOperation = 'source-atop'; x.fillStyle = lg; x.fillRect(g.minx - 30, -gh, g.maxx - g.minx + 60, gh + 30);
     x.globalCompositeOperation = 'destination-out';
     for (xx = g.minx + 6; xx < g.maxx; xx += rw * 1.3) {
