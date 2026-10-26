@@ -1,0 +1,222 @@
+PRE-FLIGHT C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  ok   składnia skryptu 1
+  ok   składnia teksty.js
+  ok   składnia dzwiek.js
+  ok   zapis w przeglądarce tylko localStorage, klucze okruszek-sterowanie, okruszek.zapis, okruszek.zapis.zly (9 wywołań)
+  ok   każdy odczyt i zapis localStorage w try/catch
+  ok   hak window.__okruszek (?test)
+  ok   pula chmur = 14
+  ok   warstw-kulis = 9
+  ok   bez ?test hak nie istnieje
+  ok   obraz niepusty przy s=0 (51 kolorów)
+  ok   obraz niepusty przy s=0.5 (94 kolorów)
+  ok   obraz niepusty przy s=1 (153 kolorów)
+  ok   s=0: zero koloru (tony L0)
+  ok   s=0,5 (L2): kolor od tyłu do przodu (niebo > daleko > blisko > 0, smugi dopiero od L3) {"niebo":0.369016,"daleko":0.356923,"blisko":0.33536,"smugi":0,"noc":0,"pora":0.44693854610770506}
+  ok   s=1: pełny kolor wszędzie
+  ok   s=0,5: pełnia jeszcze nie osiągnięta (pełny kolor dopiero w L4-L5)
+  ok   pętla działa (401 klatek w 4 s)
+  info fps przy s=1, 390x844 @2x (SC=1,5), headless bez GPU: {"n":240,"avg":100,"p5":99,"min":98}
+  ok   średnio 100 kl/s >= 25
+  info fps przy L5 (hiperprzestrzeń), 390x844 @2x (SC=1,5), headless bez GPU (to NIE jest pomiar telefonu): {"n":240,"avg":99.6,"p5":99,"min":50}
+  ok   L5: średnio 99.6 kl/s >= 25
+  ok   skręt w prawo przesuwa kamerę (camX=308)
+  ok   hak Z1-Z3b, Z2b, Z10, Z3c i Z11 kompletny (50 funkcji)
+  ok   Z11: szpile, komin, latawce, poryw, przelot, tęcza księżycowa i Rogal wymuszalne i widoczne w gdzie()
+  ok   nowy bieg: wysokość 0.8, gra trwa
+  ok   dwa palce: po puszczeniu obu brak ducha
+  ok   Z3: zdarzenia ptak/deszcz/jastrzab/prad wymuszalne i widoczne w gdzie(), noc(), czysty nowy bieg
+  ok   Z14: bez ?tor swobodny lot (tor wyłączony)
+  ok   Z14: ?tor=1 włącza tor 3x3 (hak kompletny, 63 wzorców, 100 plastrów generatora uczciwych, 8 s lotu w symulacji, 199 klatek)
+  ok   brak błędów i ostrzeżeń konsoli
+  z2> TEST Z2 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html (tempo czasu gry x4)
+  z2> ok   lądowanie po 25.0 s czasu gry (cel 14-28)
+  z2> (a) bot-gracz i kontrola
+  z2> ok   kontrola (bez sterowania, prądy włączone) ląduje po 41.7 s, wlotów: 2
+  z2> ok   bot leci 60.1 s czasu gry bez lądowania (min wysokość 0.64, wlotów 19, dystans 977 m, nurkowań 19, maks. s 0.78)
+  z2> info metoda symulacji palców: CDP (prawdziwy dotyk)
+  z2> TEST Z2 OK
+  ok   test bota Z2 (gra_test_z2.cjs) przeszedł
+  z3> TEST Z3 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z3> (a) harmonogram zdarzeń (bieg 125 s czasu gry, tempo x8)
+  z3> (b) każde zdarzenie wymuszalne i widoczne w gdzie()
+  z3> (c) kolizja z ptakiem
+  z3> (d) chmura deszczowa
+  z3> (e) jastrząb
+  z3> (f) noc (pora doby) i kolejność koloru
+  z3> TEST Z3 OK
+  ok   test Z3 (gra_test_z3.cjs) przeszedł: 65 sprawdzeń
+  z3b> TEST Z3b C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html (tempo botów x4)
+  z3b> info stałe: {"SINK":0.04,"DIVE":0.2,"ZOOM":0.12,"PRAD_H":0.55,"PRAD_S":0.24,"CH_STEP":0.5,"CHAIN_W":2.2,"DIVE_TOP":0.5,"GATE4":3,"CAP4":0.79,"GATE5":5,"CAP5":0.93,"HY_S":0.95,"HY_HOLD":2,"HY_LEN":6,"H0":0.8,"ZB":0.7,"HIT":72,"HITB":30,"HITR":95,"WET":5,"SPIN":1,"HAW_WARN":2,"HAW_CHASE":10,"HAW_FIRST":120,"HAW_S":0.7,"OBS_FROM":20,"WARN":2,"WIND_LEN":4,"HAIL_LEN":2.2,"HAIL_H":0.12,"FOG_LEN":3.5,"E_POJEDYNCZY":0.3,"E_DWA":0.62,"E_TRZY":1,"E_NURK":0.4,"HIT_IDEAL":34,"HIT_IDEAL_UCZ":54,"EDGE_K":0.5,"GRACE_E":1.3,"FALL_E":0.35,"E_UP":3,"BLOOM_T":1.2,"ZIG":0.16,"E_SK":[[0,0],[0.3,0.5],[0.62,0.7],[1,1]]}
+  z3b> (a) poziomy L0-L5 i wskaźnik
+  z3b> (b) trudność: boty (czas gry 60 s, tempo x4)
+  z3b> info bot idealny: koniec 150.09 s gry, tryb gra, wlotów 56, maks. poziom 4, pierwsze wejścia na poziomy (s gry) 0.01/1.21/2.09/5.79/24.95/-1.00, czas w poziomach 5.83/15.66/63.14/56.05/9.42/0.00, hiper razy 0, L5 bez łańcucha 0
+  z3b> info średniak A (co drugi prąd): maks. poziom 3, wlotów 11, koniec 60.03 s; B (losowo 50%): 3, wlotów 4, 38.04 s; C (50% i nurkuje jak idealny): 3, wlotów 5, 42.97 s
+  z3b> info losowy A: maks. poziom 2 (4.08 s), losowy B: 2 (4.07 s), bierny: 0 (20.00 s)
+  z3b> (c) hiperprzestrzeń (L5)
+  z3b> info łańcuch 6: maks. s 1.00, hiper razy 1, czasy ["6.00"]
+  z3b> info łańcuch 4: maks. s 0.93, maks. poziom 4, hiper razy 0
+  z3b> info 6 prądów co 3,6 s (zerwany łańcuch): maks. poziom 3, maks. prądów w 12 s 4, hiper 0
+  z3b> (d) kolor: kolejność, odcienie, etapy
+  z3b> info liczba odcieni (wagi > 0,5) od s: 0:0 0.1:0 0.2:1 0.3:3 0.4:4 0.5:6 0.6:8 0.7:9 0.8:11 0.9:14 1:14
+  z3b> info nadwyżka chroma / ułamek barwnych pikseli, zachód, L0..L4: 0.0/0.00  0.0/0.00  2.7/0.12  6.4/0.24  10.8/0.40
+  z3b> (e) doba w tle
+  z3b> info tempo doby (s na dobę): L5 15.0, s=0.1 240.0, s=0.3 240.0, s=0.5 84.4, s=0.7 39.4, s=0.9 36.2
+  z3b> info zmierzony okres doby w czasie gry: spokojny 240 s, s=0,8 37.7 s, L5 15.0 s
+  z3b> info jasność nieba: min 92, maks. 214, największy skok na 0,1% doby (s=0.2): 0.65
+  z3b> info jasność nieba: min 60, maks. 163, największy skok na 0,1% doby (s=0.9): 0.43
+  z3b> info jasność obrazu na klatkach przy L5 (doba 15 s): 1566 klatek, min 107, maks. 197, największy skok między klatkami 3.20
+  z3b> info kolejność pór od zachodu: zachod > noc > swit > dzien > zachod > noc
+  z3b> (f) nowe przeszkadzajki
+  z3b> (g) harmonogram nowych przeszkód (bieg 125 s czasu gry, tempo x8)
+  z3b> info pierwsze pojawienia (s gry), noc: {"ptak":24.569599999428142,"deszcz":31.609599999428305,"wiatr":34.64959999942804,"stado":41.6903999994271,"latawiec":50.249599999426344,"grad":55.449599999425814,"mgla":69.20959999942573,"burza":78.64959999942721,"sowa":120.0903999994335}, spawny: {"ptak":10,"deszcz":6,"jastrzab":0,"sowa":1,"stado":2,"wiatr":2,"grad":1,"burza":1,"latawiec":1,"mgla":1}
+  z3b> info fps (headless bez GPU, 390x844 @1x) L0..L5: 100 / 100 / 100 / 100 / 100 / 100 (to NIE jest pomiar telefonu)
+  z3b> TEST Z3b OK
+  ok   test Z3b (gra_test_z3b.cjs) przeszedł: 70 sprawdzeń
+  z2b> TEST Z2b C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html (tempo botów x3, bot 60 s czasu gry)
+  z2b> (a) tryb 1 (jeden kciuk) domyślny, bez zmian
+  z2b> (b) tryb 2: dwa kciuki jak skrzydła
+  z2b> info środek ciężkości skrzydła (px, w dół = większe): pole lewe: L złożone 44.3, P złożone 25.4; pole prawe: L złożone 24.7, P złożone 45.3
+  z2b> (c) tryb 3: drążek
+  z2b> (e) przełączanie trybu w trakcie dotyku, T
+  z2b> (h) czułość skrętu we wszystkich trybach
+  z2b> info tryb 1: vx przy czułości 0,5 / 1,0 / 1,5 = 46.56 / 93.16 / 139.74
+  z2b> info tryb 2: vx przy czułości 0,5 / 1,0 / 1,5 = 124.17 / 248.23 / 372.34
+  z2b> info tryb 3: vx przy czułości 0,5 / 1,0 / 1,5 = 53.21 / 106.43 / 159.71
+  z2b> (d) bot-gracz, prawdziwe dotyki, 60 s czasu gry w każdym trybie
+  z2b> (f) wybór w grze, pamięć localStorage, ?sterowanie=n, pierwsze uruchomienie, brak localStorage
+  z2b> info opisy trybów: "1. Jeden kciuk Przesuń kciuk w bok, żeby skręcić. Przytrzymaj, żeby nurkować." | "2. Dwa kciuki jak skrzydła Lewy kciuk skręca w lewo, prawy w prawo, oba naraz nurkują. Stukanie na zmianę podnosi lot." | "3. Drążek Dotknij lewej połowy i przesuń kciuk: im dalej, tym ostrzejszy skręt. Prawy kciuk nurkuje."
+  z2b> (g) przycisk "sterowanie": 44 px, stała strefa, bez nakładania na wskaźnik poziomu
+  z2b> TEST Z2b OK
+  ok   test Z2b (gra_test_z2b.cjs) przeszedł: 109 sprawdzeń
+  z10> TEST Z10 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z10> (a) KRAINY jako dane
+  z10> (b) boty z bramy do bramy (10 ziaren)
+  z10> (e) napięcie N(t), odstępy, spokój po starcie i po bramie, budżet uwagi
+  z10> (c) zapowiedź w sekundach i zasada szkicu
+  z10> (d) klasy skutku: 50 wymuszeń każdej przeszkody innej niż jastrząb i sowa
+  z10> (f) start z bramy, cicha pomoc, ziarno
+  z10> (g) wytrwałość, prąd ratunkowy, sowa-pokaz, napis krainy
+  z10> (h) zapis okruszek.zapis v1
+  z10> (i) brama-kurtyna: klatki przez cały przelot, zrzuty 390 px
+  z10> info klatki (390x844 @2x, SC 1,5, headless bez GPU): bez ograniczenia CPU, brama 2: przelot 100 kl/s (p5 99), praca 2.58 ms (p95 3.7); bez bramy 100 kl/s, praca 2.2 ms (p95 2.9) | CPU x4, brama 2: przelot 42.7 kl/s (p5 25), praca 18.37 ms (p95 29.6); bez bramy 38 kl/s, praca 21.06 ms (p95 34) | CPU x4, brama 5: przelot 29 kl/s (p5 20), praca 28.05 ms (p95 39.4); bez bramy 39.8 kl/s, praca 20.59 ms (p95 32.9)
+  z10> (j) tryb zgodności ?pasmo=1
+  z10> TEST Z10 OK
+  ok   test Z10 (gra_test_z10.cjs) przeszedł: 67 sprawdzeń
+  z3c> TEST Z3c C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z3c> (a) hak Z3c i stałe
+  z3c> info stałe Z3c: {"E_POJEDYNCZY":0.3,"E_DWA":0.62,"E_TRZY":1,"E_NURK":0.4,"CHAIN_W":2.2,"HIT_IDEAL":34,"HIT_IDEAL_UCZ":54,"GRACE_E":1.3,"FALL_E":0.35,"BLOOM_T":1.2,"ZIG":0.16,"GATE4":3,"GATE5":5,"CAP4":0.79}
+  z3c> (b) model energii koloru E (symulacja)
+  z3c> info zanik: pełny kolor od 1.22 s, trzyma 1.37 s, spadek 0,9 -> 0,7: 0.35 E/s (stałe: łaska 1.3 s, FALL_E 0.35)
+  z3c> (c) boty (symulacja bez rysowania, 16 ziaren)
+  z3c> info idealny: pierwszy pełny kolor w 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00 s; rozkwitów/bieg 10.00; pełny kolor łącznie/bieg 15.33 s; hiper razy 0, L5 bez łańcucha 0
+  z3c> info idealny121 (nurkuje od 30% wysokości, jak w Z3b): pierwszy pełny kolor w 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00, 27.00 s; hiper razy 0, czas L5 0.00 s, pełny kolor 294.40 s
+  z3c> info bot 50% prądów (losowo): 575 serii (>= 3 prądów), trójek 81 (14.1%), pełny kolor 141.00 s łącznie = 1.74 s na trójkę, najdłuższy ciągły 6.13 s; "co drugi prąd": trójek 0 z 464; 80% prądów: 50% serii
+  z3c> info geometria serii (8 serii): minimalny odstęp w x między sąsiednimi prądami 73.85 j., najmniejsze odchylenie standardowe x serii 38.38 j.
+  z3c> (d) kolor: kolejność przy E = 0, 0,3, 0,62, 1 o każdej porze doby, rozkwit, L0
+  z3c> info rozkwit na klatkach: 152 próbek, największa różnica niebo - blisko 0.47 (po rozkwicie 0.00)
+  z3c> (e) HUD: trzy iskierki
+  z3c> info piksele strefy iskierek (liczba barwnych pikseli) E=0/0,3/0,62/1: 0/48/92/518
+  z3c> (f) klasy przeszkód i konsola
+  z3c> (g) fps headless: po zmianie vs baza (gra-okruszek-M1)
+  z3c> info fps (najlepszy z 4, 390x844 @2x, headless bez GPU): baza s=1 100.00 (100.00/97.60/100.00/100.00), po zmianie s=1 100.00 (100.00/100.00/100.00/100.00), po zmianie E=1 100.00 (100.00/100.00/100.00/99.60)
+  z3c> TEST Z3c OK
+  ok   test Z3c (gra_test_z3c.cjs) przeszedł: 39 sprawdzeń
+  z11> TEST Z11 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z11> (a) hak, KRAINY, teksty, klasy
+  z11> (b) każdy element wymuszalny hakiem i widoczny w gdzie()
+  z11> (c) szczeliny, kolizja trzonu, niska wieża, skutki S1
+  z11> (d) komin, tęcza, poryw, smuga, wiry
+  z11> (e) budżet prędkości
+  z11> info boty z wymuszanymi bonusami (90 s): K5 smuga+tecza_ks+poryw+komin: maks. L5, smug 15, kominów 0 | K3 komin: maks. L3, smug 0, kominów 61 | K5 smuga: maks. L1, smug 0, kominów 0 | K2 tecza_ks+smuga+komin+prądy: maks. L5, smug 8, kominów 7 | K4 poryw+smuga+komin+prądy: maks. L5, smug 7, kominów 8
+  z11> info bot idealny w K2-K5 (z Z3b, nurkuje od 30% wysokości), pierwszy pełny kolor (s): K2/1 27.75, K2/2 28.00, K2/3 27.00, K3/1 27.00, K3/2 27.00, K3/3 27.00, K4/1 27.00, K4/2 33.50, K4/3 34.75, K5/1 35.25, K5/2 42.75, K5/3 27.00
+  z11> (f) 400 wymuszeń nowych przeszkód: 0 końców biegu
+  z11> (g) zapowiedzi w sekundach
+  z11> (i) kierunek słońca, finały i zwiastuny w ruchu, Rogal
+  z11> info finały i zwiastuny: K1 zwiastun tecza, finał trzy_w_rytmie | K2 zwiastun szpile, finał ulewa_i_luk | K3 zwiastun latawce, finał kanion_wiez | K4 zwiastun przelot, finał festiwal (+żółty latawiec) | K5 zwiastun burza, finał przelot_olbrzyma
+  z11> (h) kolor: kolejność warstw i czerwień przy s = 0
+  z11> info czerwone piksele poza szalikiem przy s = 0: K2/domowa 0 z 161443 (szalik 162, strefa HUD i tekstu 4), K2/noc 0 z 161443 (szalik 178, strefa HUD i tekstu 11), K2/dzien 0 z 161443 (szalik 164, strefa HUD i tekstu 0), K3/domowa 0 z 161443 (szalik 169, strefa HUD i tekstu 0), K3/noc 0 z 161443 (szalik 168, strefa HUD i tekstu 4), K3/dzien 0 z 161443 (szalik 173, strefa HUD i tekstu 0), K4/domowa 0 z 161443 (szalik 162, strefa HUD i tekstu 0), K4/noc 0 z 161443 (szalik 166, strefa HUD i tekstu 4), K4/dzien 0 z 161443 (szalik 166, strefa HUD i tekstu 0), K5/domowa 0 z 161443 (szalik 168, strefa HUD i tekstu 0), K5/noc 0 z 161443 (szalik 163, strefa HUD i tekstu 4), K5/dzien 0 z 161443 (szalik 174, strefa HUD i tekstu 0)
+  z11> (j) pamięć sprite'ów i klatki
+  z11> info klatki (5 rund A/B, mediany; 390x844 @2x, headless bez GPU): Z5 100.00 (100.00/100.00/100.00/100.00/100.00), Z11 z samolotem i 5 wieżami 94.10 (94.10/94.90/91.30/86.30/96.80); stosunki rund 0.94/0.95/0.91/0.86/0.97; czas rysowania (cpu, średnio ms): Z5 2.27/2.59/2.5/2.68/2.02, Z11 3.76/3.83/4.19/4.56/3.42
+  z11> info CPU x4 (tylko informacja, headless bez GPU): Z5 38.00 kl/s (rysowanie 16.36 ms), Z11 z samolotem i wieżami 32.80 kl/s (rysowanie 21.02 ms); kryterium >= 55 kl/s na średnim Androidzie do potwierdzenia na telefonie (Z7)
+  z11> TEST Z11 OK
+  ok   test Z11 (gra_test_z11.cjs) przeszedł: 36 sprawdzeń
+  z15> TEST Z15 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z15> (a) brak jednolitego ciemnego obrysu
+  z15> info baza Z11, L2: ciemne linie zachód/dzień/noc 0.0091 / 0.0156 / 0.0077; Z15: 0.0003 / 0.0001 / 0.0003; L0 zachód: jasność 30.1 -> 160.1, jasne linie 0.0479 -> 0.0011
+  z15> (b) przejścia między poziomami, przemiatanie etapu, czas gry
+  z15> info przemiatanie s 0..1 co 0,05 (zachód), jasność: 169.3 169.6 169.9 170.2 170.0 169.3 168.7 168.2 167.5 166.4 163.9 160.2 157.0 154.9 154.1 153.9 151.4 146.9 145.0 143.9 142.2
+  z15> info wlot w prąd: Z15 145 klatek, jasność 161.3..169.4, etap rysowania 10% -> 90% w 17 klatkach, największy skok między klatkami 3.9; baza Z11: skok 115.0, etap 10% -> 90% w 0 klatkach
+  z15> (c) pory doby
+  z15> info L0 doba co 2%: jasność 113.2..216.0, największy skok 11.0
+  z15> info L2 doba co 2%: jasność 134.6..195.7, największy skok 6.3
+  z15> (d) L0
+  z15> (e) kolejność koloru i etapy
+  z15> (f) zieleń tylko z funkcją
+  z15> (g) pamięć i klatki
+  z15> info klatki L2 w ruchu (najlepszy z 3, 390x844 @2x, headless bez GPU, to NIE jest pomiar telefonu): Z11 100.0 (100.0/100.0/98.8), Z15 100.0 (99.2/98.8/100.0); czas rysowania ms Z11 3.32/2.51/3.83, Z15 3.11/2.85/2.74
+  z15> TEST Z15 OK
+  ok   test Z15 (gra_test_z15.cjs) przeszedł: 27 sprawdzeń
+  z5> TEST Z5 C:\Users\User\Desktop\projekty\gra-okruszek-Z18
+  z5> (a) pliki: manifest, ikony, sw.js, head
+  z5> (b) wstęp „Gdzie śpi słońce”
+  z5> (c) dźwięk: moduł, wywołania, przełączniki, pauza
+  z5> (d) PWA: service worker, pamięć, najpierw sieć, offline
+  z5> (e) prywatność i regulamin, „Usuń zapis”
+  z5> (g) konsola
+  z5> TEST Z5 OK
+  ok   test Z5 (gra_test_z5.cjs) przeszedł: 104 sprawdzeń
+  z14> TEST Z14 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z14> (a) przełącznik ?tor=1 i hak
+  z14> (b) biblioteka WZORCE
+  z14> (c) generator: uczciwość 1000 plastrów
+  z14> (d) zieleń tylko z funkcją (sekcja 15.7)
+  z14> (j) ruch w siatce: koszt wznoszenia, rytm, szybowanie, nurkowanie i wybicie
+  z14> (k) skrzydła zgodne z akcją
+  z14> (i) łańcuch wiatrów: E = 1, L5, na wprost tylko ze środka
+  z14> (e) zapowiedzi >= 1,5 s na L0, L2, L4, L5
+  z14> (f) bot po torze: 60 s bez lądowania
+  z14> info K1 ziarno 1: 60 s, gra, wiatry 20 (idealnie 13), kary 1 z 2 kontaktów, pełny kolor 0 s, poziom max L2, znaki: FU<u>ZbloDP
+  z14> info K1 ziarno 2: 60 s, gra, wiatry 22 (idealnie 12), kary 0 z 0 kontaktów, pełny kolor 0 s, poziom max L2, znaki: FU<u>ZPlbo
+  z14> info K3 ziarno 3: 60 s, gra, wiatry 17 (idealnie 10), kary 0 z 1 kontaktów, pełny kolor 0 s, poziom max L2, znaki: FU<u>ZblHoPDsS
+  z14> info K4 ziarno 4: 60 s, gra, wiatry 12 (idealnie 8), kary 0 z 1 kontaktów, pełny kolor 0 s, poziom max L2, znaki: FU<u>ZKlobfMDPs
+  z14> info K5 ziarno 5: 60 s, gra, wiatry 22 (idealnie 14), kary 0 z 1 kontaktów, pełny kolor 1.12 s, poziom max L4, znaki: FU<u>ZblADofgM
+  z14> info K2 ziarno 6: 60 s, gra, wiatry 18 (idealnie 11), kary 0 z 1 kontaktów, pełny kolor 0 s, poziom max L2, znaki: FU<u>ZblHoDgP
+  z14> (g) bot bierny
+  z14> (h) 400 wymuszeń: końce biegu tylko S3
+  z14> (m) krainy i bramy, drapieżnik
+  z14> (l) trzy tryby sterowania (prawdziwy dotyk), mysz, klawiatura
+  z14> (n) pamięć, klatki, czerwień
+  z14> info klatki headless przy s = 1 (390 x 844 @2x; swobodny | tor jednocześnie w dwóch nowych przeglądarkach, role zamieniane): 92.7 | 100, 94.1 | 99.2, 87.3 | 91.3, 86.3 | 90.6, 85.7 | 93.4, 87.9 | 96
+  z14> TEST Z14 OK
+  ok   test Z14 (gra_test_z14.cjs) przeszedł: 58 sprawdzeń
+  z17> TEST Z17 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z17> (e) nazwa poziomu L1 w HUD
+  z17> (f) tor bez widocznej siatki: cień Okruszka, wiatry i zapowiedzi zamiast ramek
+  z17> (d) nadchmurze: widowiska S0 bez kolizji
+  z17> (b) brak ciemnych konturów na obiektach toru, (c) zieleń tylko z funkcją
+  z17> info cienkie ciemne linie (dol): tło toru | z 17 rodzajami elementów i 5 widowiskami: dzien L0 0.0023 | 0.0030, dzien L2 0.0037 | 0.0045, dzien L4 0.0044 | 0.0064, noc L0 0.0023 | 0.0034, noc L2 0.0039 | 0.0049, noc L4 0.0030 | 0.0039
+  z17> (a) brak błędów w trzech trybach sterowania (>= 120 s czasu gry na tryb, z botem i rysowaniem)
+  z17> info tryb 1: 122.4 s czasu gry w 47 s, biegów 1, kroków bota 4501, wymuszeń 60, E max 1.00, poziomy 01234, gestów 17, klatek strony 6934
+  z17> info tryb 2: 122.5 s czasu gry w 47 s, biegów 1, kroków bota 4527, wymuszeń 60, E max 1.00, poziomy 01234, gestów 18, klatek strony 11462
+  z17> info tryb 3: 121.7 s czasu gry w 46 s, biegów 1, kroków bota 4530, wymuszeń 60, E max 1.00, poziomy 01234, gestów 15, klatek strony 15993
+  z17> TEST Z17 OK
+  ok   test Z17 (gra_test_z17.cjs) przeszedł: 19 sprawdzeń
+  z18> TEST Z18 C:\Users\User\Desktop\projekty\gra-okruszek-Z18\index.html
+  z18> (a) cele strojenia botami (deterministyczne ziarna)
+  z18> (b) nadchmurze: tylko Schody światła
+  z18> (c) idealne wejście = środek wstęgi
+  z18> (d) drapieżnik: śledzi do namierzenia, unik po namierzeniu
+  z18> (e) luki bez plastra z zawartością
+  z18> (f) debiuty tornada i burzy
+  z18> (g) czytelność przeszkody 1,5 s przed kontaktem
+  z18> (h) HUD, nazwa L0, wstęp
+  z18> (i) sterowanie: kciuk położony w trybie 1, para kciuków w trybie 2
+  z18> (j) jasne panele, opisy trybów, manifest
+  z18> TEST Z18 OK
+  ok   test Z18 (gra_test_z18.cjs) przeszedł: 31 sprawdzeń
+PRE-FLIGHT OK
+
+real	26m59.293s
+user	0m0.030s
+sys	0m0.031s
