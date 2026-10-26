@@ -285,16 +285,16 @@ Słońce obiecało wrócić rano.</p>
   /* ---------- Z15: styl tonalny, bez ciemnych konturów (PROJEKT.md 15.5 i 15.7, właściciel 26.10) ----------
      Krawędź wyznacza RÓŻNICA TONU, nie obrys: chmury, wieże, przeszkody, morze chmur i Okruszek są malowane warstwami tonów
      (płaty światła i cienia, miękki brzeg, mgiełka między warstwami), a kontur, jeśli jest, to jasny brzeg albo półprzezroczysty, ciemniejszy odcień TEGO SAMEGO wypełnienia.
-     L0 nie jest czarnym granatem: to spokojna, ciemnoniebieskoszara paleta z warstwami i światłem (tony poniżej, osobno dla pory doby).
-     Chroma tonów L0 nie przekracza chromy tła danej pory (L0 jest bez koloru: testy Z3b mierzą nadwyżkę chromy ponad tło), jasność rośnie od nocy do dnia.
+     L0 (15.8, właściciel 26.10): JASNY, spokojny, delikatnie pokolorowany świat (blady róż, krem, jasny błękit, lawenda, ciepły piasek); noc i zachód to granat i lawenda ze światłem, nie czerń.
+     Chroma tonów L0 jest niska (pastel bazowy) i nie przekracza wyraźnie chromy tła pory; więcej barw i nasycenia dochodzi z energią koloru E (etapy stageCol).
      Pola (interpolowane w palAt jak reszta palety pory): bg = niebo u góry, h0 = jasny horyzont, c0..c3 = tony chmur (światło, ciało, cień płata, podstawa),
      s0 = cień (zastępuje dawny granat NAVY), r0 = jasny brzeg (światło na krawędzi), f0 = mgiełka powietrzna, m0 = trzy tony morza chmur (góra, środek, głębia).
-     Etapy koloru (stageCol) nakładają się na te tony: base = ton L0, więc kolor wchodzi na szaroniebieski obraz, a nie na czerń. */
-  var Z15L0 = [
-    { bg: [27, 33, 57], h0: [66, 73, 96], c0: [140, 148, 170], c1: [109, 117, 141], c2: [84, 92, 116], c3: [64, 71, 95], s0: [40, 46, 71], r0: [186, 192, 214], f0: [78, 86, 108], m0: [[94, 102, 126], [72, 80, 104], [54, 61, 86]] },
-    { bg: [46, 48, 72], h0: [128, 125, 143], c0: [180, 177, 195], c1: [149, 147, 169], c2: [121, 120, 144], c3: [97, 98, 123], s0: [64, 65, 92], r0: [218, 213, 227], f0: [126, 124, 144], m0: [[124, 123, 147], [99, 100, 125], [77, 79, 105]] },
-    { bg: [62, 73, 100], h0: [152, 161, 182], c0: [204, 209, 224], c1: [174, 181, 200], c2: [144, 153, 174], c3: [116, 125, 150], s0: [84, 93, 121], r0: [236, 239, 247], f0: [154, 163, 184], m0: [[150, 159, 182], [122, 131, 156], [96, 105, 132]] },
-    { bg: [37, 41, 65], h0: [106, 106, 127], c0: [160, 161, 182], c1: [127, 130, 153], c2: [100, 104, 129], c3: [78, 82, 107], s0: [51, 55, 80], r0: [208, 208, 224], f0: [98, 100, 123], m0: [[108, 111, 136], [84, 88, 113], [62, 66, 91]] }
+     Etapy koloru (stageCol) nakładają się na te tony: base = ton L0, etap g (L1) to pierwsze blade barwy, potem pastel, ciepło i pełnia. */
+  var Z15L0 = [   /* 15.8: L0 jasny i delikatnie pokolorowany (niska chroma); noc = granat ze światłem i barwnymi warstwami, nie czerń */
+    { bg: [46, 54, 100], h0: [120, 114, 170], c0: [194, 190, 228], c1: [162, 158, 206], c2: [132, 130, 184], c3: [106, 106, 160], s0: [76, 78, 128], r0: [224, 222, 246], f0: [122, 120, 172], m0: [[142, 140, 192], [114, 114, 168], [90, 92, 146]] },
+    { bg: [172, 186, 224], h0: [252, 224, 216], c0: [255, 247, 241], c1: [246, 228, 228], c2: [229, 209, 216], c3: [208, 191, 208], s0: [184, 172, 200], r0: [255, 252, 246], f0: [240, 224, 228], m0: [[238, 218, 224], [216, 200, 216], [192, 182, 206]] },
+    { bg: [176, 206, 240], h0: [238, 240, 244], c0: [255, 255, 252], c1: [244, 242, 244], c2: [224, 226, 236], c3: [202, 208, 226], s0: [182, 194, 220], r0: [255, 255, 255], f0: [228, 236, 244], m0: [[238, 238, 244], [216, 222, 238], [192, 202, 228]] },
+    { bg: [96, 96, 152], h0: [240, 202, 188], c0: [250, 228, 226], c1: [230, 204, 214], c2: [198, 178, 200], c3: [166, 152, 184], s0: [128, 116, 162], r0: [255, 238, 226], f0: [216, 190, 202], m0: [[222, 200, 212], [188, 170, 196], [152, 140, 178]] }
   ];
   (function () { var k, f; for (k = 0; k < 4; k++) for (f in Z15L0[k]) PORY[k][f] = Z15L0[k][f]; })();
   /* tony dynamiczne: dawne stałe "ciemnego L0" (NAVY, MONO, STM, HK_MONO) śledzą teraz paletę L0 pory doby (updZ15 co klatkę, w miejscu, bez nowych tablic) */
@@ -1060,7 +1060,7 @@ Słońce obiecało wrócić rano.</p>
   var Ec = 0, Egoal = 0, eReachT = -99, bloomOn = false, bloomT = 0, bloomE0 = 0, bloomN = 0, bloomLog = [], lockE = null, zPrevRaw = 0, eFullT = 0, eFullRun = 0, eFullMax = 0, seriaLog = [], wlotIdeal = 0, wlotBrzeg = 0, sparkPulse = 0;
   var lvlFirst = [-1, -1, -1, -1, -1, -1], chainN = 0, lastHitT = -99, hitLog = [], cI = 0, inC = 0, lvl = 0, lvlMax = 0, lvlTime = [0, 0, 0, 0, 0, 0], l5bez = 0, l5czas = 0, hiperRazy = 0, hiperTrwa = [], lvMsg = null;
   var hyLeft = 0, hyHold = 0, hyCool = false, hyK = 0, hyForce = false, hyFlash = 0, hyRun = 0, hyLog = [];
-  var PHI0 = 0.75, phi = PHI0, poraLock = false, dayRate = 1 / 240;
+  var PHI0 = 0.42, phi = PHI0,   /* 15.8: start o poranku (świt > dzień), dawniej 0,75 zachód */ poraLock = false, dayRate = 1 / 240;
   var nightK = 0, PAL = {}, ST = { g: 0, p: 0, w: 0, f: 0 }, hueW = [], odcieni = 0;
   var stumbleT = 0, fogT = 0, windDX = 0, gradHit = 0, mglaHit = 0, burzaHit = 0, latHit = 0, stadoHit = 0, flashK = 0, boltT = 0, dbgL = [], predLog = { jastrzab: [], sowa: [] };
   var nextEv = {}, lastBR = -99, lastNew = -99, reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1732,10 +1732,10 @@ Słońce obiecało wrócić rano.</p>
 
   /* ---------- kolor: etapy, odcienie, paleta światła ---------- */
   /* kolor etapu: baza (kontur/granat) -> szarość/błękit -> pastel -> ciepło pory -> pełnia; warstwy nakładają się (etapy rozciągnięte) */
-  var PASTEL_WARM = 0.2, PASTEL_SAT = 1.55, SAT_FULL = 0.35, PASTEL_BIEL = 0.2, SZAROSC_JASNA = 0.15;   /* Z15: SZAROSC_JASNA = rozjaśnienie etapu szarości L1 (łagodniejsze wejście z L0), PASTEL_BIEL (dawniej 0,42) = ile bieli w pastelu L2; mniej bieli = mniejszy skok jasności L1 > L2 i mniej mgły zamiast pastelu */
+  var PASTEL_WARM = 0.2, PASTEL_SAT = 1.55, SAT_FULL = 0.35, PASTEL_BIEL = 0.2, BLADE_BIEL = 0.5;   /* Z15 (15.8): BLADE_BIEL = ile bieli w etapie L1 (pierwsze blade barwy zamiast szarości), PASTEL_BIEL (dawniej 0,42) = ile bieli w pastelu L2; mniej bieli = mniejszy skok jasności L1 > L2 i mniej mgły zamiast pastelu */
   function satc(c, k) { var l = lumOf(c); return [Math.max(0, Math.min(255, l + (c[0] - l) * k)), Math.max(0, Math.min(255, l + (c[1] - l) * k)), Math.max(0, Math.min(255, l + (c[2] - l) * k))]; }
   function stageCol(base, F, warm, hz, ww) {
-    var l = lumOf(F), Gc = mixc([l * 0.9, l * 0.98, Math.min(255, l * 1.1 + 6)], [206, 212, 228], SZAROSC_JASNA), Pc = mixc(mixc(F, [238, 232, 252], PASTEL_BIEL), [196, 210, 248], 0.18), Wc = mixc(F, warm, ww === undefined ? 0.5 : ww), c;
+    var Gc = mixc(mixc(F, [246, 242, 250], BLADE_BIEL), base, 0.25), Pc = mixc(mixc(F, [238, 232, 252], PASTEL_BIEL), [196, 210, 248], 0.18), Wc = mixc(F, warm, ww === undefined ? 0.5 : ww), c;
     Pc = satc(mixc(Pc, warm, PASTEL_WARM + (hz || 0)), PASTEL_SAT);   /* Z3c: pastel jest ciepły i baśniowy, nie szaro-lawendowy (zrzut żywego podglądu przy poziomie Kolor) */
     c = mixc(base, Gc, ST.g); c = mixc(c, Pc, ST.p); c = mixc(c, Wc, ST.w); return satc(mixc(c, F, ST.f), 1 + SAT_FULL * ST.f);   /* Z3c: pełnia (E = 1 / Turbo) jest wyraźnie bardziej nasycona niż etap ciepły */
   }
@@ -1755,10 +1755,9 @@ Słońce obiecało wrócić rano.</p>
   /* paleta koloru chmury nr ci: szare tony (L1) przechodzą w jej własny odcień (wejście jak odcień ci), drugi odcień mieszany w plamach */
   function cloudParams(ci, storm) {
     var P = PAL, se = sk + 0.02, gm = 0.45 + 0.55 * P.hl, pv = lumOf(P.cM) * gm, hk = (ci * 5 + 2) % NHUE, h2 = (hk + 1) % NHUE, wk = hueW[hk], w2 = hueW[h2] * ST.p, C = {}, gB = [], Hc, H2, hT, hM, hB, tones, k;
-    gB[0] = grayTone(P.cT, pv, gm); gB[1] = grayTone(mixc(P.cT, P.cM, 0.55), pv, gm); gB[2] = grayTone(mixc(P.cM, P.cB, 0.5), pv, gm); gB[3] = grayTone(P.cB, pv, gm);
-    gB[3] = mixc(gB[3], gB[2], 0.55 * P.nightW); gB[2] = mixc(gB[2], gB[1], 0.25 * P.nightW);   /* Z15: nocą szarości spodu chmur lżejsze (bez ciemnego pasa) */
     Hc = hueCz(hk); H2 = hueCz(h2);
     hT = mixc(Hc, [255, 250, 240], 0.42); hM = mixc(Hc, [255, 250, 240], 0.15); hB = mixc(mulc(mixc(Hc, H2, 0.3), 0.86), mixc(P.sh, [176, 156, 220], 0.55), 0.3);
+    gB = [mixc(P.c0, hT, 0.3), mixc(P.c1, hM, 0.3), mixc(P.c2, Hc, 0.28), mixc(P.c3, hB, 0.26)];   /* Z15 (15.8): L1 = blady ton L0 z odrobiną własnego odcienia chmury (bez szarości) */
     var lift = Z15_LIFT * wk * (1 - wk), CRM = [246, 240, 252];   /* Z15: Z15_LIFT 0,6 (dawniej 1,3): mniej bieli w połowie przejścia = mniejszy skok jasności L1 > L2 */   /* Z4: przejście szarość > odcień przez jasny pastel (bez oliwkowego błota) */
     tones = [mixc(mixc(gB[0], CRM, lift), hT, wk), mixc(mixc(gB[1], CRM, lift), hM, wk), mixc(mixc(gB[2], CRM, lift * 0.8), Hc, wk), mixc(mixc(gB[3], CRM, lift * 0.5), hB, wk)];
     for (k = 0; k < 4; k++) tones[k] = satc(tones[k], 1 + SAT_FULL * ST.f);   /* Z3c: nasycenie chmur rośnie w pełni koloru */
@@ -2627,7 +2626,7 @@ Słońce obiecało wrócić rano.</p>
   function updZ15() {
     var P = PAL;
     cpc(NAVY, P.s0); cpc(MONO, P.c1); cpc(STM, mixc(P.c3, P.s0, 0.45)); cpc(HK_MONO, mixc(P.c2, P.c3, 0.5));
-    cpc(BIRD_F0, mixc(P.c0, P.r0, 0.3)); cpc(BIRD_D0, mixc(P.c2, P.c3, 0.55));   /* skrzydła L0 ciemniejsze od ciała i morza: Okruszek czytelny tonem */
+    cpc(BIRD_F0, mixc(B_BODY, [236, 240, 250], 0.42)); cpc(BIRD_D0, mixc(B_DARK, [200, 206, 230], 0.4));   /* 15.8: Okruszek w L0 pastelowo niebieski (czytelny na jasnym świecie) */
   }
   function updLight() {
     /* Z11: kierunek słońca (00-wybor.md: wschód ZA PLECAMI gracza, zachód PRZED Okruszkiem): u = 0 świt (słońce za kamerą, niewidoczne, światło od widza: SUNP.b),
@@ -2969,7 +2968,7 @@ Słońce obiecało wrócić rano.</p>
     if (haw && haw.faza === 'zapowiedz') drawSygnal();
     drawStick(dt);
     if (!introOn) {   /* Z5: we wstępie sam świat, bez wskaźników */
-      if (state !== 'koniec') drawHUD();
+      if (state !== 'koniec') { ctx.save(); ctx.shadowColor = rgba(mixc(NAVY, [40, 44, 84], 0.6), 0.55 * sm((lumOf(PAL.bg) - 90) / 60)); ctx.shadowBlur = 4; drawHUD(); ctx.restore(); }   /* Z15 (15.8): na jasnym niebie biały tekst HUD dostaje miękki cień (czytelność) */
       drawZ10Nakladka(dt);   /* Z10: kreska do bramy, strefa tekstu, łuki zapowiedzi */
       drawLvMsg();
     }
@@ -3044,7 +3043,7 @@ Słońce obiecało wrócić rano.</p>
      nBaza = napięcie na start krainy; final = id finału (Z11); zwiastun = element krainy pokazywany 300 m przed jej bramą. Teksty (nazwy, tablice) w teksty.js. */
   var V_TYP = 18.3;   /* m/s: mediana prędkości bota "70%" w K1 z 10 ziaren (pomiar Z10, raporty/z10-pomiar.md) */
   var KRAINY = [
-    { id: 1, czasTyp: 90, pora: 0.75, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
+    { id: 1, czasTyp: 90, pora: 0.42, akcent: null, sink: 0.032, pradCo: 1.0, pradTyp: 'wstega', przeszkody: { ptak: 1 }, debiut: ['ptak'],
       drapieznik: { jastrzab: 0, sowa: 0 }, nBaza: 0.10, final: 'trzy_w_rytmie' },
     { id: 2, czasTyp: 120, pora: 0.92, akcent: [200, 196, 240], sink: 0.036, pradCo: 1.05, pradTyp: 'tecza_ks', przeszkody: { ptak: 0.5, deszcz: 1, grad: 0.4 }, debiut: ['deszcz', 'grad', 'sowa', 'tecza'],
       drapieznik: { jastrzab: 0, sowa: 100 }, nBaza: 0.20, final: 'ulewa_i_luk', zwiastun: 'tecza' },
@@ -4703,7 +4702,7 @@ Słońce obiecało wrócić rano.</p>
         return false;
       },
       /* noc() = ustawienie pory doby na noc (i zatrzymanie doby); noc(false) = zachód (dawna paleta startowa), też zatrzymany */
-      noc: function (v) { poraLock = true; phi = (v === undefined || v) ? 0 : PHI0; palAt(phi, PAL); nightK = PAL.nightW; forceTint = true; },
+      noc: function (v) { poraLock = true; phi = (v === undefined || v) ? 0 : 0.75; palAt(phi, PAL); nightK = PAL.nightW; forceTint = true; },
       bezPrzeszkod: function (v) { noObst = v === undefined ? true : !!v; },
       ustawDystans: function (m) { dist = Math.max(0, +m || 0); },
       gdzie: function () {

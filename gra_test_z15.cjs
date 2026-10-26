@@ -6,7 +6,7 @@
    (b) przejścia: brak skoku jasności i nasycenia powyżej progu między sąsiednimi poziomami L0-L5 (4 pory), przy przemiataniu etapu koloru co 0,05
        i w czasie gry po wlocie w prąd (klatka do klatki; kolor napływa w ok. 0,3 s zamiast skakać)
    (c) pory doby: L0 i L2 przy przejściu przez całą dobę co 2% bez skoku jasności obrazu
-   (d) L0 nie jest czarny: średnia jasność obrazu w zakresie dla każdej pory; L0 bez koloru ponad chromę tła (szaroniebieskie tony)
+   (d) L0 (15.8): jasny, delikatnie pokolorowany: średnia jasność w jasnym zakresie dla każdej pory, chroma niezerowa i niska, L4 wyraźnie bardziej nasycony; start gry o poranku
    (e) kolejność koloru niebo >= daleko >= blisko >= smugi (E = 0 / 0,3 / 0,62 / 1, 4 pory) i monotoniczność etapów (nasycenie rośnie z poziomem, tolerancja jak w Z3b)
    (f) zieleń tylko w chmurach z funkcją: w pełnym kolorze (L4) brak zielonych pikseli w świecie dekoracyjnym; paleta CHMURY15 ma zieleń tylko w mgla_zielona i oaza_zielona
    (g) pamięć sprite'ów <= 60 MB (wszystkie wieże, samoloty i 8 chmur toru), klatki headless nie gorsze niż o 10% od bazy, tryb lekki działa
@@ -34,8 +34,10 @@ const P = {
   DLUM_KROK: 15,       /* przemiatanie etapu co 0,05: |różnica jasności| (Z11: do 29) */
   DCHR_KROK: 10,       /* przemiatanie co 0,05: |różnica chromy| */
   WLOT_WZGL: 0.6,      /* po wlocie w prąd: największy skok jasności klatki najwyżej 60% skoku bazy Z11 (błysk wlotu jest w obu) */
-  DLUM_PORA: 8,        /* doba co 2% (2% doby trwa najmniej 0,3 s = ok. 18 klatek przy L5): skok jasności obrazu między próbkami */
-  L0_ZAKRES: { zachod: [60, 115], noc: [45, 100], dzien: [85, 150], swit: [70, 130] },
+  DLUM_PORA: 18,       /* doba co 2%: 2% doby trwa najmniej 0,3 s (L5, doba 15 s) = 18 klatek przy 60 kl/s, więc 18 to <= 1 jasności na klatkę; L0 przechodzi z granatowej nocy w jasny świt (15.8) */
+  L0_ZAKRES: { zachod: [130, 195], noc: [80, 150], dzien: [180, 240], swit: [170, 235] },   /* 15.8: L0 jasny (noc: granat ze światłem, nie czerń) */
+  L0_CHROMA: [8, 55],  /* 15.8: L0 delikatnie pokolorowany: średnia chroma niezerowa, ale niska (noc ma granat, więc górna granica 55) */
+  L4_PLUS: 7, L4_PLUS_JASNE: 20,   /* L4 (pełniejsza paleta) ma wyraźnie wyższą chromę niż L0: o >= 7 (każda pora), o >= 20 o świcie i w dzień (start gry) */
   ZIELEN: 0.003        /* udział zielonych pikseli w świecie przy L4 */
 };
 const MIERZ = () => {
@@ -169,7 +171,10 @@ const MIERZ = () => {
 
   /* ---------- (d) L0 nie czarny, bez koloru ---------- */
   console.log('(d) L0');
-  for (const pora of PORY) { const m = M[pora][0], z = P.L0_ZAKRES[pora]; chk(m.lum >= z[0] && m.lum <= z[1] && m.ex < 5, 'L0 ' + pora + ': średnia jasność ' + f1(m.lum) + ' w [' + z[0] + ', ' + z[1] + '], nadwyżka chromy ponad tło ' + f1(m.ex) + ' < 5 (szaroniebieskie tony, bez koloru)'); }
+  for (const pora of PORY) { const m = M[pora][0], m4 = M[pora][4], z = P.L0_ZAKRES[pora], plus = (pora === 'swit' || pora === 'dzien') ? P.L4_PLUS_JASNE : P.L4_PLUS;
+    chk(m.lum >= z[0] && m.lum <= z[1] && m.chr >= P.L0_CHROMA[0] && m.chr <= P.L0_CHROMA[1] && m4.chr >= m.chr + plus, 'L0 ' + pora + ': jasność ' + f1(m.lum) + ' w [' + z[0] + ', ' + z[1] + '], chroma ' + f1(m.chr) + ' w [' + P.L0_CHROMA.join(', ') + '] (delikatny kolor), L4 chroma ' + f1(m4.chr) + ' >= L0 + ' + plus); }
+  { const pz = await strona(file, ''); const st = await pz.evaluate(() => ({ pora: __okruszek.pora(), nazwa: __okruszek.stan().poraNazwa })); await pz.close();
+    chk(st.pora > 0.2 && st.pora < 0.6, 'start gry (brama 1) o poranku: pora ' + st.pora.toFixed(2) + ' (' + st.nazwa + '), nie zmierzch'); }
   const L0p = await pg.evaluate(() => __okruszek.z15().L0);
   chk(0.299 * L0p.bg[0] + 0.587 * L0p.bg[1] + 0.114 * L0p.bg[2] >= 28, 'tło L0 (niebo u góry) nie jest czarne: ' + JSON.stringify(L0p.bg.map(Math.round)));
 

@@ -17,7 +17,7 @@ const chce = (g) => grupa === 'wszystko' || grupa === g;
   const fresh = () => ev(() => { const o = __okruszek; o.odblokuj(); o.nurkuj(false); o.przesun(null); o.bezPradow(true); o.bezPrzeszkod(true); o.tempo(1); o.nowyBieg(); o.noc(false); o.tempo(0.02); });
   const shot = async (n) => { await p.screenshot({ path: path.join(OUT, n + '.png') }); console.log('  ' + n); };
   if (chce('poziomy')) {
-    for (const pora of ['zachod', 'dzien', 'noc']) {
+    for (const pora of ['swit', 'dzien', 'zachod', 'noc']) {
       await fresh();
       for (let n = 0; n <= 5; n++) { await ev((a) => { __okruszek.ustawPore(a[0]); __okruszek.ustawPoziom(a[1]); }, [pora, n]); await sleep(n === 5 ? 1500 : 800); await shot('L' + n + '-' + pora); }
     }
@@ -26,10 +26,10 @@ const chce = (g) => grupa === 'wszystko' || grupa === g;
   if (chce('przejscia')) {
     /* przejście między poziomami w czasie gry: E (energia) rośnie od wartości poziomu n do n+1; 6 klatek co 0,05 s czasu gry (świat zamrożony tempem) */
     await fresh();
-    await ev(() => { __okruszek.ustawPore('zachod'); });
+    await ev(() => { __okruszek.ustawPore('swit'); });
     const mid = [0.04, 0.25, 0.47, 0.70, 0.88, 1.0];
     for (let n = 0; n < 5; n++) {
-      for (let k = 0; k < 6; k++) { const v = mid[n] + (mid[n + 1] - mid[n]) * k / 5; await ev((x) => { __okruszek.ustaw(x); __okruszek.ustawPore('zachod'); }, v); await sleep(380); await shot('przejscie-L' + n + 'L' + (n + 1) + '-' + k); }
+      for (let k = 0; k < 6; k++) { const v = mid[n] + (mid[n + 1] - mid[n]) * k / 5; await ev((x) => { __okruszek.ustaw(x); __okruszek.ustawPore('swit'); }, v); await sleep(380); await shot('przejscie-L' + n + 'L' + (n + 1) + '-' + k); }
     }
   }
   if (chce('czas')) {   /* przejście w czasie gry: wlot w prąd (E 0 -> 0,3, potem 0,3 -> 0,62), 6 klatek co 0,05 s czasu gry (tempo 0,1: 0,5 s na klatkę) */
