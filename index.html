@@ -4943,7 +4943,9 @@ Słońce obiecało wrócić rano.</p>
      w stylu bez ciemnych obrysów (wypełnienia tonalne, jasna krawędź). Wpięcia w istniejący kod oznaczone „Z14” w miejscu: sim(), isHold(), onDown / onMove / onUp,
      klawiatura, reset(), render() (szyny toru, plastry w kolejce głębi, podświetlenie komórki, położenie ptaszka), drawBird() (faza machnięcia z toru), hawkGeom(), makeFlat().
      ===================================================================================================================== */
-  var TORON = Q.get('tor') === '1' && Q.get('swobodny') !== '1' && !PASMO;
+  /* 26.10, uwaga właściciela (swobodny skręt zbacza z trasy, nie ma wiatrów): TOR jest teraz domyślny dla graczy (bez ?test); ?swobodny=1 lub ?tor=0 przywracają stary lot;
+     w trybie ?test bez parametru zostaje stary lot (żeby nie unieważniać testów Z2-Z11); ?tor=1 wymusza tor także w testach. */
+  var TORON = (Q.get('tor') === '1' || (!TEST && Q.get('tor') !== '0')) && Q.get('swobodny') !== '1' && !PASMO;
   /* Z17 (właściciel 26.10: „po co widać te tory? to ma być intuicyjne”): siatka toru (szyny, ramy plastrów, komórki, ramki ostrzeżeń) NIE jest rysowana;
      tylko flaga ?siatka=1 (debug, strojenie i testy) włącza dawny rysunek. Mechanika 3 x 3 bez zmian; drogę pokazują cień Okruszka na chmurach,
      poświata drogi przed nim, wstęgi wiatrów i zapowiedzi przeszkód w świecie (cień, poświata, ruch zbliżania). */
