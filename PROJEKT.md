@@ -230,3 +230,11 @@ Z16 (Opus high): tryb poziomy z gestami skrzydeł (16.1), strefy wysokości i zi
 
 ### 16.5 Decyzja właściciela: drążek zostaje (26.10)
 Właściciel: „jeśli uważasz, że lepiej z drążkami, to zostawimy drążki, fajnie się nimi gra”. Tryb 3 (drążek) jest PEŁNOPRAWNYM trybem w torze (Z14) i w trybie poziomym (Z16): w poziomie lewy kciuk steruje drążkiem (kierunek = komórka docelowa, także ukosy), prawy kciuk robi zamach (stuknięcie) i nurkowanie (przytrzymanie). Wszystkie cztery sposoby sterowania (jeden kciuk, dwa kciuki jak skrzydła, drążek, w poziomie gesty skrzydeł) pozostają do wyboru w grze; domyślny zostaje wybrany po teście właściciela na telefonie, a do tego czasu domyślny to drążek lub jeden kciuk wg jego wskazania (drążek preferowany jako „fajnie się nim gra”).
+
+### 15.8 Start bez ciemności, delikatne kolory od początku (właściciel 26.10)
+Cytat: „nie jestem pewien, czy robiłbym tę zupełną ciemność jak jest na starcie, skoro robimy jeszcze ziemię. Zrobiłbym kolory, ale delikatne, a im szybciej lecisz, tym dochodzi ich więcej i więcej barw, żeby chcieć latać szybko.”
+Decyzja (nadpisuje „L0 sam kontur i ciemny granat” z sekcji 2/8/12.2 oraz „L0 miękka ciemnoniebieskoszara paleta” z 15.5):
+- Start gry (L0) to JASNY, spokojny, delikatnie pokolorowany świat: poranny lub dzienny pastelowy świat z miękkimi barwami o niskim nasyceniu (blady róż, krem, jasny błękit, delikatna lawenda, ciepły piasek), z widoczną ziemią (zarys krajobrazu z sekcji 16) tam, gdzie jest już w grze; NIE czarny granat i NIE tylko białe kreski.
+- Im szybciej (energia koloru E z Z3c, łańcuch wiatrów), tym więcej barw i większe nasycenie: kolejne odcienie dochodzą po jednym, mieszają się akwarelowo, plamy rosną; pełna paleta i pełna akwarela nadal dopiero przy E=1, hiperprzestrzeń w L5. Motywacja gracza: chcieć lecieć szybko, żeby zobaczyć więcej barw.
+- Doba w tle: start o poranku lub dniu (jasno); noc i zachód pozostają w cyklu (gwiazdy, księżyc) i są ładnymi, nie czarnymi etapami (granat z światłem i barwnymi warstwami). Początkowa pora doby: świt lub dzień zamiast zachodu/zmierzchu.
+- Szalik Okruszka nadal czerwony; zasada „przy zerowej prędkości kolor ma tylko szalik” traci moc: zastępuje ją „przy zerowej energii delikatne, pastelowe kolory bazowe”. Kolejność koloru od tyłu do przodu, monotoniczność etapów i testy zachowane (progi dostosować uczciwie).
