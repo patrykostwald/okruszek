@@ -169,3 +169,5 @@ Z12 (Zeszyt i ekrany) i Z13 (nuty wiatru, rzadkie zdarzenia, Bączek) są WSTRZY
 | Z16 | Tryb poziomy: gesty skrzydeł dwoma kciukami (na zewnątrz = zamach w górę, do wewnątrz = nurkowanie jak jastrząb), cztery strefy wysokości (ziemia, powietrze, chmury, nadchmurze), ziemia z znajdźkami i baśniowym krajobrazem, układ poziomy (PROJEKT.md sekcja 16) | Opus 5.5 high | Z14, Z15 | testy gestów przez CDP, strefy i znajdźki, zrzuty 844x390, fps bez spadku > 10%, testy Z14 zielone w pionie |
 
 | Z19 | Runda czucia lotu (game feel) wg PROJEKT.md 17.2: opóźnienie, animacje skrzydeł z dobiegiem, dźwięk i wibracja na zdarzenia toru, kamera, rytm fraz, mikro-nagrody; podpięcie dzwiek.js pod zdarzenia toru | Opus 5.5 high | Z18 | opóźnienie wejścia do pierwszej reakcji < 50 ms, każdy typ zdarzenia ma co najmniej dwa kanały sprzężenia, brak migotań > 3/s, ocena QA satysfakcji >= 8 w rundzie 2 (cel 9+ w rundzie 3-4), testy zielone |
+
+| Z21 | Przewrót w bok (podwójne tapnięcie, unik, PROJEKT.md 19.1), widoczne drogi toru bez ramek (19.2), widoczne unoszenie (19.3) | Codex (gpt-6-astra) | Z19 | testy z 19.1 i 19.2, boty, kontrast, testy Z2-Z20 zielone |
