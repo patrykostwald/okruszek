@@ -95,8 +95,8 @@ i leciał w hyperspace; kolory i zachodzące słońce albo noc: czas w tle szybc
 ### 12.1 Poziomy prędkości (stopnie turbo); s nadal 0..1, ale gra pokazuje nazwane poziomy
 | Poziom | s | Wygląd świata | Jak trudno |
 |---|---|---|---|
-| L0 Kontur | 0-0,15 | tylko białe kreski na granacie (jak teraz) | start, machanie |
-| L1 Szarość i błękit | 0,15-0,35 | kontury grubsze i podwójne, chmury wypełnione 3-4 odcieniami szarości i błękitu, kreskowanie cieni, zimna poświata | 1-2 prądy |
+| L0 Mgiełka (Z18, dawniej Kontur) | 0-0,15 | jasny, mglisty, delikatnie pastelowy świat (15.8; dawniej białe kreski na granacie) | start, machanie |
+| L1 Pastel (Z17, dawniej Szarość i błękit) | 0,15-0,35 | kontury grubsze i podwójne, chmury wypełnione 3-4 odcieniami szarości i błękitu, kreskowanie cieni, zimna poświata | 1-2 prądy |
 | L2 Kolor | 0,35-0,6 | pastelowy błękit i lawenda w chmurach i niebie, pierwsze ciepłe odcienie przy horyzoncie | łańcuch 2-3 prądów albo nurkowanie |
 | L3 Złoto | 0,6-0,8 | brzoskwinia, złoto, róż; słońce rośnie; smugi prędkości | łańcuch 3-4 prądów + nurkowanie |
 | L4 Turbo | 0,8-0,95 | pełne nasycenie, kolorowe smugi, lekkie poszerzenie pola widzenia, poświata na brzegach ekranu | łańcuch ≥5 prądów w 12 s + nurkowanie |
@@ -104,7 +104,7 @@ i leciał w hyperspace; kolory i zachodzące słońce albo noc: czas w tle szybc
 Zasady trudności (do strojenia po testach właściciela): prąd daje mały skok (nie +0,6 jak w Z2), skoki z łańcucha rosną (x1, x1,3, x1,6...) tylko gdy prądy złapane w oknie 3 s;
 s opada szybciej na wysokich poziomach; nurkowanie podnosi s powoli i kosztuje wysokość. Typowy gracz ma szczyt L2-L3; L4 raz na kilka minut; L5 rzadko.
 Test odbioru: bot trafiający wszystkie prądy osiąga L4 co najmniej raz w 60 s i nie osiąga L5 bez łańcucha ≥5; bot losowy nigdy nie osiąga L4; kolejność koloru (od tyłu do przodu) zachowana na każdym poziomie.
-Na ekranie: mały wskaźnik poziomu w stałej strefie (pasek ze stopniami L1-L5, bez tekstu „L”: ikony albo nazwy: Kontur, Szarość, Kolor, Złoto, Turbo, Hiper), komunikat przy wejściu na nowy poziom (krótki, bez dymków).
+Na ekranie: mały wskaźnik poziomu w stałej strefie (pasek ze stopniami L1-L5, bez tekstu „L”: ikony albo nazwy: Mgiełka, Pastel, Kolor, Złoto, Turbo, Hiper; Z18: L0 „Mgiełka”, bo konturów już nie ma), komunikat przy wejściu na nowy poziom (krótki, bez dymków).
 
 ### 12.2 Etapy koloru (zastępują progi z sekcji 8)
 Chmury: L0 sam kontur; L1 wypełnienia szare i błękitne w 3-4 tonach + kreskowanie; L2 pastele; L3 ciepłe; L4 pełne; L5 efekt hiperprzestrzeni.
@@ -258,3 +258,13 @@ Właściciel po zobaczeniu gry: „po co widać te tory? tego nie powinno być w
 
 ### 17.2 Cel: satysfakcja z lotu blisko 10/10 (właściciel 26.10)
 Właściciel po rundzie QA 1 (ocena satysfakcji z lotu 4/10): „satysfakcja z lotu musi być zdecydowanie bliżej 10/10”. Kryterium odbioru całej gry: w kolejnych rundach QA ocena satysfakcji z lotu >= 9/10 (oraz piękno >= 9, czytelność >= 9, stabilność >= 9). Dźwignie „czucia lotu” (game feel), które ma dopracować runda Z19 po Z18: (1) skrzydła i ruch ptaszka odpowiadają na dotyk natychmiast (opóźnienie wejścia < 50 ms do pierwszej reakcji wizualnej), z przewidywaniem i dobiegiem (anticipation, overshoot, easing), ciężki zamach wyraźnie cięższy od lekkiego; (2) sprzężenie zwrotne zmysłów przy każdym zdarzeniu: wiatr (smuga, fala koloru, nuta z dzwiek.js, krótka wibracja na Androidzie), nurkowanie (szum, smugi, lekkie przybliżenie kamery), wybicie (przypływ światła, dźwięk), łańcuch wiatrów (rosnąca melodia, narastający kolor), zderzenie z chmurą (miękkie spowolnienie, mgiełka, dźwięk tłumiony); (3) kamera: delikatne pochylanie przy skręcie, rozszerzenie pola widzenia przy prędkości, drżenie tylko w turbulencjach i bez migotania; (4) rytm: wiatry i przeszkody ułożone w frazy, które „śpiewają” razem z muzyką; (5) poczucie masy i wysokości (wysoko = ciężko, nisko = bezpiecznie), czytelny postęp (poziomy, kolor, dystans); (6) mikro-nagrody (znajdźki, nuty, odblaski) bez presji. Pomiary: opóźnienie wejścia, liczba bodźców na zdarzenie, spójność animacji skrzydeł z kciukami, ocena panelu recenzentów.
+
+## 18. Strojenie toru po QA runda 1 (zlecenie Z18, 26.10)
+Raport QA: Desktop\projekty\gra-okruszek-QA1\qa\RAPORT-QA-RUNDA-1.md. Wszystkie stałe w obiektach TOR i TOR_G (TOR_G nadpisuje G tylko w torze; swobodny lot bez zmian). Liczby z botów: qa\qa_z18_pomiar.cjs, sprawdzane w gra_test_z18.cjs.
+- Nadchmurze (17 nr 1): wejście tylko wiatrem w górę jako drugi (i dalszy) idealny wiatr z rzędu (Schody światła, NADCH_LANC 2); winda bez łańcucha kończy w chmurach; machanie nie wnosi i nie trzyma (rzadkie powietrze), opadanie co 2,5 s; brama stawia w chmurach.
+- Idealne wejście (14): Okruszek leci środkiem wstęgi (odchylenie od środka wiersza < 0,09 wiersza; opadanie i zebrany wzlot go przesuwają). Brzeg zrywa łańcuch. W nauce (20 s) najwyżej dwa z rzędu; zaraz po nauce trójka w rytmie (F, Schody, zjazd).
+- Prędkość z łańcucha (12.1, 15.3): 1 = Pastel, 2 = Kolor, 3 z rzędu = Turbo (L4, razem z pełnym kolorem), 5 w 12 s + nurkowanie = szansa na Hiper; rozpęd trzyma, póki łańcuch żyje; okno łańcucha 1,6 s, łaska pełnego koloru 0,9 s.
+- Presja: chmura spycha w dół (fiolet i burza o wiersz, nigdy od razu koniec), opadanie przyspiesza z czasem biegu (do x1,45 po 5 min), drapieżnik śledzi komórkę i namierza ją 0,6 s przed zejściem (unik po namierzeniu), pościgi coraz częściej.
+- Gęstość i debiuty (17, 05 tabela 4.2): generator dobiera frazy do tempa z tabeli dla poziomu i krainy (x0,75 na 3 wiersze), po S2 oddech, najwyżej ok. 4 s bez niczego, tornado od K5, burza w Dalekim Niebie.
+- Czytelność: plastry rysowane bliżej (skala 1,5 s przed kontaktem ok. 0,6), pojawiają się >= 3,6 s przed kontaktem; HUD z tuszem zależnym od tła; jasne panele; L0 „Mgiełka”.
+- Cele botów (wynik Z18): bot idealny pełny kolor w 60 s w 94-98% biegów, Turbo osiągalne, Hiper tylko z nurkowaniem; bot 50% pełny kolor w <= 60 s w 5-8% biegów (<= 1,1 s); bot 70% kończy bieg po medianie 5-6,5 min; samo machanie ginie w ok. 2,5 min i nie widzi nadchmurza.
