@@ -333,12 +333,22 @@ const BOT_TOR = `(function () {
   console.log('(n) pamięć, klatki, czerwień');
   const MEM = await ev(() => { const O = __okruszek; O.z11Zbuduj(); O.torSprite(); return O.pamiec(); });
   chk(MEM.MB <= 60, 'pamięć sprite\'ów z wszystkimi elementami Z11 i toru: ' + MEM.MB + ' MB (<= 60 MB), ' + MEM.sprite + ' sprite\'ów');
-  const fpsOf = async (q) => { const p3 = await mkPage(q, { deviceScaleFactor: 2 }); const f = await p3.pg.evaluate(async () => { const O = __okruszek; O.ustaw(1); await new Promise(r => setTimeout(r, 1200)); O.zerujFps(); await new Promise(r => setTimeout(r, 4000)); return O.fps().avg; }); await p3.ctx.close(); return f; };
-  const fs = [], ft = [];
-  for (let i = 0; i < 3; i++) { fs.push(await fpsOf('?test&seed=23')); ft.push(await fpsOf('?test&tor=1&seed=23')); }
-  const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-  info('klatki headless przy s = 1 (390 x 844 @2x): swobodny ' + fs.join(', ') + ' | tor ' + ft.join(', '));
-  chk(avg(ft) >= 0.9 * avg(fs), 'klatki w torze bez spadku > 10% względem swobodnego lotu (średnio ' + r2(avg(ft)) + ' vs ' + r2(avg(fs)) + ' kl/s, ' + r2(100 * (avg(ft) / avg(fs) - 1)) + '%)');
+  /* klatki: swobodny lot (= Z11) i tor mierzone JEDNOCZEŚNIE w dwóch osobnych przeglądarkach (to samo obciążenie maszyny; dwie karty jednej przeglądarki
+     dzielą zegar klatek i zawsze wychodzą równo), role przeglądarek zamieniane co próbę, 6 prób, mediana stosunku */
+  await pg.evaluate(() => __okruszek.pauza(true));
+  const bA = await chromium.launch({ headless: true, executablePath: CHROME, args: ['--window-position=-32000,-32000', '--window-size=1,1'] });
+  const bB = await chromium.launch({ headless: true, executablePath: CHROME, args: ['--window-position=-32000,-32000', '--window-size=1,1'] });
+  const fpsPara = async (i) => {
+    const mk2 = async (br, q) => { const c = await br.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true }); const p = await c.newPage(); p.on('pageerror', e => errors.push('pageerror: ' + e)); await p.goto(base + q); await p.waitForTimeout(900); return { c, p }; };
+    const A = await mk2(i % 2 ? bB : bA, '?test&seed=23'), B = await mk2(i % 2 ? bA : bB, '?test&tor=1&seed=23');
+    const go = (pgx) => pgx.evaluate(async () => { const O = __okruszek; O.ustaw(1); await new Promise(r => setTimeout(r, 1200)); O.zerujFps(); await new Promise(r => setTimeout(r, 4000)); return O.fps().avg; });
+    const [fa, fb] = await Promise.all([go(A.p), go(B.p)]); await A.c.close(); await B.c.close(); return [fa, fb]; };
+  const PR = []; for (let i = 0; i < 6; i++) PR.push(await fpsPara(i));
+  await bA.close(); await bB.close(); await pg.evaluate(() => __okruszek.pauza(false));
+  /* para prób z zamianą ról: średnia geometryczna stosunków znosi różnicę między przeglądarkami; potem mediana z 3 par */
+  const pary = [0, 2, 4].map(k => Math.sqrt((PR[k][1] / PR[k][0]) * (PR[k + 1][1] / PR[k + 1][0]))).sort((a, b) => a - b), medR = pary[1];
+  info('klatki headless przy s = 1 (390 x 844 @2x; swobodny | tor jednocześnie w dwóch nowych przeglądarkach, role zamieniane): ' + PR.map(p => p[0] + ' | ' + p[1]).join(', '));
+  chk(medR >= 0.9, 'klatki w torze bez spadku > 10% względem swobodnego lotu (mediana 3 par z zamianą ról: ' + r2(100 * (medR - 1)) + '%; pary ' + pary.map(x => r2(100 * (x - 1)) + '%').join(', ') + ')');
   const RED = await ev(async () => { const O = __okruszek; O.pauza(true); O.ziarno(5); O.brama(5); O.odblokuj(); O.ustawEnergie(0); O.ustaw(0); O.idz(1, 1, true);
     const typy = ['chmura:biala', 'chmura:lawenda', 'chmura:szara', 'chmura:fiolet', 'chmura:zielona_mgla', 'chmura:oaza', 'burza', 'grad', 'tornado', 'ptak', 'samolot', 'motolotnia', 'ufo', 'szpile', 'latawiec', 'wiatr:gora', 'wiatr:lewo'];
     typy.forEach((t, i) => O.zdarzenie(t, { k: i % 3, w: (i >> 1) % 3, z: 1.3 + (i % 6) * 0.7 })); O.pauza(false); await new Promise(r => setTimeout(r, 500)); O.tempo(0.1); await new Promise(r => setTimeout(r, 150));   /* zamrożenie tempem (nakładka pauzy przyciemnia szalik) */

@@ -17,6 +17,8 @@
    Z11: hak krain K2-K5 (z11, z11Zbuduj, ptakEkran, budzetLog; zdarzenie szpile / komin / latawce / poryw / przelot / tecza_ks / rogal widoczne w gdzie()), potem pełny test gra_test_z11.cjs
    (wymuszenia, szczeliny i kolizje, komin / tęcza / poryw / smuga / wiry, budżet prędkości z bonusami, 400 wymuszeń, zapowiedzi, kolejność koloru i brak czerwieni przy s = 0,
    słońce, finały i zwiastuny, Rogal, pamięć <= 60 MB, klatki względem Z5). SKIP_Z11=1 pomija go (ok. 8 min).
+   Z14: tor 3x3 (?tor=1): hak toru, krótki lot w torze bez błędów konsoli, bez ?tor i z ?swobodny=1 swobodny lot; potem pełny test gra_test_z14.cjs
+   (wzorce i generator z gwarancją wolnej ścieżki, boty po torze, łańcuch, zapowiedzi, 400 wymuszeń, trzy tryby dotyku, pamięć, klatki). SKIP_Z14=1 pomija go (ok. 5 min).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -121,6 +123,19 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       o.noc(true); r.noc = o.stan().noc === 1; o.noc(false); o.nowyBieg(); r.czysto = o.gdzie().length === 0 && o.stan().jastrzab === null; o.bezPrzeszkod(false); return r; });
     Object.values(z3).every(Boolean) ? ok('Z3: zdarzenia ptak/deszcz/jastrzab/prad wymuszalne i widoczne w gdzie(), noc(), czysty nowy bieg') : bad('hak Z3: ' + JSON.stringify(z3));
     await page.evaluate(() => { window.__okruszek.bezPradow(false); window.__okruszek.nowyBieg(); });
+    /* Z14: tor 3x3 obok swobodnego lotu */
+    const sw = await page.evaluate(() => typeof window.__okruszek.tor === 'function' && window.__okruszek.tor().wlaczony === false);
+    sw ? ok('Z14: bez ?tor swobodny lot (tor wyłączony)') : bad('Z14: tor włączony bez ?tor=1');
+    const pt = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    pt.on('pageerror', e => errors.push('pageerror (tor): ' + e));
+    pt.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ' (tor): ' + m.text()); });
+    await pt.goto('file:///' + file.replace(/\\/g, '/') + '?test&tor=1&seed=23');
+    await pt.waitForTimeout(2500);
+    const tr = await pt.evaluate(() => { const O = window.__okruszek, need = ['komorka', 'idz', 'stuknij', 'plastry', 'siatka', 'wzorzec', 'wzorce', 'uczciwy', 'generuj', 'tor', 'torLog', 'torSymuluj', 'skrzydla'];
+      const miss = need.filter(k => typeof O[k] !== 'function'); const t = O.tor(), g = O.generuj(100, { losoweN: true, losowaKraina: true }); const r = O.torSymuluj(8);
+      return { miss, on: t.wlaczony, wz: t.wzorcow, ucz: g.every(x => O.uczciwy(x).ok), kom: O.komorka(), gdzie: O.gdzie().some(e => e.typ === 'okruszek'), t: r.graCzas, klatki: O.stan().klatki }; });
+    (tr.on && !tr.miss.length && tr.wz >= 40 && tr.ucz && tr.gdzie && tr.t > 7.9) ? ok('Z14: ?tor=1 włącza tor 3x3 (hak kompletny, ' + tr.wz + ' wzorców, 100 plastrów generatora uczciwych, 8 s lotu w symulacji, ' + tr.klatki + ' klatek)') : bad('Z14: tor ' + JSON.stringify(tr));
+    await pt.close();
   }
   const real = errors.filter(e => !/favicon/i.test(e));
   real.length ? bad('błędy konsoli: ' + real.slice(0, 3).join(' | ')) : ok('brak błędów i ostrzeżeń konsoli');
@@ -236,6 +251,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z5|BŁĄD|^[(]/.test(l));
       lines.forEach(l => console.log('  z5> ' + l.trim()));
       code === 0 && /TEST Z5 OK/.test(out) ? ok('test Z5 (gra_test_z5.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z5 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z14: tor 3x3, pełny test w osobnym procesie */
+  if (process.env.SKIP_Z14) console.log('  info pominięto test Z14 (SKIP_Z14)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z14.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z14.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 1200000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z14|BŁĄD|^[(]| info (klatki|K[0-9] ziarno)/.test(l));
+      lines.forEach(l => console.log('  z14> ' + l.trim()));
+      code === 0 && /TEST Z14 OK/.test(out) ? ok('test Z14 (gra_test_z14.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z14 nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

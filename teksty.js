@@ -60,5 +60,15 @@ window.OKRUSZEK_TEKSTY = {
   },
   dzwiek: {
     efekty: 'Efekty', muzyka: 'Muzyka', wl: 'włączone', wyl: 'wyłączone'
+  },
+  /* Z14: tor 3x3 (?tor=1): opisy trybów w panelu sterowania, podpis suwaka i opis gry dla czytnika ekranu (w swobodnym locie zostają teksty z index.html) */
+  tor: {
+    tryby: [   /*   = twarda spacja po jednoliterowych słowach (bez pojedynczych liter na końcu linii) */
+      'Przesuń kciuk o krok: w bok, w dół albo w górę. Stuknij, żeby machnąć. Przytrzymaj, żeby nurkować.',
+      'Stuknij lewym albo prawym: skrzydło w tę stronę i w górę. Oba naraz: mocno w górę. Przytrzymaj oba: nurkuj.',
+      'Drążek wskazuje sąsiednią komórkę. Stuknij prawą połową, żeby machnąć. Przytrzymaj prawą, żeby nurkować.'
+    ],
+    czulosc: 'Czułość gestu',
+    aria: 'Okruszek leci torem z dziewięciu komórek: trzy kolumny i trzy wysokości. Machaj skrzydłami, żeby wznieść się o wiersz, przytrzymaj, żeby nurkować, przesuwaj się w bok. Łap wiatry jeden po drugim, bo wtedy świat nabiera kolorów. Omijaj chmury, burze, grad, tornada, ptaki i samoloty. Gdy drapieżnik zaznaczy komórkę, uciekaj z niej.'
   }
 };
