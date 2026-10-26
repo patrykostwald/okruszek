@@ -292,13 +292,14 @@ const BOT_TOR = `(function () {
   const swipe = async (x0, y0, x1, y1, n, po) => { await touch('touchStart', [[1, x0, y0]]); for (let i = 1; i <= (n || 6); i++) { await touch('touchMove', [[1, x0 + (x1 - x0) * i / (n || 6), y0 + (y1 - y0) * i / (n || 6)]]); await sleep(16); } await touch('touchEnd', []); await sleep(po === undefined ? 260 : po); };
   const tap = async (x, y, id, po) => { await touch('touchStart', [[id || 1, x, y]]); await sleep(50); await touch('touchEnd', []); await sleep(po === undefined ? 200 : po); };
   const RUCH = {};
+  /* Z21 (19.1): dwa stuknięcia po tej samej stronie w oknie 250 ms to PODWÓJNE stuknięcie = przewrót (test gra_test_z21.cjs); tu dwa POJEDYNCZE machnięcia mają odstęp 300 ms */
   /* tryb 1 */
   await fresh(1, 1, 1); await swipe(200, 600, 140, 600); RUCH.t1_lewo = (await kom()).kol === 0;
   await fresh(1, 1, 1); await swipe(200, 600, 260, 600); RUCH.t1_prawo = (await kom()).kol === 2;
   await fresh(1, 1, 1); await swipe(200, 600, 200, 660); RUCH.t1_dol = (await kom()).wiersz === 2;
   await fresh(1, 1, 1); await swipe(200, 600, 150, 650); { const k = await kom(); RUCH.t1_ukos_dol = k.kol === 0 && k.wiersz === 2; }
   await fresh(1, 1, 2); let m0 = await mach(); await swipe(200, 600, 250, 550, 6, 40); await swipe(200, 600, 200, 550); { const k = await kom(); RUCH.t1_ukos_gora = k.kol === 2 && k.wiersz === 1 && (await mach()) - m0 === 2; }
-  await fresh(1, 1, 2); m0 = await mach(); await tap(200, 600, 1, 60); await tap(200, 600); { const k = await kom(); RUCH.t1_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
+  await fresh(1, 1, 2); m0 = await mach(); await tap(200, 600, 1, 300); await tap(200, 600); { const k = await kom(); RUCH.t1_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
   await fresh(1, 1, 0); await touch('touchStart', [[1, 200, 600]]); await sleep(450); { const k = await kom(); RUCH.t1_nurk = k.nurkuje && k.wiersz >= 1; } await touch('touchEnd', []); await sleep(200); { const k = await kom(); RUCH.t1_duch = !k.nurkuje && (await ev(() => __okruszek.stan().palce)) === 0; }
   /* tryb 2 */
   await fresh(2, 1, 1); m0 = await mach(); await tap(80, 700); { const k = await kom(); RUCH.t2_lewo_gora = k.kol === 0 && (await mach()) - m0 === 1; }
@@ -315,7 +316,7 @@ const BOT_TOR = `(function () {
   await fresh(3, 1, 1); await stick(0, 50); RUCH.t3_dol = (await kom()).wiersz === 2;
   await fresh(3, 1, 1); await stick(-40, 40); { const k = await kom(); RUCH.t3_ukos_dol = k.kol === 0 && k.wiersz === 2; }
   await fresh(3, 1, 2); m0 = await mach(); await stick(40, -40); { const k = await kom(); RUCH.t3_ukos_gora = k.kol === 2 && (await mach()) - m0 === 1; }
-  await fresh(3, 1, 2); m0 = await mach(); await tap(300, 650, 1, 60); await tap(300, 650); { const k = await kom(); RUCH.t3_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
+  await fresh(3, 1, 2); m0 = await mach(); await tap(300, 650, 1, 300); await tap(300, 650); { const k = await kom(); RUCH.t3_stuk = (await mach()) - m0 === 2 && k.wiersz === 1; }
   await fresh(3, 1, 0); await touch('touchStart', [[2, 300, 650]]); await sleep(450); { const k = await kom(); RUCH.t3_nurk = k.nurkuje && k.wiersz >= 1; } await touch('touchEnd', []); await sleep(200);
   RUCH.t3_duch = (await ev(() => __okruszek.stan().palce)) === 0 && !(await kom()).nurkuje && !(await ev(() => __okruszek.stan().drazek.jest));
   /* Z17: jedna ponowna próba gestu, który nie zadziałał (te same kroki od świeżego biegu). Powód: pojedyncze, nieodtwarzalne porażki pierwszego gestu po scenie (m)
@@ -327,7 +328,7 @@ const BOT_TOR = `(function () {
     t1_dol: async () => { await fresh(1, 1, 1); await swipe(200, 600, 200, 660); return (await kom()).wiersz === 2; },
     t1_ukos_dol: async () => { await fresh(1, 1, 1); await swipe(200, 600, 150, 650); const k = await kom(); return k.kol === 0 && k.wiersz === 2; },
     t1_ukos_gora: async () => { await fresh(1, 1, 2); const m = await mach(); await swipe(200, 600, 250, 550, 6, 40); await swipe(200, 600, 200, 550); const k = await kom(); return k.kol === 2 && k.wiersz === 1 && (await mach()) - m === 2; },
-    t1_stuk: async () => { await fresh(1, 1, 2); const m = await mach(); await tap(200, 600, 1, 60); await tap(200, 600); const k = await kom(); return (await mach()) - m === 2 && k.wiersz === 1; },
+    t1_stuk: async () => { await fresh(1, 1, 2); const m = await mach(); await tap(200, 600, 1, 300); await tap(200, 600); const k = await kom(); return (await mach()) - m === 2 && k.wiersz === 1; },
     t2_lewo_gora: async () => { await fresh(2, 1, 1); const m = await mach(); await tap(80, 700); const k = await kom(); return k.kol === 0 && (await mach()) - m === 1; },
     t2_prawo_gora: async () => { await fresh(2, 1, 1); const m = await mach(); await tap(310, 700); const k = await kom(); return k.kol === 2 && (await mach()) - m === 1; },
     t2_kolumna: async () => { await fresh(2, 1, 1); await tap(80, 700); await sleep(100); const k = await kom(); return k.kol === 0 && k.wiersz === 1; },
@@ -336,7 +337,7 @@ const BOT_TOR = `(function () {
     t3_dol: async () => { await fresh(3, 1, 1); await stick(0, 50); return (await kom()).wiersz === 2; },
     t3_ukos_dol: async () => { await fresh(3, 1, 1); await stick(-40, 40); const k = await kom(); return k.kol === 0 && k.wiersz === 2; },
     t3_ukos_gora: async () => { await fresh(3, 1, 2); const m = await mach(); await stick(40, -40); const k = await kom(); return k.kol === 2 && (await mach()) - m === 1; },
-    t3_stuk: async () => { await fresh(3, 1, 2); const m = await mach(); await tap(300, 650, 1, 60); await tap(300, 650); const k = await kom(); return (await mach()) - m === 2 && k.wiersz === 1; }
+    t3_stuk: async () => { await fresh(3, 1, 2); const m = await mach(); await tap(300, 650, 1, 300); await tap(300, 650); const k = await kom(); return (await mach()) - m === 2 && k.wiersz === 1; }
   };
   for (const k of Object.keys(PONOW)) if (!RUCH[k]) { const st = await ev(() => { const L = __okruszek.torLog(), s = __okruszek.stan(); return { tryb: s.tryb, palce: s.palce, ruchy: L.ruchy, nurkowania: L.nurkowania, machniecia: L.machniecia }; }); RUCH[k] = await PONOW[k](); info('ponowiono gest ' + k + ' (stan przed ponowieniem ' + JSON.stringify(st) + '): ' + (RUCH[k] ? 'zadziałał' : 'znów nie')); }
   /* przełączenie trybu w trakcie dotyku: bez ducha */
