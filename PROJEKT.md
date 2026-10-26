@@ -238,3 +238,13 @@ Decyzja (nadpisuje „L0 sam kontur i ciemny granat” z sekcji 2/8/12.2 oraz �
 - Im szybciej (energia koloru E z Z3c, łańcuch wiatrów), tym więcej barw i większe nasycenie: kolejne odcienie dochodzą po jednym, mieszają się akwarelowo, plamy rosną; pełna paleta i pełna akwarela nadal dopiero przy E=1, hiperprzestrzeń w L5. Motywacja gracza: chcieć lecieć szybko, żeby zobaczyć więcej barw.
 - Doba w tle: start o poranku lub dniu (jasno); noc i zachód pozostają w cyklu (gwiazdy, księżyc) i są ładnymi, nie czarnymi etapami (granat z światłem i barwnymi warstwami). Początkowa pora doby: świt lub dzień zamiast zachodu/zmierzchu.
 - Szalik Okruszka nadal czerwony; zasada „przy zerowej prędkości kolor ma tylko szalik” traci moc: zastępuje ją „przy zerowej energii delikatne, pastelowe kolory bazowe”. Kolejność koloru od tyłu do przodu, monotoniczność etapów i testy zachowane (progi dostosować uczciwie).
+
+## 17. Zawartość stref: bestiariusz i tabela (26.10)
+Dokument fabula\05-bestiariusz-stref.md (96 typów: ziemia 28, powietrze 28, chmury 24, nadchmurze 16; liczby dla poziomów L0-L5 i krain K1-K5 plus Dalekie Niebo; 12 fraz toru) oraz dane maszynowe fabula\zawartosc.json są OBOWIĄZUJĄCĄ specyfikacją zawartości dla Z14 (tam, gdzie pasuje do toru) i Z16 (tryb poziomy, strefy). Wartości liczbowe są startowe: stroi je bot i test właściciela.
+Rozstrzygnięcia orkiestratora (właściciel kazał decydować; do zmiany po jego teście):
+1. Na szczyt (nadchmurze) wchodzi się tylko wiatrem po dwóch wiatrach z rzędu (Schody światła) albo jetstreamem, nie machaniem: TAK.
+2. Pierwsze dotknięcie ziemi to przysiad (łagodne odbicie), dopiero drugie w krótkim czasie kończy lot: TAK.
+3. Hiperprędkość tylko na szczycie, gdzie jastrząb i sowa nigdy nie wlatują (zgodne z Z10: w L5 nowy pościg nie startuje): TAK.
+4. Tornado dopiero w K5, burza w Dalekim Niebie (Z14 ma je wcześniej: dostosować przy scalaniu lub w Z16): TAK.
+5. Jetstream już w wersji 1.5 (wcześniej odłożony do v2): TAK.
+Z16 ma czytać fabula\05-bestiariusz-stref.md i zawartosc.json jako źródło typów, liczb i fraz; generator plastrów z Z14 po scaleniu zasilany tą tabelą.

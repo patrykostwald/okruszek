@@ -1,0 +1,412 @@
+{
+  "wersja": "1.0",
+  "data": "2026-10-26",
+  "opis": "Bestiariusz stref toru Okruszka: typy zawartości w strefach wysokości, gęstość na poziom i krainę, budżet uwagi, frazy toru. Liczby to wartości startowe do strojenia botem (Z14/Z16), nie pomiar.",
+  "dokument": "fabula/05-bestiariusz-stref.md",
+  "legenda": {
+    "klasy": {
+      "S0": "brak kary (widowisko, wiatr, znajdźka, bonus, kryjówka)",
+      "S1": "lekka: wirowanie do 0,8 s, s -0,08 albo spowolnienie chmury, kolor chwilowo gaśnie",
+      "S2": "mocna: wirowanie 1 s, s w dół najwyżej o jeden poziom, utrata wiersza",
+      "S3": "koniec biegu: tylko jastrząb, sowa, morze chmur (K2) i drugie dotknięcie ziemi"
+    },
+    "rzadkosc": {
+      "czesty": "co najmniej raz na 10 s, gdy typ jest aktywny",
+      "sredni": "raz na 30-60 s",
+      "rzadki": "raz na 2-5 min",
+      "bardzo_rzadki": "raz na 10 min lub rzadziej (talia zdarzeń)"
+    },
+    "jednostka": "j. = G.PRAD_S (skok prędkości zwykłego wiatru); wartości to mnożniki PRAD_S",
+    "grafika": {
+      "istniejaca": "jest rysunek lub sprite w kodzie Z3-Z15 (ewentualnie przemalowanie lub zmiana skali)",
+      "nowa": "trzeba narysować (kodem, Canvas, bez ciemnych konturów)"
+    },
+    "wersjaTypu": {
+      "v1.5": "do wdrożenia w Z14-Z16",
+      "v2": "odłożone",
+      "opcja": "tylko po decyzji właściciela"
+    }
+  },
+  "siatka": {
+    "kolumny": 3,
+    "wiersze": 4,
+    "kolumnyPoziomo": 5,
+    "wierszeOdGory": ["nadchmurze", "chmury", "powietrze", "ziemia"],
+    "start": { "kolumna": 1, "wiersz": 2 },
+    "srodekWprost": [[1, 1], [1, 2]],
+    "uczciwosc": "z każdej komórki plastra poprzedniego istnieje wolna komórka w zasięgu jednego ruchu: ta sama lub sąsiednia kolumna, ten sam lub o jeden niższy wiersz",
+    "zapowiedzMinS": 1.5,
+    "zapowiedzDrapieznikaMinS": 2.0
+  },
+  "poziomy": [
+    { "id": "L0", "nazwa": "Kontur", "s": [0, 0.15] },
+    { "id": "L1", "nazwa": "Szarość", "s": [0.15, 0.35] },
+    { "id": "L2", "nazwa": "Kolor", "s": [0.35, 0.6] },
+    { "id": "L3", "nazwa": "Złoto", "s": [0.6, 0.8] },
+    { "id": "L4", "nazwa": "Turbo", "s": [0.8, 0.95] },
+    { "id": "L5", "nazwa": "Hiper", "s": [0.95, 1] }
+  ],
+  "krainy": [
+    { "id": "K1", "nazwa": "Nad Wielką Górą", "pora": "zmierzch", "czasTypS": 90, "dol": "zbocze Wielkiej Góry: hala, świerki, strumień", "drapieznik": "brak", "nowaZasada": "wiatry, chmury, bloki naziemne, znajdźki", "final": "trzy w rytmie i pierwsze Schody światła" },
+    { "id": "K2", "nazwa": "Morze Pierzyn", "pora": "noc", "czasTypS": 120, "dol": "Pierzyny: powierzchnia morza chmur (dotknięcie = sen na Pierzynce)", "drapieznik": "sowa: pierwsza wizyta tylko pohukuje", "nowaZasada": "strefy pogody (deszcz, grad, zielone chmury)", "final": "ulewa i łuk" },
+    { "id": "K3", "nazwa": "Kamienny Las", "pora": "świt", "czasTypS": 135, "dol": "dachy miasteczka, kominy, dzwonnica, pranie", "drapieznik": "sowa nocą", "nowaZasada": "kolumny (wieże) i komin bez łańcucha", "final": "kanion wież z kominami" },
+    { "id": "K4", "nazwa": "Wietrzne Schody", "pora": "dzień", "czasTypS": 150, "dol": "łąki i pola: wiatraki, strach na wróble, bociany, latawce", "drapieznik": "jastrząb: pierwszy pościg", "nowaZasada": "pościg po komórkach i kryjówki", "final": "festiwal latawców" },
+    { "id": "K5", "nazwa": "Szlak Żelaznych Gęsi", "pora": "popołudnie", "czasTypS": 165, "dol": "rzeka, wieś, pola przy lotnisku z rękawem wiatrowym", "drapieznik": "jastrząb rzadziej", "nowaZasada": "linie (samoloty, klucz) i wiry", "final": "przelot olbrzyma" },
+    { "id": "DN", "nazwa": "Dalekie Niebo", "pora": "dowolna", "czasTypS": 0, "dol": "remiks wszystkich", "drapieznik": "oba według pory", "nowaZasada": "burza z piorunem, pełne Nadchmurze", "final": "brak (lot bez końca)" }
+  ],
+  "strefy": [
+    {
+      "id": "ziemia",
+      "nazwa": "Ziemia",
+      "wiersz": 3,
+      "opis": "Bezpieczna, wolniejsza, pełna znajdziek: łąki, wzgórza, drzewa, rzeka, wieś w baśniowej akwareli.",
+      "zasady": { "opadanieCoS": 5.4, "tempoSwiata": 0.85, "zanikS": 1.4, "machniecDoWyzej": 2, "wejscie": "szybowanie z powietrza, nurkowanie", "dotkniecie": "pierwsze dotknięcie w biegu = przysiad (do decyzji właściciela), drugie = sen w trawie (koniec biegu)", "udzialAtakow": 0.25 },
+      "typy": {
+        "przeszkody": [
+          { "id": "z_drzewo", "nazwa": "Drzewo (korona)", "znak": "d", "klasa": "S1", "rodzina": "blok", "efekt": "odbicie, wirowanie 0,8 s, s -0,08, kilka listków", "zapowiedz": "korona rośnie z horyzontu, cień na łące od 2 s", "jakUnikac": "obok albo górą przez powietrze", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_fala_pierzyn", "nazwa": "Fala Pierzyn", "znak": "q", "klasa": "S1", "rodzina": "blok", "efekt": "miękkie wybrzuszenie morza chmur, odbicie, s -0,06", "zapowiedz": "pierzyna puchnie przez 2 s", "jakUnikac": "sąsiednia komórka albo wyżej", "rzadkosc": "czesty", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_dach", "nazwa": "Dach kamienicy", "znak": "c", "klasa": "S1", "rodzina": "blok", "efekt": "odbicie od dachu jak od drzewa", "zapowiedz": "kalenica i okna widać od 2 s", "jakUnikac": "nad dachem (powietrze) albo ulicą obok", "rzadkosc": "czesty", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_dzwonnica", "nazwa": "Wieża z dzwonem", "znak": "W", "klasa": "S1", "rodzina": "kolumna", "efekt": "trzon zajmuje ziemię i powietrze jednej kolumny; odbicie jak od szpili", "zapowiedz": "„bim-bam” 2 s przed, sylwetka z daleka", "jakUnikac": "sąsiednia kolumna albo górą przez chmury", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_wiatrak", "nazwa": "Wiatrak", "znak": "w", "klasa": "S1", "rodzina": "blok", "efekt": "komórka zajęta (śmigła to dekoracja, bez wyczucia czasu); obok poryw", "zapowiedz": "śmigła widać z daleka, szum 2 s", "jakUnikac": "obok; poryw z boku przerzuca o kolumnę", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_pranie", "nazwa": "Sznur z praniem", "znak": "n", "klasa": "S1", "rodzina": "linia", "efekt": "2 komórki ziemi w wierszu; skarpetka owija Okruszka: wirowanie 0,8 s, s -0,08", "zapowiedz": "kolorowe pranie powiewa 2 s wcześniej", "jakUnikac": "trzecia, wolna komórka albo powietrze", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_strach", "nazwa": "Strach na wróble", "znak": "t", "klasa": "S1", "rodzina": "blok", "efekt": "macha rękawem; odbicie; szept „Nie boję się. Prawie.”", "zapowiedz": "sylwetka na polu od 2 s, rękaw macha", "jakUnikac": "obok albo górą", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_wroble", "nazwa": "Wróble zrywające się z pola", "znak": "p", "klasa": "S1", "rodzina": "ruchomy", "efekt": "stadko zrywa się do komórki powietrza nad sobą, gdy Okruszek jest plaster przed nim", "zapowiedz": "kłosy kołyszą się 1,5 s wcześniej", "jakUnikac": "nie lecieć w kołyszące się kłosy ani tuż nad nimi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_bociany", "nazwa": "Bociany na łące", "znak": "j", "klasa": "S0", "rodzina": "widowisko", "efekt": "kroczą po łące; jeden zrywa się i zapowiada bociana w locie", "zapowiedz": "widać od horyzontu", "jakUnikac": "nie trzeba, nie kolidują", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" }
+        ],
+        "wiatry": [
+          { "id": "z_termika", "nazwa": "Termika nad polem", "znak": "u", "klasa": "S0", "rodzina": "przerzut", "efekt": "unosi o wiersz", "trasa": "ziemia -> powietrze, ta sama kolumna", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "drżące powietrze, dmuchawce wirują w górę 2 s", "jakUnikac": "wlecieć środkiem komórki (idealne wejście)", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_zbocze", "nazwa": "Wiatr zboczowy", "znak": "U", "klasa": "S0", "rodzina": "przerzut", "efekt": "unosi o dwa wiersze", "trasa": "ziemia -> chmury, ta sama kolumna (tylko z ziemi)", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "trawy kładą się pod górę, czapka chmury nad zboczem", "jakUnikac": "wlecieć środkiem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_bryza", "nazwa": "Bryza znad rzeki", "znak": "<>", "klasa": "S0", "rodzina": "przerzut", "efekt": "przerzut o kolumnę w bok", "trasa": "ziemia -> ziemia, kolumna obok", "wartoscJ": 0.8, "lancuch": true, "zapowiedz": "zmarszczki na wodzie, trzcina pochylona, w K5 rękaw wiatrowy", "jakUnikac": "wlecieć środkiem", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_komin", "nazwa": "Komin ciepła nad dachem", "znak": "k", "klasa": "S0", "rodzina": "bez_lancucha", "efekt": "wysokość +1 wiersz, s najwyżej +0,5 j., kolor stoi; gaśnie 5 s po wlocie", "trasa": "ziemia -> powietrze", "wartoscJ": 0.5, "lancuch": false, "zapowiedz": "drgające powietrze nad dachem", "jakUnikac": "ratunek po nurkowaniu; nie przedłuża łańcucha", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_poryw_wiatraka", "nazwa": "Poryw od wiatraka", "znak": "<>", "klasa": "S0", "rodzina": "przerzut", "efekt": "przerzut o kolumnę od wiatraka", "trasa": "ziemia -> ziemia, kolumna obok", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "śmigła przyspieszają 1,5 s", "jakUnikac": "wlecieć w komórkę obok wiatraka", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_ratunkowa", "nazwa": "Termika ratunkowa", "znak": "u", "klasa": "S0", "rodzina": "przerzut", "efekt": "prąd ratunkowy w komórce Okruszka, gdy zaraz dotknie ziemi; szersze idealne wejście", "trasa": "ziemia -> powietrze", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "puch dmuchawców wiruje pod Okruszkiem 1,8 s", "jakUnikac": "zostać w komórce", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "znajdzki": [
+          { "id": "z_okruszki", "nazwa": "Okruszki z pikniku", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "strona Zeszytu „Skąd moje imię”", "zaCo": "przelot nisko nad kocem w kratkę", "wartosc": "imię bohatera, uśmiech: „To ja?”", "zapowiedz": "koc widać od 2 s", "jakUnikac": "zejść do ziemi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_puch", "nazwa": "Puch dmuchawca do gniazda", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "gniazdo w Zeszycie mości się puchem (obrazek, bez liczb)", "zaCo": "przelot przez łąkę z dmuchawcami", "wartosc": "tęsknota za domem, troska", "zapowiedz": "białe kulki na łące", "jakUnikac": "zejść do ziemi", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_pioro", "nazwa": "Pióro w trawie", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "strona o ptaku w Zeszycie (jedno zdanie)", "zaCo": "przelot przez komórkę z piórem", "wartosc": "poznawanie świata ptaków", "zapowiedz": "pióro błyszczy w trawie", "jakUnikac": "zejść do ziemi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_wspomnienie", "nazwa": "Wspomnienie w trawie", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "bańka z obrazkiem: jedno z 15 wspomnień Zeszytu", "zaCo": "dotknięcie bańki (dryfuje nisko i wolno)", "wartosc": "historia „Gdzie śpi słońce”", "zapowiedz": "ciepła poświata od 2 s", "jakUnikac": "skręcić do bańki", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_swietliki", "nazwa": "Świetliki", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "lecą wokół Okruszka; gasną od strony sowy (ostrzeżenie)", "zaCo": "przelot nisko nocą", "wartosc": "opieka, światło w ciemności", "zapowiedz": "ciepłe punkciki nad trawą", "jakUnikac": "zejść do ziemi nocą", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_motyl", "nazwa": "Motyl z kartki", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "prowadzi do ukrytej znajdźki; zignorowany odlatuje bez żalu", "zaCo": "lot za motylem przez 2-3 plastry", "wartosc": "ciekawość, mały sekret", "zapowiedz": "papierowe skrzydła trzepoczą", "jakUnikac": "lecieć za nim albo nie", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" }
+        ],
+        "drapiezniki": [
+          { "id": "z_jastrzab", "nazwa": "Jastrząb nad polem", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "zaznacza komórkę Okruszka i uderza po 1,6 s; przy ziemi nie da się uciec w dół", "zapowiedz": "cień sunie po łące 2,6 s i niska nuta", "jakUnikac": "zmienić komórkę, schować się w dziupli dębu, prędkość od Złota (s 0,7)", "udzialAtakow": 0.25, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_sowa", "nazwa": "Sowa nad łąką", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "poluje nisko i cicho; uderza w zaznaczoną komórkę", "zapowiedz": "świetliki gasną od jej strony, „huu” 2,6 s", "jakUnikac": "w górę do chmur (sowa nie wlatuje w chmury), zmiana komórki, prędkość", "udzialAtakow": 0.35, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "bonusy": [
+          { "id": "z_polana", "nazwa": "Słoneczna polana", "znak": "=", "klasa": "S0", "rodzina": "oddech", "efekt": "5 s: zagrożenia wstrzymane, opadanie stoi, pewne wspomnienie", "zapowiedz": "słup światła widać 3 s", "jakUnikac": "zejść do ziemi i wlecieć w światło", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_rzeka", "nazwa": "Ciepła rzeka", "znak": "_", "klasa": "S0", "rodzina": "oddech", "efekt": "3-5 plastrów lotu wzdłuż rzeki: bez przeszkód naziemnych, opadanie 2 x wolniej, s nie maleje; kolor stoi", "zapowiedz": "odbicie nieba w wodzie od horyzontu", "jakUnikac": "trzymać się środkowej kolumny ziemi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "z_dziupla", "nazwa": "Dąb z dziuplą (kryjówka)", "znak": "h", "klasa": "S0", "rodzina": "kryjowka", "efekt": "w pościgu wlot = drapieżnik traci trop; Okruszek chowa się na 1 s", "zapowiedz": "ciepłe światło w dziupli, pojawia się tylko przy zapowiedzi drapieżnika", "jakUnikac": "wlecieć w komórkę dębu", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" }
+        ],
+        "nerfy": [
+          { "id": "z_mgla_poranna", "nazwa": "Mgła poranna nad rzeką", "znak": "~", "klasa": "S1", "rodzina": "strefa", "efekt": "wiersz ziemi przez 3-4 plastry: energia koloru -0,2 na s, widać tylko 1,5 s naprzód", "zapowiedz": "biała ściana rośnie nad wodą 2 s", "jakUnikac": "podlecieć do powietrza", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "swit", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "z_pylki", "nazwa": "Pyłki (apsik!)", "znak": ":", "klasa": "S1", "rodzina": "strefa", "efekt": "Okruszek kicha: podskok o pół komórki i powrót, s -0,05; łańcuch się nie zrywa", "zapowiedz": "złota mgiełka nad kwiatami 2 s", "jakUnikac": "ominąć kwitnącą komórkę", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" }
+        ]
+      }
+    },
+    {
+      "id": "powietrze",
+      "nazwa": "Powietrze",
+      "wiersz": 2,
+      "opis": "Środek nieba i komórka startu: wiatry, ptaki, motolotnie, balony, małe samoloty; główne łowisko jastrzębia.",
+      "zasady": { "opadanieCoS": 3.6, "tempoSwiata": 1.0, "zanikS": 1.0, "machniecDoWyzej": 3, "wejscie": "start biegu, termika z ziemi, zjazd z chmur", "udzialAtakow": 0.55 },
+      "typy": {
+        "przeszkody": [
+          { "id": "p_ptak", "nazwa": "Większy ptak (wrona, gęś)", "znak": "P", "klasa": "S1", "rodzina": "ruchomy", "efekt": "przylatuje z sąsiedniej komórki; kontakt: wirowanie 0,8 s, piórka", "zapowiedz": "skrzydła i szkic toru lotu 2 s", "jakUnikac": "zejść z jego toru", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_klucz", "nazwa": "Klucz gęsi", "znak": "V", "klasa": "S1", "rodzina": "linia", "efekt": "2-3 komórki wiersza (środek klucza); wolne miejsce na końcu to autostop", "zapowiedz": "„gę-gę” i litera V od 2,5 s", "jakUnikac": "wolna komórka albo koniec klucza", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L1" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_bocian", "nazwa": "Bocian w locie", "znak": "C", "klasa": "S1", "rodzina": "ruchomy", "efekt": "duży i powolny: 2 plastry w tej samej komórce", "zapowiedz": "bocian zrywa się z łąki 2,5 s wcześniej", "jakUnikac": "łatwe ominięcie, uczy skali", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "p_motolotnia", "nazwa": "Motolotnia", "znak": "M", "klasa": "S1", "rodzina": "ruchomy", "efekt": "przelot ukosem przez 2 komórki (powietrze i chmury), za nią turbulencja", "zapowiedz": "brzęczenie i skrzydło-trójkąt 2 s", "jakUnikac": "przeciwna strona toru", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_balon", "nazwa": "Balon na ogrzane powietrze", "znak": "O", "klasa": "S1", "rodzina": "blok", "efekt": "zajmuje komórkę; komórka obok ma ciepły podmuch palnika (winda o wiersz)", "zapowiedz": "kolorowa kopuła z daleka, syk palnika 2 s; nigdy czerwony", "jakUnikac": "ominąć kosz, wykorzystać podmuch obok", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "p_samolot", "nazwa": "Mały samolot (dwupłatowiec)", "znak": "Aa", "klasa": "S1", "rodzina": "linia", "efekt": "przelot przez cały wiersz (A) albo kolumnę (a), turbulencja", "zapowiedz": "warkot i cień 2,5 s", "jakUnikac": "opuścić wiersz albo kolumnę", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_latawiec", "nazwa": "Sznur latawca", "znak": "K", "klasa": "S1", "rodzina": "kolumna", "efekt": "sznur przez ziemię i powietrze, latawiec w chmurach; kontakt jak ptak", "zapowiedz": "latawiec wyżej, sznur rysuje się w dół 1,5 s", "jakUnikac": "sąsiednia kolumna", "rzadkosc": "czesty", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_szpile", "nazwa": "Szpila miasta (wieża)", "znak": "S", "klasa": "S1", "rodzina": "kolumna", "efekt": "niska wieża: ziemia; wysoka: ziemia i powietrze; najwyższa sięga chmur", "zapowiedz": "sylwetka z oknami od 2 s", "jakUnikac": "aleja środkiem albo nad niską wieżą", "rzadkosc": "czesty", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_szybowiec", "nazwa": "Szybowiec", "znak": "G", "klasa": "S0", "rodzina": "widowisko", "efekt": "cicho krąży tam, gdzie jest termika: pokazuje, gdzie czeka winda", "zapowiedz": "długie skrzydła w oddali", "jakUnikac": "nie koliduje; lecieć pod niego", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "p_dron", "nazwa": "Dron-klonik", "znak": "e", "klasa": "S1", "rodzina": "ruchomy", "efekt": "mały ogrodowy dron z śmigiełkami jak nasiona klonu; przelatuje między komórkami jak ptak", "zapowiedz": "bzyczenie 2 s", "jakUnikac": "zejść z toru", "rzadkosc": "bardzo_rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L2" }, "pora": "dzien", "grafika": "nowa", "wersja": "opcja" }
+        ],
+        "wiatry": [
+          { "id": "p_wprost", "nazwa": "Wiatr z tyłu na wprost", "znak": "F", "klasa": "S0", "rodzina": "wprost", "efekt": "sama prędkość, bez zmiany komórki", "trasa": "tylko środkowa kolumna, wiersze powietrze i chmury", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "wstęga biegnie środkiem toru", "jakUnikac": "być w środkowej kolumnie", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_winda", "nazwa": "Winda o wiersz", "znak": "u", "klasa": "S0", "rodzina": "przerzut", "efekt": "unosi o wiersz", "trasa": "powietrze -> chmury, ta sama kolumna", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "wstęga skręca w górę", "jakUnikac": "wlecieć środkiem", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_poprzeczny", "nazwa": "Wiatr poprzeczny", "znak": "<>", "klasa": "S0", "rodzina": "przerzut", "efekt": "przerzut o kolumnę", "trasa": "powietrze lub chmury, kolumna obok", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "wstęga zakręca w bok", "jakUnikac": "wlecieć środkiem", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_dol_srodek", "nazwa": "Winda dół-środek", "znak": "D", "klasa": "S0", "rodzina": "przerzut", "efekt": "zsuwa do środkowej komórki powietrza", "trasa": "chmury lub nadchmurze -> powietrze, środkowa kolumna", "wartoscJ": 1.1, "lancuch": true, "zapowiedz": "wstęga lejkiem do środka", "jakUnikac": "wlecieć środkiem; ustawia pod wiatr na wprost", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_poryw", "nazwa": "Poryw latawcowy", "znak": "u", "klasa": "S0", "rodzina": "przerzut", "efekt": "latawce szarpią w górę 1 s przed; unosi o wiersz", "trasa": "powietrze -> chmury", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "latawce szarpią w górę", "jakUnikac": "wlecieć pod szarpiący latawiec (obok sznura)", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_smuga", "nazwa": "Smuga za Wielkim przelotem", "znak": "X", "klasa": "S0", "rodzina": "wprost", "efekt": "prąd długi ok. 3 s, jeden prąd w łańcuchu, skok najwyżej 1,5 j.; od s 0,35", "trasa": "powietrze, ta sama komórka", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "cień olbrzyma przykrywa ekran, smuga opada 2,7 s", "jakUnikac": "środek smugi; wiry po bokach", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L2" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "znajdzki": [
+          { "id": "p_drobiny", "nazwa": "Drobiny akwareli", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "plama koloru wokół Okruszka na 3 s (tylko obok niego, nie cały świat)", "zaCo": "przelot przez pyłek koloru", "wartosc": "zabawa kolorem, przedsmak nagrody", "zapowiedz": "unoszące się krople pigmentu", "jakUnikac": "przelecieć przez nie", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_pioro_lotne", "nazwa": "Pióro z podróży", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "spada spiralą po spotkaniu z ptakiem; jastrzębie i sowie tylko po ucieczce", "zaCo": "złapanie spadającego pióra", "wartosc": "pamiątka spotkania, „przeżyłem”", "zapowiedz": "pióro wiruje 2 s", "jakUnikac": "skręcić pod pióro", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_samolocik", "nazwa": "Papierowy samolocik", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "leci obok 5 s i nurkuje; kto poleci za nim, trafia na ukryty wiatr i pocztówkę", "zaCo": "lot za samolocikiem", "wartosc": "zaskoczenie, sekret", "zapowiedz": "szelest papieru", "jakUnikac": "lecieć za nim", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "p_nasionko", "nazwa": "Nasionka klonu", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "wirujące „helikopterki”: przelot gra krótką melodię i maluje stronę „Drzewo przy domu”", "zaCo": "przelot przez wirujące nasionka", "wartosc": "dom, drzewo przy gnieździe", "zapowiedz": "nasionka wirują w dół 2 s", "jakUnikac": "przelecieć przez nie", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "dzien", "grafika": "nowa", "wersja": "v1.5" }
+        ],
+        "drapiezniki": [
+          { "id": "p_jastrzab", "nazwa": "Jastrząb w powietrzu", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "główne łowisko; 3 ataki na komórki, potem odlatuje", "zapowiedz": "cień i niska nuta 2,6 s, zaznaczenie komórki 1,6 s przed uderzeniem", "jakUnikac": "zmienić komórkę, prędkość od Złota, gęsta chmura wyżej", "udzialAtakow": 0.55, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_sowa", "nazwa": "Sowa w powietrzu", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "nocny odpowiednik jastrzębia, leci cicho", "zapowiedz": "pohukiwanie, świetliki gasną, zaznaczenie komórki 1,6 s", "jakUnikac": "w górę do chmur, zmiana komórki, prędkość", "udzialAtakow": 0.45, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "bonusy": [
+          { "id": "p_autostop", "nazwa": "Autostop za kluczem gęsi", "znak": "V", "klasa": "S0", "rodzina": "oddech", "efekt": "6 s lotu w szyku: opadanie stoi, s stałe; wejście liczy się jako jeden wiatr", "zapowiedz": "wolne miejsce na końcu klucza świeci", "jakUnikac": "wlecieć w wolne miejsce", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K5", "poziomMin": "L1" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_fiuk", "nazwa": "Fiuk prowadzi", "znak": "-", "klasa": "S0", "rodzina": "pomocnik", "efekt": "po 2 wiatrach z rzędu zawijas Fiuka leci na czele i lekko podświetla komórkę następnego wiatru", "zapowiedz": "zawijas z oczkami", "jakUnikac": "lecieć za zawijasem", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_wiatrolap", "nazwa": "Wiatrołap (zaprzyjaźniony wróbel)", "znak": "-", "klasa": "S0", "rodzina": "pomocnik", "efekt": "raz na bieg wiatr z tyłu 1,5 j.; relacja rośnie przez wiele dni", "zapowiedz": "wróbel z pióropuszem z prawej", "jakUnikac": "lecieć obok", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "v2" }
+        ],
+        "nerfy": [
+          { "id": "p_flauta", "nazwa": "Flauta (Panna Flauta)", "znak": "%", "klasa": "S1", "rodzina": "strefa", "efekt": "wiersz powietrza przez 3 plastry: wiatry w nim śpią, opadanie 1,3 x szybsze", "zapowiedz": "blada, nieruchoma mgiełka i cisza w dźwięku 2 s", "jakUnikac": "przejść do chmur albo ziemi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_turbulencja", "nazwa": "Wiry i turbulencja", "znak": "v", "klasa": "S1", "rodzina": "wir", "efekt": "drżenie do 8 px przez 1,2 s, czułość skrętu -40%, znos do szerokości ptaszka", "zapowiedz": "zawirowania kresek po bokach smugi", "jakUnikac": "środek smugi albo inny wiersz", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L2" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "p_szkwal", "nazwa": "Szkwał (wiatr boczny)", "znak": "&", "klasa": "S1", "rodzina": "strefa", "efekt": "znosi o kolumnę wbrew woli, bez skoku prędkości", "zapowiedz": "falujące linie z boku 2 s", "jakUnikac": "wyprzedzić ruchem w przeciwną stronę albo zmienić wiersz", "rzadkosc": "sredni", "debiut": { "krainaMin": "K4", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" }
+        ]
+      }
+    },
+    {
+      "id": "chmury",
+      "nazwa": "Chmury",
+      "wiersz": 1,
+      "opis": "Kolorowe kumulusy spowalniają (kolor = siła), ale tu są oazy, tunele i Schody światła do Nadchmurza; burze, grad, tornada.",
+      "zasady": { "opadanieCoS": 3.6, "tempoSwiata": 1.0, "zanikS": 1.0, "machniecDoWyzej": 0, "wejscie": "3 machnięcia z powietrza, winda, wiatr zboczowy, zjazd z Nadchmurza", "udzialAtakow": 0.2, "uwaga": "z chmur do Nadchmurza tylko wiatrem (Schody światła, jetstream)" },
+      "typy": {
+        "przeszkody": [
+          { "id": "c_biala", "nazwa": "Biała chmurka", "znak": "b", "klasa": "S1", "rodzina": "chmura", "efekt": "przelot: s -0,04, energia koloru x0,85", "zapowiedz": "kłąb rośnie od 2 s", "jakUnikac": "obok; można przelecieć tanio", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_lawenda", "nazwa": "Lawendowa chmura", "znak": "l", "klasa": "S1", "rodzina": "chmura", "efekt": "przelot: s -0,08, energia x0,7; gęsta, chowa przed drapieżnikiem", "zapowiedz": "lawendowy kłąb od 2 s", "jakUnikac": "obok albo celowo jako kryjówka", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_szara", "nazwa": "Szara chmura deszczowa", "znak": "s", "klasa": "S1", "rodzina": "chmura", "efekt": "przelot: s -0,13, energia x0,5, mokre piórka 5 s; gęsta", "zapowiedz": "kreski deszczu pod spodem 2 s", "jakUnikac": "obok; pod nią pada", "rzadkosc": "czesty", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_fiolet", "nazwa": "Fioletowa chmura burzowa", "znak": "f", "klasa": "S2", "rodzina": "chmura", "efekt": "przelot: s o poziom w dół, energia x0,3; gęsta", "zapowiedz": "ciemniejący fiolet i pomruk 2 s", "jakUnikac": "obok, nigdy przez", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_grad", "nazwa": "Chmura gradowa", "znak": "H", "klasa": "S2", "rodzina": "burza", "efekt": "trafienie: wiersz w dół", "zapowiedz": "stukanie i białe kropki 2 s", "jakUnikac": "obok albo pod nią z wyprzedzeniem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_tornado", "nazwa": "Tornado (lejek)", "znak": "T", "klasa": "S2", "rodzina": "wir", "efekt": "2 komórki w pionie (chmury i powietrze); wciąga i znosi o kolumnę", "zapowiedz": "lejek rośnie 2,5 s, kurz pod nim", "jakUnikac": "kolumna dalej od lejka", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K5", "poziomMin": "L2" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_burza", "nazwa": "Burza z piorunem", "znak": "B", "klasa": "S2", "rodzina": "burza", "efekt": "wirowanie 1 s, s o poziom w dół, błysk (najwyżej 3 na s; przy ograniczeniu ruchu bez błysku)", "zapowiedz": "niebo ciemnieje 2 s, pomruk", "jakUnikac": "inny wiersz", "rzadkosc": "rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L2" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_ufo", "nazwa": "UFO Bączek", "znak": "Y", "klasa": "S1", "rodzina": "wir", "efekt": "środek wiru: wirowanie 0,8 s; bez wiązki i bez wciągania", "zapowiedz": "ciche bzyczenie, kręcący się talerzyk 2 s", "jakUnikac": "komórka obok = proca", "rzadkosc": "bardzo_rzadki", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "wiatry": [
+          { "id": "c_schody", "nazwa": "Schody światła", "znak": "^", "klasa": "S0", "rodzina": "przerzut", "efekt": "wynosi do Nadchmurza; działa tylko przy łańcuchu co najmniej 2 (inaczej blady szkic, nie działa i nie zrywa)", "trasa": "powietrze lub chmury -> nadchmurze, ta sama kolumna", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "stopnie światła zapalają się po drugim wietrze z rzędu", "jakUnikac": "zbudować łańcuch 2 i wlecieć środkiem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L1" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "c_zjazd", "nazwa": "Zjazd", "znak": "Z", "klasa": "S0", "rodzina": "przerzut", "efekt": "o wiersz w dół z przyspieszeniem", "trasa": "nadchmurze -> chmury albo chmury -> powietrze", "wartoscJ": 1.35, "lancuch": true, "zapowiedz": "wstęga opada w dół", "jakUnikac": "wlecieć środkiem; po nim wznieść się windą (pompa)", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_tecza", "nazwa": "Tęcza księżycowa", "znak": "r", "klasa": "S0", "rodzina": "wprost", "efekt": "prąd pod łukiem: jeden prąd, suche piórka; kolor tylko łuku", "trasa": "chmury lub powietrze, ta sama komórka", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "blady łuk po deszczu", "jakUnikac": "lecieć pod łukiem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_proca", "nazwa": "Proca Bączka", "znak": "y", "klasa": "S0", "rodzina": "wprost", "efekt": "lot w komórce obok UFO zgodnie z obrotem: jeden prąd", "trasa": "chmury, komórka obok Bączka", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "spirala kresek wokół UFO", "jakUnikac": "minąć Bączka bokiem", "rzadkosc": "bardzo_rzadki", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_delfin", "nazwa": "Delfin z chmur", "znak": "u", "klasa": "S0", "rodzina": "przerzut", "efekt": "chmurowy delfin wyskakuje łukiem; grzbiet działa jak winda o wiersz", "trasa": "powietrze -> chmury", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "plusk chmur i łuk 2 s", "jakUnikac": "wlecieć na grzbiet", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "dzien", "grafika": "nowa", "wersja": "opcja" }
+        ],
+        "znajdzki": [
+          { "id": "c_ksztalt", "nazwa": "Chmura w kształcie", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "pocztówka do Zeszytu (gniazdo, mama, babcia z drutami, rogal, złote jajko)", "zaCo": "przelot obok chmury w kształcie", "wartosc": "uśmiech, tęsknota za domem", "zapowiedz": "kształt widać z daleka", "jakUnikac": "przelecieć obok", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "c_kropla", "nazwa": "Kropla tęczy", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "plama barwy wokół Okruszka; 3 krople malują łuk w Zeszycie", "zaCo": "przelot przez kroplę po deszczu", "wartosc": "deszcz oddaje kolor", "zapowiedz": "mieniąca się kropla", "jakUnikac": "przelecieć przez nią", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "c_wspomnienie", "nazwa": "Wspomnienie w chmurach", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "bańka ze wspomnieniem sekretnym (tylko od Turbo albo o konkretnej porze)", "zaCo": "dotknięcie bańki", "wartosc": "sekret dla wprawnych", "zapowiedz": "złota poświata w chmurze", "jakUnikac": "skręcić do bańki", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L3" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" }
+        ],
+        "drapiezniki": [
+          { "id": "c_jastrzab", "nazwa": "Jastrząb przy chmurach", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "atakuje rzadziej; w gęstej chmurze traci trop", "zapowiedz": "cień na chmurach 2,6 s", "jakUnikac": "lawendowa, szara albo fioletowa chmura, tunel, zmiana komórki", "udzialAtakow": 0.2, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K4", "poziomMin": "L0" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_sowa", "nazwa": "Sowa pod chmurami", "znak": "!", "klasa": "S3", "rodzina": "poscig", "efekt": "nie wlatuje w chmury: wlot w gęstą chmurę kończy pościg", "zapowiedz": "„huu” z dołu 2,6 s", "jakUnikac": "wlecieć w chmurę", "udzialAtakow": 0.2, "rzadkosc": "rzadki", "debiut": { "krainaMin": "K3", "poziomMin": "L0" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "bonusy": [
+          { "id": "c_oaza", "nazwa": "Zielona chmura-oaza", "znak": "o", "klasa": "S0", "rodzina": "chmura", "efekt": "opadanie stoi 4 s, energia koloru nie gaśnie 4 s, s nie maleje (zieleń z funkcją)", "zapowiedz": "miętowy kłąb z jasnym środkiem", "jakUnikac": "wlecieć celowo", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_tunel", "nazwa": "Tunel w chmurze", "znak": "#", "klasa": "S0", "rodzina": "kryjowka", "efekt": "korytarz przez 3 plastry w środkowej komórce chmur: bez przeszkód, gubi drapieżnika; wylot = jeden prąd 1,5 j.; kolor gaśnie na 1,5 s", "zapowiedz": "wielki kumulus z otworem i promieniami", "jakUnikac": "wlecieć w otwór", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "c_promien", "nazwa": "Słońce zza chmury", "znak": "=", "klasa": "S0", "rodzina": "oddech", "efekt": "przelot przez promień: energia koloru nie gaśnie przez 3 s (łaska dla łańcucha)", "zapowiedz": "promienie między chmurami", "jakUnikac": "przelecieć przez promień", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L1" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "nerfy": [
+          { "id": "c_zielona_mgla", "nazwa": "Zatruta zielona mgła", "znak": "g", "klasa": "S1", "rodzina": "chmura", "efekt": "s -0,10, energia koloru do zera; gęsta (zieleń z funkcją)", "zapowiedz": "mglisty zielonkawy kłąb z bąbelkami, czytelny od Konturu", "jakUnikac": "obok; tylko w ostateczności jako kryjówka", "rzadkosc": "sredni", "debiut": { "krainaMin": "K2", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_mgla", "nazwa": "Gęsta mgła", "znak": "~", "klasa": "S2", "rodzina": "strefa", "efekt": "wiersz chmur przez 3-4 plastry: kolor gaśnie, poziom w dół", "zapowiedz": "szara ściana rośnie 2 s", "jakUnikac": "zejść do powietrza", "rzadkosc": "sredni", "debiut": { "krainaMin": "K3", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "c_deszcz", "nazwa": "Mokre piórka", "znak": "s", "klasa": "S1", "rodzina": "strefa", "efekt": "komórka pod szarą chmurą: 5 s wolniej, kolor gaśnie szybciej", "zapowiedz": "kreski deszczu 2 s", "jakUnikac": "nie lecieć pod szarą chmurą; tęcza zdejmuje mokre piórka", "rzadkosc": "czesty", "debiut": { "krainaMin": "K2", "poziomMin": "L0" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" }
+        ]
+      }
+    },
+    {
+      "id": "nadchmurze",
+      "nazwa": "Nadchmurze",
+      "wiersz": 0,
+      "opis": "Szczyt: rzadkie powietrze, gwiazdy i światło, najwyższa prędkość, jedyne miejsce hiperprzestrzeni; bez drapieżników.",
+      "zasady": { "opadanieCoS": 2.5, "tempoSwiata": 1.15, "zanikS": 0.6, "machniecDoWyzej": 0, "wejscie": "tylko wiatrem: Schody światła (łańcuch co najmniej 2) albo jetstream; machanie tu nie podnosi", "nurkowanie": "przez pierwsze 1,2 s strzała bez utraty wiersza, dłużej zjazd do chmur", "udzialAtakow": 0, "hiper": "L5 tylko tutaj" },
+      "typy": {
+        "przeszkody": [
+          { "id": "n_odrzutowiec", "nazwa": "Odrzutowiec wysoko", "znak": "A", "klasa": "S1", "rodzina": "linia", "efekt": "przelot przez cały wiersz Nadchmurza; za nim smuga kondensacyjna", "zapowiedz": "daleki szum, biała kreska rośnie 2,5 s", "jakUnikac": "zjazd do chmur albo smuga za nim", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L2" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_meteor", "nazwa": "Iskry meteorów", "znak": "m", "klasa": "S1", "rodzina": "ruchomy", "efekt": "ukośna smuga przez komórkę: błysk, s -0,08", "zapowiedz": "jasny punkt rośnie 1,5 s", "jakUnikac": "komórka obok", "rzadkosc": "sredni", "debiut": { "krainaMin": "DN", "poziomMin": "L3" }, "pora": "noc", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_satelita", "nazwa": "Zagubiony satelita", "znak": "@", "klasa": "S1", "rodzina": "ruchomy", "efekt": "koziołkuje i piszczy „bip”; zgubiony jak Okruszek", "zapowiedz": "„bip” i błysk paneli 2 s", "jakUnikac": "komórka obok", "rzadkosc": "rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L3" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "n_wir_jet", "nazwa": "Wir na brzegu jetstreamu", "znak": "v", "klasa": "S1", "rodzina": "wir", "efekt": "komórka obok rzeki powietrza: znos o kolumnę, drżenie 0,8 s", "zapowiedz": "zawirowane kreski przy brzegu", "jakUnikac": "środek jetstreamu", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L3" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" }
+        ],
+        "wiatry": [
+          { "id": "n_jetstream", "nazwa": "Jetstream", "znak": "J", "klasa": "S0", "rodzina": "wprost", "efekt": "rzeka powietrza: jeden prąd na wlocie, potem niesie 3 s (opadanie stoi, okno łańcucha liczone od wylotu)", "trasa": "nadchmurze, ta sama komórka; J w kolejnych plastrach tej samej kolumny = jedna rzeka", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "szeroka wstęga lawendy i miodu", "jakUnikac": "wlecieć środkiem; wejście z chmur także samym jetstreamem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L3" }, "pora": "dzien", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_smuga_kond", "nazwa": "Smuga kondensacyjna", "znak": "X", "klasa": "S0", "rodzina": "wprost", "efekt": "prąd długi za odrzutowcem, jeden prąd, skok najwyżej 1,5 j.", "trasa": "nadchmurze, ta sama komórka", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "biała kreska za odrzutowcem", "jakUnikac": "środek smugi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K5", "poziomMin": "L2" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_promien", "nazwa": "Promień zachodu (złota droga)", "znak": "y", "klasa": "S0", "rodzina": "wprost", "efekt": "złota wstęga na wprost, jeden prąd", "trasa": "nadchmurze, ta sama komórka", "wartoscJ": 1.25, "lancuch": true, "zapowiedz": "złoty pas od słońca przed Okruszkiem", "jakUnikac": "wlecieć środkiem", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L2" }, "pora": "zachod", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_gwiezdne", "nazwa": "Gwiezdne smugi (hiper)", "znak": "J", "klasa": "S0", "rodzina": "wprost", "efekt": "w hiperprzestrzeni co plaster smuga gwiazd: każda jeden prąd, podtrzymuje hiper", "trasa": "nadchmurze", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "promieniste smugi gwiazd", "jakUnikac": "trzymać się smug", "rzadkosc": "czesty", "debiut": { "krainaMin": "K1", "poziomMin": "L5" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_zorza", "nazwa": "Zorza", "znak": "R", "klasa": "S0", "rodzina": "wprost", "efekt": "3 zasłony w kolejnych plastrach, każda jeden prąd: naturalny łańcuch nocą", "trasa": "nadchmurze", "wartoscJ": 1.0, "lancuch": true, "zapowiedz": "brzeg nieba zielenieje", "jakUnikac": "lecieć pod zasłonami", "rzadkosc": "rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L2" }, "pora": "noc", "grafika": "nowa", "wersja": "v2" }
+        ],
+        "znajdzki": [
+          { "id": "n_zlote_pioro", "nazwa": "Złote pióro słońca", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "sekretne wspomnienie krainy (np. „Ostatni promyk”, „Szybciej niż samolot”)", "zaCo": "dotknięcie w Turbo o zachodzie lub w smudze", "wartosc": "duma, najrzadszy skarb", "zapowiedz": "złoty błysk 2 s", "jakUnikac": "skręcić do pióra", "rzadkosc": "bardzo_rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L4" }, "pora": "zachod", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "n_spadajaca", "nazwa": "Spadająca gwiazda", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "lot równolegle 3 s spełnia życzenie: cichy prezent (pióro, tęcza, wiatr obok)", "zaCo": "lot obok ogona gwiazdy", "wartosc": "czułość, życzenie", "zapowiedz": "dzwoneczek i kreska przez niebo", "jakUnikac": "lecieć równolegle", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K2", "poziomMin": "L2" }, "pora": "noc", "grafika": "nowa", "wersja": "v1.5" },
+          { "id": "n_gwiazdozbior", "nazwa": "Gwiazdozbiór Małego Ptaka", "znak": "+", "klasa": "S0", "rodzina": "znajdzka", "efekt": "7 kropek w łuku: lot obok kolejnych łączy je złotą linią", "zaCo": "przelot obok kropek po kolei", "wartosc": "własne niebo", "zapowiedz": "kropki zapalają się po kolei", "jakUnikac": "lecieć łukiem", "rzadkosc": "rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L2" }, "pora": "noc", "grafika": "nowa", "wersja": "v2" }
+        ],
+        "drapiezniki": [],
+        "bonusy": [
+          { "id": "n_panorama", "nazwa": "Nad wszystkim", "znak": "-", "klasa": "S0", "rodzina": "oddech", "efekt": "pierwsze wejście w biegu: 2 s bez przeszkód, panorama świata pod chmurami", "zapowiedz": "kurtyna chmur rozsuwa się w dół", "jakUnikac": "samo przychodzi", "rzadkosc": "sredni", "debiut": { "krainaMin": "K1", "poziomMin": "L1" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_hiper", "nazwa": "Hiperprzestrzeń", "znak": "-", "klasa": "S0", "rodzina": "stan", "efekt": "L5 przez 6 s: ptaszek świeci, gwiazdy w smugach, brak pościgów; na końcu zjazd do chmur", "zapowiedz": "chromatyczny rozbłysk", "jakUnikac": "5 wiatrów w 12 s i nurkowanie-strzała w Nadchmurzu", "rzadkosc": "rzadki", "debiut": { "krainaMin": "K1", "poziomMin": "L4" }, "pora": "kazda", "grafika": "istniejaca", "wersja": "v1.5" },
+          { "id": "n_kometa", "nazwa": "Ogon komety", "znak": "-", "klasa": "S0", "rodzina": "wprost", "efekt": "ogon przecina wiersz: jeden prąd, nie podnosi s ponad CAP4 bez łańcucha", "zapowiedz": "niebiesko-złoty ślad pędzla 3 s", "jakUnikac": "wskoczyć w ogon", "rzadkosc": "bardzo_rzadki", "debiut": { "krainaMin": "DN", "poziomMin": "L4" }, "pora": "noc", "grafika": "nowa", "wersja": "v2" }
+        ],
+        "nerfy": [
+          { "id": "n_cirrus", "nazwa": "Lodowe pierzaste chmurki", "znak": "i", "klasa": "S1", "rodzina": "strefa", "efekt": "energia koloru -0,2, okno łańcucha -0,4 s przez 3 s (zimne skrzydła)", "zapowiedz": "cienkie białe pióra chmur od 2 s", "jakUnikac": "komórka obok", "rzadkosc": "sredni", "debiut": { "krainaMin": "DN", "poziomMin": "L3" }, "pora": "kazda", "grafika": "nowa", "wersja": "v1.5" }
+        ]
+      }
+    }
+  ],
+  "rozkladWierszy": {
+    "opis": "jaka część zajętych komórek leży w danym wierszu, zależnie od poziomu prędkości gracza",
+    "L0": { "nadchmurze": 0, "chmury": 0.25, "powietrze": 0.4, "ziemia": 0.35 },
+    "L1": { "nadchmurze": 0.05, "chmury": 0.3, "powietrze": 0.35, "ziemia": 0.3 },
+    "L2": { "nadchmurze": 0.1, "chmury": 0.35, "powietrze": 0.3, "ziemia": 0.25 },
+    "L3": { "nadchmurze": 0.15, "chmury": 0.35, "powietrze": 0.3, "ziemia": 0.2 },
+    "L4": { "nadchmurze": 0.2, "chmury": 0.35, "powietrze": 0.3, "ziemia": 0.15 },
+    "L5": { "nadchmurze": 0.6, "chmury": 0.25, "powietrze": 0.1, "ziemia": 0.05 }
+  },
+  "udzialCzasu": {
+    "opis": "docelowy udział czasu lotu w strefie dla gracza, który zwykle leci na danym poziomie (do sprawdzenia botem)",
+    "L0": { "nadchmurze": 0, "chmury": 0.15, "powietrze": 0.45, "ziemia": 0.4 },
+    "L1": { "nadchmurze": 0.02, "chmury": 0.25, "powietrze": 0.45, "ziemia": 0.28 },
+    "L2": { "nadchmurze": 0.08, "chmury": 0.35, "powietrze": 0.4, "ziemia": 0.17 },
+    "L3": { "nadchmurze": 0.15, "chmury": 0.4, "powietrze": 0.33, "ziemia": 0.12 },
+    "L4": { "nadchmurze": 0.3, "chmury": 0.4, "powietrze": 0.25, "ziemia": 0.05 },
+    "L5": { "nadchmurze": 0.9, "chmury": 0.1, "powietrze": 0, "ziemia": 0 }
+  },
+  "znajdzkiWgStref": { "ziemia": 0.6, "powietrze": 0.25, "chmury": 0.1, "nadchmurze": 0.05 },
+  "gestosc": {
+    "opis": "na plaster toru 3 x 4 (12 komórek); odstepS = odstęp wszystkich plastrów; pustePlastry = udział plastrów bez niczego (oddech); zajeteNaPlaster = średnio zajętych komórek w plastrze niepustym; wiatry / przeszkody / specjalne = udział wśród zajętych; wiatrowNaMin i przeszkodNaMin = komórki na minutę; lawirowanie = udział fraz, w których prosta droga jest zablokowana; s2NaMin = najwyżej tyle przeszkód S2 na minutę. Tryb poziomy 5 x 4: zajete x1,4, reszta bez zmian.",
+    "L0": {
+      "K1": {"odstepS": 1.76, "pustePlastry": 0.63, "zajeteNaPlaster": 1.7, "zajeteProc": 0.14, "wiatry": 0.53, "przeszkody": 0.3, "specjalne": 0.17, "wolnePolaProc": 0.86, "wiatrowNaMin": 11, "przeszkodNaMin": 6, "znajdzkiNa100m": 3.6, "lawirowanie": 0.05, "s2NaMin": 0},
+      "K2": {"odstepS": 1.68, "pustePlastry": 0.59, "zajeteNaPlaster": 1.8, "zajeteProc": 0.15, "wiatry": 0.49, "przeszkody": 0.34, "specjalne": 0.17, "wolnePolaProc": 0.85, "wiatrowNaMin": 13, "przeszkodNaMin": 9, "znajdzkiNa100m": 3, "lawirowanie": 0.05, "s2NaMin": 0},
+      "K3": {"odstepS": 1.6, "pustePlastry": 0.55, "zajeteNaPlaster": 2, "zajeteProc": 0.17, "wiatry": 0.45, "przeszkody": 0.38, "specjalne": 0.17, "wolnePolaProc": 0.83, "wiatrowNaMin": 15, "przeszkodNaMin": 13, "znajdzkiNa100m": 3, "lawirowanie": 0.1, "s2NaMin": 0},
+      "K4": {"odstepS": 1.57, "pustePlastry": 0.53, "zajeteNaPlaster": 2.1, "zajeteProc": 0.18, "wiatry": 0.43, "przeszkody": 0.4, "specjalne": 0.17, "wolnePolaProc": 0.83, "wiatrowNaMin": 16, "przeszkodNaMin": 15, "znajdzkiNa100m": 3.3, "lawirowanie": 0.15, "s2NaMin": 0},
+      "K5": {"odstepS": 1.54, "pustePlastry": 0.52, "zajeteNaPlaster": 2.2, "zajeteProc": 0.18, "wiatry": 0.41, "przeszkody": 0.42, "specjalne": 0.17, "wolnePolaProc": 0.82, "wiatrowNaMin": 17, "przeszkodNaMin": 17, "znajdzkiNa100m": 2.7, "lawirowanie": 0.15, "s2NaMin": 0},
+      "DN": {"odstepS": 1.5, "pustePlastry": 0.5, "zajeteNaPlaster": 2.3, "zajeteProc": 0.19, "wiatry": 0.39, "przeszkody": 0.44, "specjalne": 0.17, "wolnePolaProc": 0.81, "wiatrowNaMin": 18, "przeszkodNaMin": 20, "znajdzkiNa100m": 2.4, "lawirowanie": 0.2, "s2NaMin": 0}
+    },
+    "L1": {
+      "K1": {"odstepS": 1.54, "pustePlastry": 0.58, "zajeteNaPlaster": 2, "zajeteProc": 0.17, "wiatry": 0.5, "przeszkody": 0.38, "specjalne": 0.12, "wolnePolaProc": 0.83, "wiatrowNaMin": 16, "przeszkodNaMin": 12, "znajdzkiNa100m": 3, "lawirowanie": 0.1, "s2NaMin": 0},
+      "K2": {"odstepS": 1.47, "pustePlastry": 0.54, "zajeteNaPlaster": 2.1, "zajeteProc": 0.18, "wiatry": 0.46, "przeszkody": 0.42, "specjalne": 0.12, "wolnePolaProc": 0.83, "wiatrowNaMin": 18, "przeszkodNaMin": 17, "znajdzkiNa100m": 2.5, "lawirowanie": 0.15, "s2NaMin": 0.4},
+      "K3": {"odstepS": 1.4, "pustePlastry": 0.5, "zajeteNaPlaster": 2.3, "zajeteProc": 0.19, "wiatry": 0.42, "przeszkody": 0.46, "specjalne": 0.12, "wolnePolaProc": 0.81, "wiatrowNaMin": 21, "przeszkodNaMin": 23, "znajdzkiNa100m": 2.5, "lawirowanie": 0.2, "s2NaMin": 0.4},
+      "K4": {"odstepS": 1.37, "pustePlastry": 0.48, "zajeteNaPlaster": 2.4, "zajeteProc": 0.2, "wiatry": 0.4, "przeszkody": 0.48, "specjalne": 0.12, "wolnePolaProc": 0.8, "wiatrowNaMin": 22, "przeszkodNaMin": 26, "znajdzkiNa100m": 2.8, "lawirowanie": 0.25, "s2NaMin": 0.5},
+      "K5": {"odstepS": 1.34, "pustePlastry": 0.47, "zajeteNaPlaster": 2.5, "zajeteProc": 0.21, "wiatry": 0.38, "przeszkody": 0.5, "specjalne": 0.12, "wolnePolaProc": 0.79, "wiatrowNaMin": 23, "przeszkodNaMin": 30, "znajdzkiNa100m": 2.3, "lawirowanie": 0.25, "s2NaMin": 0.6},
+      "DN": {"odstepS": 1.32, "pustePlastry": 0.45, "zajeteNaPlaster": 2.6, "zajeteProc": 0.22, "wiatry": 0.36, "przeszkody": 0.52, "specjalne": 0.12, "wolnePolaProc": 0.78, "wiatrowNaMin": 23, "przeszkodNaMin": 34, "znajdzkiNa100m": 2, "lawirowanie": 0.3, "s2NaMin": 0.7}
+    },
+    "L2": {
+      "K1": {"odstepS": 1.32, "pustePlastry": 0.53, "zajeteNaPlaster": 2.2, "zajeteProc": 0.18, "wiatry": 0.46, "przeszkody": 0.44, "specjalne": 0.1, "wolnePolaProc": 0.82, "wiatrowNaMin": 22, "przeszkodNaMin": 21, "znajdzkiNa100m": 2.4, "lawirowanie": 0.25, "s2NaMin": 0},
+      "K2": {"odstepS": 1.26, "pustePlastry": 0.49, "zajeteNaPlaster": 2.4, "zajeteProc": 0.2, "wiatry": 0.42, "przeszkody": 0.48, "specjalne": 0.1, "wolnePolaProc": 0.8, "wiatrowNaMin": 24, "przeszkodNaMin": 28, "znajdzkiNa100m": 2, "lawirowanie": 0.3, "s2NaMin": 0.7},
+      "K3": {"odstepS": 1.2, "pustePlastry": 0.45, "zajeteNaPlaster": 2.6, "zajeteProc": 0.22, "wiatry": 0.38, "przeszkody": 0.52, "specjalne": 0.1, "wolnePolaProc": 0.78, "wiatrowNaMin": 27, "przeszkodNaMin": 37, "znajdzkiNa100m": 2, "lawirowanie": 0.35, "s2NaMin": 0.9},
+      "K4": {"odstepS": 1.18, "pustePlastry": 0.43, "zajeteNaPlaster": 2.7, "zajeteProc": 0.23, "wiatry": 0.36, "przeszkody": 0.54, "specjalne": 0.1, "wolnePolaProc": 0.78, "wiatrowNaMin": 28, "przeszkodNaMin": 42, "znajdzkiNa100m": 2.2, "lawirowanie": 0.4, "s2NaMin": 1},
+      "K5": {"odstepS": 1.15, "pustePlastry": 0.42, "zajeteNaPlaster": 2.9, "zajeteProc": 0.24, "wiatry": 0.34, "przeszkody": 0.56, "specjalne": 0.1, "wolnePolaProc": 0.76, "wiatrowNaMin": 30, "przeszkodNaMin": 49, "znajdzkiNa100m": 1.8, "lawirowanie": 0.4, "s2NaMin": 1.1},
+      "DN": {"odstepS": 1.13, "pustePlastry": 0.4, "zajeteNaPlaster": 3, "zajeteProc": 0.25, "wiatry": 0.32, "przeszkody": 0.58, "specjalne": 0.1, "wolnePolaProc": 0.75, "wiatrowNaMin": 31, "przeszkodNaMin": 55, "znajdzkiNa100m": 1.6, "lawirowanie": 0.45, "s2NaMin": 1.3}
+    },
+    "L3": {
+      "K1": {"odstepS": 1.1, "pustePlastry": 0.53, "zajeteNaPlaster": 2.4, "zajeteProc": 0.2, "wiatry": 0.4, "przeszkody": 0.52, "specjalne": 0.08, "wolnePolaProc": 0.8, "wiatrowNaMin": 25, "przeszkodNaMin": 32, "znajdzkiNa100m": 1.8, "lawirowanie": 0.4, "s2NaMin": 0},
+      "K2": {"odstepS": 1.05, "pustePlastry": 0.49, "zajeteNaPlaster": 2.6, "zajeteProc": 0.22, "wiatry": 0.36, "przeszkody": 0.56, "specjalne": 0.08, "wolnePolaProc": 0.78, "wiatrowNaMin": 27, "przeszkodNaMin": 42, "znajdzkiNa100m": 1.5, "lawirowanie": 0.45, "s2NaMin": 1},
+      "K3": {"odstepS": 1, "pustePlastry": 0.45, "zajeteNaPlaster": 2.8, "zajeteProc": 0.23, "wiatry": 0.32, "przeszkody": 0.6, "specjalne": 0.08, "wolnePolaProc": 0.77, "wiatrowNaMin": 30, "przeszkodNaMin": 55, "znajdzkiNa100m": 1.5, "lawirowanie": 0.5, "s2NaMin": 1.3},
+      "K4": {"odstepS": 0.98, "pustePlastry": 0.43, "zajeteNaPlaster": 2.9, "zajeteProc": 0.24, "wiatry": 0.3, "przeszkody": 0.62, "specjalne": 0.08, "wolnePolaProc": 0.76, "wiatrowNaMin": 30, "przeszkodNaMin": 63, "znajdzkiNa100m": 1.7, "lawirowanie": 0.55, "s2NaMin": 1.5},
+      "K5": {"odstepS": 0.96, "pustePlastry": 0.42, "zajeteNaPlaster": 3.1, "zajeteProc": 0.26, "wiatry": 0.28, "przeszkody": 0.64, "specjalne": 0.08, "wolnePolaProc": 0.74, "wiatrowNaMin": 31, "przeszkodNaMin": 72, "znajdzkiNa100m": 1.4, "lawirowanie": 0.55, "s2NaMin": 1.7},
+      "DN": {"odstepS": 0.94, "pustePlastry": 0.4, "zajeteNaPlaster": 3.2, "zajeteProc": 0.27, "wiatry": 0.26, "przeszkody": 0.66, "specjalne": 0.08, "wolnePolaProc": 0.73, "wiatrowNaMin": 32, "przeszkodNaMin": 81, "znajdzkiNa100m": 1.2, "lawirowanie": 0.6, "s2NaMin": 2}
+    },
+    "L4": {
+      "K1": {"odstepS": 0.99, "pustePlastry": 0.53, "zajeteNaPlaster": 2.6, "zajeteProc": 0.22, "wiatry": 0.34, "przeszkody": 0.58, "specjalne": 0.08, "wolnePolaProc": 0.78, "wiatrowNaMin": 25, "przeszkodNaMin": 43, "znajdzkiNa100m": 1.2, "lawirowanie": 0.5, "s2NaMin": 0},
+      "K2": {"odstepS": 0.95, "pustePlastry": 0.49, "zajeteNaPlaster": 2.8, "zajeteProc": 0.23, "wiatry": 0.3, "przeszkody": 0.62, "specjalne": 0.08, "wolnePolaProc": 0.77, "wiatrowNaMin": 27, "przeszkodNaMin": 56, "znajdzkiNa100m": 1, "lawirowanie": 0.55, "s2NaMin": 1.4},
+      "K3": {"odstepS": 0.9, "pustePlastry": 0.45, "zajeteNaPlaster": 3, "zajeteProc": 0.25, "wiatry": 0.26, "przeszkody": 0.66, "specjalne": 0.08, "wolnePolaProc": 0.75, "wiatrowNaMin": 29, "przeszkodNaMin": 73, "znajdzkiNa100m": 1, "lawirowanie": 0.6, "s2NaMin": 1.7},
+      "K4": {"odstepS": 0.88, "pustePlastry": 0.43, "zajeteNaPlaster": 3.2, "zajeteProc": 0.27, "wiatry": 0.24, "przeszkody": 0.68, "specjalne": 0.08, "wolnePolaProc": 0.73, "wiatrowNaMin": 30, "przeszkodNaMin": 85, "znajdzkiNa100m": 1.1, "lawirowanie": 0.65, "s2NaMin": 2},
+      "K5": {"odstepS": 0.86, "pustePlastry": 0.42, "zajeteNaPlaster": 3.3, "zajeteProc": 0.27, "wiatry": 0.22, "przeszkody": 0.7, "specjalne": 0.08, "wolnePolaProc": 0.73, "wiatrowNaMin": 29, "przeszkodNaMin": 93, "znajdzkiNa100m": 0.9, "lawirowanie": 0.65, "s2NaMin": 2.2},
+      "DN": {"odstepS": 0.85, "pustePlastry": 0.4, "zajeteNaPlaster": 3.5, "zajeteProc": 0.29, "wiatry": 0.2, "przeszkody": 0.72, "specjalne": 0.08, "wolnePolaProc": 0.71, "wiatrowNaMin": 30, "przeszkodNaMin": 107, "znajdzkiNa100m": 0.8, "lawirowanie": 0.7, "s2NaMin": 2.6}
+    },
+    "L5": {
+      "K1": {"odstepS": 0.88, "pustePlastry": 0.63, "zajeteNaPlaster": 1.9, "zajeteProc": 0.16, "wiatry": 0.5, "przeszkody": 0.42, "specjalne": 0.08, "wolnePolaProc": 0.84, "wiatrowNaMin": 24, "przeszkodNaMin": 20, "znajdzkiNa100m": 0.6, "lawirowanie": 0.3, "s2NaMin": 0},
+      "K2": {"odstepS": 0.84, "pustePlastry": 0.59, "zajeteNaPlaster": 2, "zajeteProc": 0.17, "wiatry": 0.46, "przeszkody": 0.46, "specjalne": 0.08, "wolnePolaProc": 0.83, "wiatrowNaMin": 27, "przeszkodNaMin": 27, "znajdzkiNa100m": 0.5, "lawirowanie": 0.35, "s2NaMin": 0.4},
+      "K3": {"odstepS": 0.8, "pustePlastry": 0.55, "zajeteNaPlaster": 2.2, "zajeteProc": 0.18, "wiatry": 0.42, "przeszkody": 0.5, "specjalne": 0.08, "wolnePolaProc": 0.82, "wiatrowNaMin": 31, "przeszkodNaMin": 37, "znajdzkiNa100m": 0.5, "lawirowanie": 0.4, "s2NaMin": 0.4},
+      "K4": {"odstepS": 0.78, "pustePlastry": 0.53, "zajeteNaPlaster": 2.3, "zajeteProc": 0.19, "wiatry": 0.4, "przeszkody": 0.52, "specjalne": 0.08, "wolnePolaProc": 0.81, "wiatrowNaMin": 33, "przeszkodNaMin": 43, "znajdzkiNa100m": 0.6, "lawirowanie": 0.45, "s2NaMin": 0.5},
+      "K5": {"odstepS": 0.77, "pustePlastry": 0.52, "zajeteNaPlaster": 2.4, "zajeteProc": 0.2, "wiatry": 0.38, "przeszkody": 0.54, "specjalne": 0.08, "wolnePolaProc": 0.8, "wiatrowNaMin": 34, "przeszkodNaMin": 48, "znajdzkiNa100m": 0.5, "lawirowanie": 0.45, "s2NaMin": 0.6},
+      "DN": {"odstepS": 0.75, "pustePlastry": 0.5, "zajeteNaPlaster": 2.5, "zajeteProc": 0.21, "wiatry": 0.36, "przeszkody": 0.56, "specjalne": 0.08, "wolnePolaProc": 0.79, "wiatrowNaMin": 36, "przeszkodNaMin": 56, "znajdzkiNa100m": 0.4, "lawirowanie": 0.5, "s2NaMin": 0.7}
+    }
+  },
+  "budzetNaraz": {
+    "oknoDecyzjiS": 1.5,
+    "liczenie": "w oknie decyzji (plastry 0-1,5 s przed kontaktem) liczymy plastry z danym rodzajem zagrożenia; kilka chmur w jednym plastrze to jedna jednostka uwagi",
+    "widowisko": 1,
+    "S2": 1,
+    "S1": 2,
+    "drapieznik": 1,
+    "nerfStrefowy": 1,
+    "bonus": 1,
+    "znajdzkiNaEkranie": 2,
+    "wiatryWOknie": 2,
+    "duzeSprite": 3,
+    "czastki": 120,
+    "poscig": "w pościgu: 0 S2, 0 widowisk, 0 nerfów strefowych; zostają S1, wiatry i kryjówki; po pościgu 15 s oddechu",
+    "pustyPlasterPoS2": 1,
+    "maksZajetychWPlastrze": 7
+  },
+  "debiutRegula": {
+    "start": "pierwsze 20 s biegu bez przeszkód, do 25 s tylko S1",
+    "wKrainie": "nowy typ pierwszy raz jako pokaz bez kolizji przy ok. 30% długości krainy, aktywny od ok. 50%",
+    "nowaZasada": "najwyżej jedna nowa rodzina zasad (mechanika) i jedna drobna na krainę; nowy wygląd znanej rodziny nie liczy się",
+    "rodzinyDebiut": { "blok": "K1", "ruchomy": "K1", "chmura": "K1", "przerzut": "K1", "wprost": "K1", "strefa": "K2", "burza": "K2", "kolumna": "K3", "bez_lancucha": "K3", "poscig": "K4", "kryjowka": "K4", "linia": "K5", "wir": "K5" },
+    "zmianyWzgledemKoduZ14": [
+      "tornado (T): K5 zamiast K4 (rodzina wir razem z wirami Wielkiego przelotu)",
+      "burza (B): Dalekie Niebo zamiast K5 (zgodnie z 00-wybor C30)",
+      "wiersze 4 zamiast 3; start w powietrzu (wiersz 2), wiatr na wprost w środkowej kolumnie wierszy 1-2",
+      "U tylko z ziemi; nowy wiatr ^ (Schody światła) jedynym przejściem do Nadchmurza obok J"
+    ]
+  },
+  "znakiFraz": {
+    ".": "pusta",
+    "+": "znajdźka (rodzaj zależy od wiersza: ziemia z_puch/z_okruszki/z_pioro, powietrze p_drobiny, chmury c_kropla, nadchmurze n_zlote_pioro)",
+    "=": "bonus: polana (ziemia), słońce zza chmury (chmury)",
+    "_": "ciepła rzeka (ziemia)",
+    "h": "dąb z dziuplą (kryjówka)",
+    "F": "p_wprost (tylko środkowa kolumna, wiersze 1-2)",
+    "u": "winda o wiersz w górę (z_termika, p_winda, p_poryw)",
+    "U": "z_zbocze (tylko z ziemi, o dwa wiersze)",
+    "^": "c_schody (do Nadchmurza, działa przy łańcuchu co najmniej 2; wiersze 1-2)",
+    "D": "p_dol_srodek",
+    "Z": "c_zjazd (o wiersz w dół)",
+    "<": "wiatr w lewo (z_bryza, p_poprzeczny)",
+    ">": "wiatr w prawo (z_bryza, p_poprzeczny)",
+    "X": "smuga (p_smuga, n_smuga_kond)",
+    "J": "n_jetstream",
+    "y": "n_promien (w Nadchmurzu)",
+    "r": "c_tecza",
+    "k": "z_komin",
+    "o": "c_oaza",
+    "b": "c_biala",
+    "l": "c_lawenda",
+    "s": "c_szara",
+    "f": "c_fiolet",
+    "g": "c_zielona_mgla",
+    "B": "c_burza",
+    "H": "c_grad",
+    "T": "c_tornado (2 komórki w pionie)",
+    "Y": "c_ufo",
+    "P": "p_ptak",
+    "V": "p_klucz",
+    "A": "p_samolot w wierszu (w Nadchmurzu n_odrzutowiec)",
+    "M": "p_motolotnia",
+    "K": "p_latawiec (sznur)",
+    "S": "p_szpile",
+    "v": "p_turbulencja (wir)",
+    "d": "z_drzewo",
+    "w": "z_wiatrak",
+    "t": "z_strach",
+    "m": "n_meteor",
+    "@": "n_satelita",
+    "i": "n_cirrus"
+  },
+  "frazy": [
+    { "id": "F01", "nazwa": "Pierwszy fiu", "poziom": "L0", "kraina": "K1", "cel": "nauka wiatru na wprost ze środka: trzy wiatry w środkowej kolumnie powietrza", "lancuch": 3, "lawirowanie": false,
+      "plastry": [ ["...", "...", ".F.", "..."], ["...", "b.b", ".F.", "+.."], ["...", "...", ".F.", "..+"] ],
+      "trasaLancucha": [[1, 2], [1, 2], [1, 2]] },
+    { "id": "F02", "nazwa": "Łąka i termika", "poziom": "L0", "kraina": "K1", "cel": "ziemia jest bezpieczna: znajdźki, drzewo do ominięcia, termika w górę, polana", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "...", "...", "d.+"], ["...", "...", "...", ".u."], ["...", ".b.", "...", "+.d"], ["...", "...", "...", "=.."] ] },
+    { "id": "F03", "nazwa": "Bryza nad rzeką", "poziom": "L1", "kraina": "K1", "cel": "wiatry poprzeczne przy ziemi i ptak w powietrzu", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "...", ".P.", "..<"], ["...", "...", "...", ">.+"], ["...", "b..", "..u", "_.."] ] },
+    { "id": "F04", "nazwa": "Białe owce", "poziom": "L1", "kraina": "K1", "cel": "wiatr zboczowy z ziemi do chmur, białe i lawendowe chmury, zjazd", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "b.b", "...", "..."], ["...", ".l.", "...", "U.."], ["...", "..b", ".+.", "..."], ["...", "Z..", "...", "..."] ] },
+    { "id": "F05", "nazwa": "Trzy wiatry", "poziom": "L2", "kraina": "K1", "cel": "łańcuch 3 różnych wiatrów z lawirowaniem: termika, na wprost, Schody światła = pełny kolor i wejście do Nadchmurza", "lancuch": 3, "lawirowanie": true,
+      "plastry": [ ["...", "...", "...", ".u."], ["...", "l.l", ".F.", "..."], ["...", "...", "..^", "d.."] ],
+      "trasaLancucha": [[1, 3], [1, 2], [2, 2]] },
+    { "id": "F06", "nazwa": "Kolorowa bramka", "poziom": "L2", "kraina": "K2", "cel": "chmury według koloru: ominąć szarą i zieloną mgłę, wybrać oazę, tęcza, zjazd", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "l.s", "...", "..."], ["...", "g.o", ".+.", "..."], ["...", "s.l", "..r", "..."], ["...", ".Z.", "...", "..."] ] },
+    { "id": "F07", "nazwa": "Kanion wież", "poziom": "L3", "kraina": "K3", "cel": "aleja wież środkiem, komin ciepła, wiatr na wprost", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "...", "S.S", "S.S"], ["...", "..f", "...", "k.."], ["...", "...", ".F.", "S.S"], ["...", "l..", "..S", "..S"] ] },
+    { "id": "F08", "nazwa": "Festiwal latawców", "poziom": "L3", "kraina": "K4", "cel": "sznury latawców w kolumnach, wiatrak, motolotnia, poryw, przerzut", "lancuch": 0, "lawirowanie": true,
+      "plastry": [ ["...", "K..", "K..", "K.w"], ["...", "..M", ".u.", "t.."], ["...", "..K", ">.K", "..K"], ["...", "K.K", "K.K", ".+."] ] },
+    { "id": "F09", "nazwa": "Przelot olbrzyma", "poziom": "L4", "kraina": "K5", "cel": "wiatr na wprost obok ptaka, samolot wierszem chmur, smuga środkiem między wirami (dwa plastry smugi = jeden wiatr), Schody światła", "lancuch": 3, "lawirowanie": true,
+      "plastry": [ ["...", "...", "PF.", "..."], ["...", "AAA", "...", "..."], ["...", "...", "vXv", "..."], ["...", "...", "vXv", ".+."], ["...", "...", "..^", "..."] ],
+      "trasaLancucha": [[1, 2], [1, 2], [2, 2]] },
+    { "id": "F10", "nazwa": "Burza i tornado", "poziom": "L4", "kraina": "DN", "cel": "S2 nie częściej niż co drugi plaster; łańcuch winda, na wprost, Schody światła między burzą, tornadem i gradem", "lancuch": 3, "lawirowanie": true,
+      "plastry": [ ["...", "B..", "...", "..."], ["...", "..<", "u..", "..d"], ["...", "T..", "T.s", "..."], ["...", ".F.", "...", "..."], ["...", "H..", "..^", "..."] ],
+      "trasaLancucha": [[0, 2], [1, 1], [2, 2]] },
+    { "id": "F11", "nazwa": "Jetstream do Hipera", "poziom": "L5", "kraina": "DN", "cel": "pięć wiatrów w Nadchmurzu (jetstream i promienie) między meteorami i satelitą; z nurkowaniem-strzałą daje hiper", "lancuch": 5, "lawirowanie": true,
+      "plastry": [ [".J.", "...", "...", "..."], ["m.y", "...", "...", "..."], [".@J", "...", "...", "..."], ["my.", "...", "...", "..."], ["J.m", "...", "...", "..."] ],
+      "trasaLancucha": [[1, 0], [2, 0], [2, 0], [1, 0], [0, 0]] },
+    { "id": "F12", "nazwa": "Gwiezdny zjazd", "poziom": "L5", "kraina": "DN", "cel": "po hiperze: zjazd z Nadchmurza, winda do środka, oaza, wiatr na wprost i powrót windą", "lancuch": 4, "lawirowanie": true,
+      "plastry": [ ["mZm", "...", "...", "..."], ["...", "bDb", "...", "..."], ["...", "o..", ".F.", "..."], ["...", "...", "..u", ".+."] ],
+      "trasaLancucha": [[1, 0], [1, 1], [1, 2], [2, 2]] }
+  ]
+}
