@@ -102,21 +102,22 @@ const MIERZ = () => {
   console.log('(d) nadchmurze: widowiska S0 bez kolizji');
   const ND = await ev((BOT) => {
     const O = __okruszek, bot = (0, eval)(BOT);
-    /* bot trzymający górny wiersz: machnięcie, gdy wiersz > 0 albo zbiera się opadanie */
-    const gora = (A) => (A.kom.wiersz > 0 || A.kom.p > 0.5) && A.t - (gora.t || -9) > 0.24 ? (gora.t = A.t, { stuk: 0 }) : {};
+    /* Z18: dawniej bot trzymał górny wiersz machnięciami; po 17 nr 1 (QA P0-1) w nadchmurzu skrzydła nie trzymają, a wejść można tylko Schodami światła,
+       więc test stawia Okruszka w nadchmurzu hakiem idz(1, 0, skok) co 0,5 s (opadanie w 0,5 s nie zmienia wiersza) i porównuje biegi z widowiskami i bez nich */
+    const gora = null, trzymaj = () => O.idz(1, 0, true);
     const bieg = (z) => {
-      O.pauza(true); O.panel(false); O.ziarno(7); O.brama(2); O.odblokuj(); O.ustawEnergie(null); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustaw(0.4); O.odblokuj(); O.idz(1, 0, true); gora.t = -9;
+      O.pauza(true); O.panel(false); O.ziarno(7); O.brama(2); O.odblokuj(); O.ustawEnergie(null); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustaw(0.4); O.odblokuj(); O.idz(1, 0, true);
       const k0 = O.torLog().kontakty.length;
       if (z) { ['statek', 'satelita', 'ufo', 'samolot', 'drapieznik'].forEach((n, i) => O.zdarzenie('nadchmurze:' + n, { k: i % 3, w: 0, z: 1.1 + 0.1 * i })); O.zdarzenie('samolot', { k: 0, w: 0, z: 1.3 }); O.zdarzenie('ufo', { k: 1, w: 0, z: 2.0 }); }
       const W = [];
-      for (let i = 0; i < 6; i++) { const r = O.torSymuluj(0.5, gora); W.push({ s: Math.round(r.s * 1e6), E: Math.round(r.E * 1e6), w: r.kom.wiersz, h: Math.round(r.h * 1e6), tryb: r.tryb }); }
+      for (let i = 0; i < 6; i++) { trzymaj(); const r = O.torSymuluj(0.5, gora); W.push({ s: Math.round(r.s * 1e6), E: Math.round(r.E * 1e6), w: r.kom.wiersz, h: Math.round(r.h * 1e6), tryb: r.tryb }); }
       const L = O.torLog();
       return { W, kary: L.kontakty.slice(k0).filter(e => e.efekt === 'kara').length, s0: L.kontakty.slice(k0).filter(e => e.efekt === 'widowisko').length, wid: L.widowiska, widKontakty: L.widowiskaKontakty, nWid: O.widowiska().length, gdzie: O.gdzie().filter(g => /^nadchmurze:/.test(g.typ)).map(g => g.typ + (g.kolizja ? '!' : '')) };
     };
     const A = bieg(false), B = bieg(true);
     /* drapieżnik w nadchmurzu: Okruszek trzyma górny wiersz; nie może zostać złapany */
-    O.pauza(true); O.panel(false); O.brama(4); O.odblokuj(); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustaw(0.1); O.odblokuj(); O.idz(1, 0, true); gora.t = -9; O.zdarzenie('jastrzab');
-    let jr = null; for (let i = 0; i < 28; i++) { jr = O.torSymuluj(0.5, gora); if (jr.tryb !== 'gra') break; }
+    O.pauza(true); O.panel(false); O.brama(4); O.odblokuj(); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.ustaw(0.1); O.odblokuj(); O.idz(1, 0, true); O.zdarzenie('jastrzab');
+    let jr = null; for (let i = 0; i < 28; i++) { trzymaj(); jr = O.torSymuluj(0.5, gora); if (jr.tryb !== 'gra') break; }
     const at = O.torLog().ataki.map(a => a.wynik), jz = O.stan().jastrzab;
     O.odblokuj(); O.bezPrzeszkod(false); O.bezPradow(false); O.ziarno(0); O.brama(1); O.pauza(false);
     return { A, B, jastrzab: { tryb: jr.tryb, wiersz: jr.kom.wiersz, ataki: at, jest: !!jz } };

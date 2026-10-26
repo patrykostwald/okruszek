@@ -144,6 +144,7 @@ const BOT_TOR = `(function () {
     O.idz(1, 2, true); O.torSymuluj(0.05);
     const m0 = O.torLog().wzloty; O.stuknij(); O.torSymuluj(0.3); R.po1 = O.komorka().wiersz; O.stuknij(); O.torSymuluj(0.3); R.po2 = O.komorka().wiersz;
     O.stuknij(); O.torSymuluj(0.3); O.stuknij(); O.torSymuluj(0.3); R.po4 = O.komorka().wiersz; O.stuknij(); O.torSymuluj(0.3); R.po5 = O.komorka().wiersz;
+    for (let i = 0; i < 4; i++) { O.stuknij(); O.torSymuluj(0.3); } R.po9 = O.komorka().wiersz; R.wzlotSufit = O.komorka().wzlot; R.kosztSufit = O.komorka().koszt;   /* Z18: machaniem nie do nadchmurza */
     O.idz(1, 2, true); O.torSymuluj(0.8); R.spamN = 0; for (let i = 0; i < 20 && O.komorka().wiersz === 2; i++) { O.stuknij(); R.spamN++; O.torSymuluj(0.05); }   /* machnięcia co 0,05 s: ile trzeba na wiersz */
     O.idz(1, 2, true); O.torSymuluj(0.8); R.rytmN = 0; for (let i = 0; i < 20 && O.komorka().wiersz === 2; i++) { O.stuknij(); R.rytmN++; O.torSymuluj(0.3); }   /* rytm co 0,3 s */
     O.idz(1, 1, true); O.torSymuluj(0.05); O.stuknij(); O.torSymuluj(1.6); R.ucieka = O.komorka().wzlot;   /* zebrany wzlot ucieka po przerwie */
@@ -151,17 +152,19 @@ const BOT_TOR = `(function () {
     O.idz(1, 0, true); O.nurkuj(true); O.torSymuluj(0.1); R.nurk1 = O.komorka().wiersz; O.torSymuluj(0.6); R.nurk2 = O.komorka().wiersz; R.sHold = O.stan().sHold; O.nurkuj(false); O.torSymuluj(0.1); R.wybicie = O.komorka().wiersz;
     O.idz(1, 2, true); O.nurkuj(true); O.torSymuluj(0.4); O.nurkuj(false); O.torSymuluj(0.1); R.dnoWybicie = O.komorka().wiersz;   /* na dnie: nurkowanie bez darmowego wzlotu */
     O.idz(0, 0, true); O.idz(-1, 0); O.torSymuluj(0.3); R.lewo = O.komorka().kol; O.idz(2, 0, true); O.idz(9, 0); O.torSymuluj(0.3); R.prawo = O.komorka().kol;
-    O.idz(1, 1, true); const kier = []; for (const [dc, dr] of [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]]) { O.idz(1, 1, true); O.torSymuluj(0.05); O.idz(1 + dc, 1 + dr); if (dr < 0) { O.torSymuluj(0.2); O.stuknij(); O.torSymuluj(0.2); O.stuknij(); } O.torSymuluj(0.3); const k = O.komorka(); kier.push([k.kol - 1, k.wiersz - 1].join(',')); }
+    /* Z18 (17 nr 1): ze środka (wiersz 1) w górę jest nadchmurze, do którego machaniem się nie wchodzi; kierunki w górę sprawdzane z dolnego wiersza (1, 2) */
+    O.idz(1, 1, true); const kier = []; for (const [dc, dr] of [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]]) { const w0 = dr < 0 ? 2 : 1; O.idz(1, w0, true); O.torSymuluj(0.05); O.idz(1 + dc, w0 + dr); if (dr < 0) { O.torSymuluj(0.2); O.stuknij(); O.torSymuluj(0.2); O.stuknij(); } O.torSymuluj(0.3); const k = O.komorka(); kier.push([k.kol - 1, k.wiersz - w0].join(',')); }
     R.kier = kier; R.T = O.tor().stale; O.bezPrzeszkod(false); O.bezPradow(false); O.nowyBieg(); O.pauza(false); return R; });
   chk(J.po1 === 2 && J.po2 === 1, 'z dolnego do środkowego wiersza 2 machnięcia (po 1: wiersz ' + J.po1 + ', po 2: ' + J.po2 + ')');
-  chk(J.po4 === 1 && J.po5 === 0, 'ze środkowego do górnego 3 machnięcia (koszt rośnie z wysokością; po 2: wiersz ' + J.po4 + ', po 3: ' + J.po5 + ')');
+  /* Z18: dawniej „ze środkowego do górnego 3 machnięcia”. Rozstrzygnięcie 17 nr 1 (zatwierdzone): do nadchmurza (górny wiersz) tylko wiatrem po dwóch z rzędu, nie machaniem (QA P0-1) */
+  chk(J.po4 === 1 && J.po5 === 1 && J.po9 === 1 && J.wzlotSufit < J.kosztSufit, 'ze środkowego wiersza machaniem nie wchodzi się do nadchmurza (17 nr 1): po 3 i 7 machnięciach nadal wiersz ' + J.po9 + ', wzlot zatrzymany pod sufitem (' + r2(J.wzlotSufit) + ' < koszt ' + J.kosztSufit + ')');
   chk(J.rytmN === 2 && J.spamN >= 4, 'rytm oszczędniejszy niż spam: wiersz w górę w rytmie co 0,3 s = ' + J.rytmN + ' machnięcia, spamem co 0,05 s = ' + J.spamN);
   chk(J.ucieka < 0.5, 'zebrany wzlot ucieka po przerwie (po 1,6 s: ' + r2(J.ucieka) + ')');
   chk(J.opad > J.T.SINK_T * 0.7 && J.opad < J.T.SINK_T * 1.4, 'szybowanie: wiersz w dół po ' + r2(J.opad) + ' s (SINK_T ' + J.T.SINK_T + ' s x opadanie krainy)');
   chk(J.nurk1 === 1 && J.nurk2 === 2 && J.wybicie === 1 && J.sHold > 0.05, 'nurkowanie: od razu wiersz w dół, po 0,55 s drugi, prędkość rośnie (sHold ' + r2(J.sHold) + '), puszczenie = wybicie o wiersz (' + J.nurk1 + ' > ' + J.nurk2 + ' > ' + J.wybicie + ')');
   chk(J.dnoWybicie === 2, 'nurkowanie z dolnego wiersza nie daje darmowego wzlotu (wybicie nie wyżej niż start nurkowania)');
   chk(J.lewo === 0 && J.prawo === 2, 'bez wychodzenia poza siatkę (krok w lewo z lewej i w prawo z prawej kolumny zostaje na miejscu)');
-  chk(J.kier.join(' ') === '1,0 1,1 0,1 -1,1 -1,0 -1,-1 0,-1 1,-1', 'ze środka osiem kierunków (w górę: krok + machnięcia): ' + J.kier.join(' '));
+  chk(J.kier.join(' ') === '1,0 1,1 0,1 -1,1 -1,0 -1,-1 0,-1 1,-1', 'osiem kierunków (ze środka w bok i w dół; w górę z dolnego wiersza: krok + machnięcia): ' + J.kier.join(' '));
 
   /* ---------- (k) skrzydła ---------- */
   console.log('(k) skrzydła zgodne z akcją');
@@ -179,9 +182,10 @@ const BOT_TOR = `(function () {
   /* ---------- (i) łańcuch, E, L5 ---------- */
   console.log('(i) łańcuch wiatrów: E = 1, L5, na wprost tylko ze środka');
   const I = await ev(() => {
-    const O = __okruszek, R = {}; O.pauza(true); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); O.idz(1, 1, true); O.torSymuluj(0.3);
+    /* Z18: łańcuch po nauce (w pierwszych UCZ_DO s najwyżej dwa z rzędu) i z szerokim idealnym wejściem: tu sprawdzana jest mechanika łańcucha, precyzję mierzy gra_test_z18.cjs */
+    const O = __okruszek, R = {}; O.pauza(true); O.bezPrzeszkod(true); O.bezPradow(true); O.nowyBieg(); const ID0 = O.torStala('IDEAL'); O.torStala('IDEAL', 0.5); const poNauce = () => { for (let i = 0; i < 42; i++) { O.idz(1, 1, true); O.torSymuluj(0.5); } }; poNauce(); O.idz(1, 1, true); O.torSymuluj(0.3);
     O.wzorzec('w01', { z: 1.6 }); let maxE = 0; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E3 = maxE; R.ch3 = O.lancuch().n; R.rozkwit = O.rozkwit().razy;
-    O.nowyBieg(); O.idz(1, 1, true); O.torSymuluj(0.3); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 1.6 }); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 2.5 }); maxE = 0; for (let i = 0; i < 240; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E2 = maxE;
+    O.nowyBieg(); poNauce(); O.idz(1, 1, true); O.torSymuluj(0.3); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 1.6 }); O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 2.5 }); maxE = 0; for (let i = 0; i < 240; i++) { O.torSymuluj(1 / 60); maxE = Math.max(maxE, O.energia()); } R.E2 = maxE;
     /* 5 (i 6.) wiatrów w 12 s z nurkowaniem: poprzeczne wiatry w dolnym wierszu przerzucają Okruszka tam, gdzie czeka następny; nurkowanie trwa cały czas */
     const SEK = [['wiatr:prawo', 0], ['wiatr:prawo', 1], ['wiatr:lewo', 2], ['wiatr:lewo', 1], ['wiatr:prawo', 0], ['wiatr:prawo', 1]];
     O.nowyBieg(); O.idz(0, 2, true); O.torSymuluj(0.2);
@@ -193,7 +197,7 @@ const BOT_TOR = `(function () {
     /* na wprost: środek tak, inna komórka nie */
     O.nowyBieg(); O.idz(1, 1, true); O.torSymuluj(0.3); const s0 = O.stan().s; O.zdarzenie('wiatr:wprost', { k: 1, w: 1, z: 1.3 }); O.torSymuluj(1.2); let wj = O.torLog().wejscia.slice(-1)[0]; R.wprostSrodek = { efekt: wj && wj.efekt, lancuch: wj && wj.lancuchPo, ds: O.stan().s - s0 };
     O.nowyBieg(); O.idz(0, 1, true); O.torSymuluj(0.3); const s1 = O.stan().s; O.zdarzenie('wiatr:wprost', { k: 0, w: 1, z: 1.3 }); O.torSymuluj(1.2); wj = O.torLog().wejscia.slice(-1)[0]; R.wprostBok = { efekt: wj && wj.efekt, lancuch: O.lancuch().n, ds: O.stan().s - s1 };
-    O.bezPrzeszkod(false); O.bezPradow(false); O.nowyBieg(); O.pauza(false); return R; });
+    O.torStala('IDEAL', ID0); O.bezPrzeszkod(false); O.bezPradow(false); O.nowyBieg(); O.pauza(false); return R; });
   chk(I.E3 >= 0.99 && I.rozkwit >= 1, '3 wiatry z rzędu (idealne wejścia) = E 1 (pełny kolor, rozkwit; E max ' + r2(I.E3) + ', łańcuch ' + I.ch3 + ')');
   chk(I.E2 > 0.5 && I.E2 < 0.7, '2 wiatry = E ok. 0,62 (bez pełni; ' + r2(I.E2) + ')');
   chk(I.L5 === 1 && I.l5bez === 0, '5 wiatrów w 12 s + nurkowanie = L5 (hiperprzestrzeń; łańcuch w 12 s ' + I.w12 + ', L5 bez łańcucha ' + I.l5bez + ', stan ' + I.tryb + ')');
@@ -265,7 +269,8 @@ const BOT_TOR = `(function () {
     O.brama(4); O.bezPrzeszkod(true); O.idz(1, 1, true); O.ustaw(0.1); O.zdarzenie('jastrzab'); for (let i = 0; i < 60 * 14; i++) { const st = O.stan().jastrzab; if (st && st.faza === 'poscig') { const a = O.torLog().ataki.slice(-1)[0]; const kk = O.komorka(); if (a && !a.wynik && a.k === kk.kol && a.w === kk.wiersz) O.idz(kk.kol === 2 ? 1 : kk.kol + 1, kk.wiersz); } O.torSymuluj(1 / 60); if (O.koniec() || !O.stan().jastrzab) break; }
     R.ucieka = { tryb: O.stan().tryb, log: O.torLog().ataki.map(a => a.wynik), uciekl: O.stan().jastrzabLog };
     O.odblokuj(); O.bezPrzeszkod(false); O.ziarno(0); O.brama(1); O.pauza(false); return R; });
-  chk(M.brama === 1 && M.kraina === 2 && M.wiersz === 0, 'przelot bramy w torze: kraina 1 > 2, Okruszek wysoko (górny wiersz, jak h >= 0,8 w Z10)', JSON.stringify(M));
+  /* Z18: dawniej górny wiersz; po 17 nr 1 nadchmurze tylko Schodami światła, więc brama stawia Okruszka w chmurach (najwyższy wiersz osiągalny bez wiatru) */
+  chk(M.brama === 1 && M.kraina === 2 && M.wiersz === 1, 'przelot bramy w torze: kraina 1 > 2, Okruszek wysoko (w chmurach, wiersz 1; nadchmurze tylko Schodami światła, 17 nr 1)', JSON.stringify(M));
   chk(M.stoi.log[0] === 'zlapal' && M.endKind.indexOf('jastrzab') >= 0, 'pościg po komórkach: stojąc w zaznaczonej komórce Okruszek zostaje złapany (koniec biegu S3: jastrząb)', JSON.stringify(M.stoi));
   chk(M.ucieka.log.length >= 3 && M.ucieka.log.every(w => w === 'pudlo') && M.ucieka.tryb === 'gra', 'opuszczając zaznaczoną komórkę Okruszek ucieka (ataki: ' + M.ucieka.log.join(', ') + ')', JSON.stringify(M.ucieka));
 
