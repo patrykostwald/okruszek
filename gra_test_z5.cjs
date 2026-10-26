@@ -197,7 +197,7 @@ let teksty2 = false;   /* serwer: druga wersja teksty.js (test „najpierw sieć
     const g = await strona(ctx, '?test&seed=23&start=1');
     const mod = await O(g, () => { const d = window.OkruszekDzwiek; return d ? Object.keys(d).sort().join(',') : null; });
     // Z19 rozszerza publiczne API o dziesięć głosów; zachowujemy dokładne sprawdzanie wszystkich nazw.
-    chk(mod === 'cwir,dzwiek,ladowanie,muzyka,nurkowanie,och,pauza,prad,predkosc,start,machniecie,uderzenie,wybicie,lancuch,rozkwit,drapieznik,turbo,hiper,schody,nurkStart'.split(',').sort().join(','), 'dzwiek.js załadowany: dotychczasowe API i dziesięć nowych głosów Z19');
+    chk(mod === 'cwir,dzwiek,ladowanie,muzyka,nurkowanie,och,pauza,prad,predkosc,start,machniecie,uderzenie,wybicie,lancuch,rozkwit,drapieznik,turbo,hiper,schody,nurkStart,przewrot'.split(',').sort().join(','), 'dzwiek.js załadowany: dotychczasowe API, dziesięć głosów Z19 i świst przewrotu Z21');
     const l0 = await O(g, () => __okruszek.dzwiekLicznik());
     { const pt = await O(g, () => __okruszek.ptak()); chk(pt && typeof pt.z === 'number' && typeof pt.hit === 'number', 'stary hak ptak() (położenie ptaszka) nietknięty przez hak ikon rysujPtaka'); }
     chk(!l0.aktywny && l0.zaladowany, 'w ?test dźwięk wyciszony (moduł nie jest wołany), ale załadowany');

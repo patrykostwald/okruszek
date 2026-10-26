@@ -6016,7 +6016,7 @@ Słońce obiecało wrócić rano.</p>
      na klatkę). Krycie DROGI21.A (ok. 12-18%), wyraźniej w komórce Okruszka (A_PTAK) i w komórkach osiągalnych jednym ruchem (A_SASIAD), przejścia alfy płynne (TAU).
      Ruch: plamy światła w drodze Okruszka płyną ku graczowi (drawTorNaturalnie). Bez prostokątów i ciemnych obrysów. Przełącznik „Drogi toru” w panelu (ZAP.drogi, domyślnie
      widoczne); siatka debug nadal tylko ?siatka=1 (wtedy drogi nie są rysowane). */
-  var DROGI21 = { A: 0.2, A_PTAK: 0.42, A_SASIAD: 0.3, A_PLAMA: 0.5, SZER: 0.62, CIEN: 2.2, NOC: 0.6, PAS_DOL: 0.16, PAS_GORA: 0.12, TAU: 0.18, L: 420 };   /* CIEN = mnożnik alfy smugi-cienia na morzu chmur (dolny wiersz za dnia); NOC = mnożnik alfy światła nocą (ciemne niebo rozjaśnia się łatwiej) */
+  var DROGI21 = { A: 0.2, A_PTAK: 0.42, A_SASIAD: 0.3, A_PLAMA: 0.5, SZER: 0.62, CIEN: 1.5, CIEN_MAX: 0.55, NOC: 0.6, PAS_DOL: 0.16, PAS_GORA: 0.12, TAU: 0.18, L: 420 };   /* CIEN = mnożnik alfy smugi-cienia na morzu chmur (dolny wiersz za dnia), CIEN_MAX = jej sufit, a ton jest jaśniejszy od cienia przeszkody (zapowiedź Z17 zostaje czytelna); NOC = mnożnik alfy światła nocą (ciemne niebo rozjaśnia się łatwiej) */
   var drogiSpr = null, drogiA = [];
   function drogiSprite() {   /* klin: wierzchołek u góry pośrodku, boki o nachyleniu 1, miękki profil boczny (1 - u^2)^1,6; wzdłuż (k = ZB / z): smuga od komórki (k 1) w głąb, gaśnie do k 0,3, i tuż przed kamerą (k 1,05-1,45) */
     if (drogiSpr) return drogiSpr;
@@ -6045,7 +6045,7 @@ Słońce obiecało wrócić rano.</p>
     /* dziewięć dróg: smuga światła od każdej komórki w głąb (klin przez punkt zbiegu; sprite). Nad morzem chmur za dnia światło nie jest widoczne, więc dolne smugi
        są tam cieniem (multiply, ton cienia jak cień Okruszka): „prześwity” między bankami chmur; nocą (ciemne morze) znów światło (waga PAL.nightW) */
     col = mixc(torKolor('wstega'), [255, 255, 255], 0.3); spr = tintTex('drogi21', drogiSprite(), col);
-    var cS21 = mixc(mixc(PAL.s0, PAL.c3, 0.45), [84, 78, 128], 0.15), sprC = tintTex('drogi21c', drogiSprite(), cS21), nW = PAL.nightW, aS, aC, pulsA;
+    var cS21 = mixc(PAL.c2, PAL.c3, 0.6), sprC = tintTex('drogi21c', drogiSprite(), cS21), nW = PAL.nightW, aS, aC, pulsA;
     half = DROGI21.SZER * torCW / 2;
     for (r = 0; r < TOR.ROWS; r++) {
       dy = torRowSY(r) - v; if (dy < 8) continue;
@@ -6055,7 +6055,7 @@ Słońce obiecało wrócić rano.</p>
       for (c = 0; c < TOR.COLS; c++) {
         xc = torKX(c) - camX; sL = (xc - half) / G.ZB / dy; sR = (xc + half) / G.ZB / dy; A = (sR - sL) * m / 2; B = (sR + sL) * m / 2;
         pulsA = drogiA[c + r * TOR.COLS] * (reduce ? 1 : 0.92 + 0.08 * Math.sin(t * 0.9 + c * 2.1 + r * 1.3)) * (1 - (1 - DROGI21.NOC) * nW);
-        aS = pulsA * (naMorzu ? Math.max(nW, 0.35) : 1); aC = naMorzu ? pulsA * DROGI21.CIEN * (1 - nW) : 0;
+        aS = pulsA * (naMorzu ? Math.max(nW, 0.35) : 1); aC = naMorzu ? Math.min(DROGI21.CIEN_MAX, pulsA * DROGI21.CIEN) * (1 - nW) : 0;
         ctx.save(); ctx.transform(A, 0, B, m, W / 2, v);
         if (aS > 0.004) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = Math.min(1, aS); ctx.drawImage(spr, -L, 0); }
         if (aC > 0.004) { ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = Math.min(1, aC); ctx.drawImage(sprC, -L, 0); }
