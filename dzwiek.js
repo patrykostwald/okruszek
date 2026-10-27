@@ -161,6 +161,13 @@
   function hiper() { if (moznaEfekt('hiper')) { ton(efektyBus, 440, 1760, 1, 0.12, 0.1); ton(efektyBus, 660, 1320, 1.2, 0.07, 0.1); } }
   function schody() { if (moznaEfekt('schody')) [659.25, 783.99, 1046.5].forEach((hz, i) => ton(efektyBus, hz, hz, 0.6, 0.07, 0.03, 'sine', i * 0.1)); }
   function nurkStart() { if (moznaEfekt('nurkStart')) ton(efektyBus, 550, 160, 0.4, 0.09, 0.03, 'triangle'); }
+  // Z21: świst przewrotu (beczka): szybki zjazd i krótki wznoszący ogon, strona bez znaczenia dla brzmienia.
+  function przewrot() {
+    if (!moznaEfekt('przewrot')) return;
+    ton(efektyBus, 1180, 420, 0.3, 0.11, 0.02, 'triangle');
+    ton(efektyBus, 760, 300, 0.26, 0.07, 0.02, 'sine', 0.04);
+    ton(efektyBus, 520, 880, 0.18, 0.05, 0.03, 'sine', 0.2);
+  }
   function cwir() {
     if (!moznaEfekt('cwir')) return;
     const hz = los(1400, 1800);
@@ -183,5 +190,5 @@
     aktualizuj();
     if (!document.hidden) void wznow(); // Nie kasuje ręcznej pauzy.
   });
-  window.OkruszekDzwiek = Object.freeze({ start, muzyka, dzwiek, predkosc, prad, nurkowanie, cwir, och, ladowanie, pauza, machniecie, uderzenie, wybicie, lancuch, rozkwit, drapieznik, turbo, hiper, schody, nurkStart });
+  window.OkruszekDzwiek = Object.freeze({ start, muzyka, dzwiek, predkosc, prad, nurkowanie, cwir, och, ladowanie, pauza, machniecie, uderzenie, wybicie, lancuch, rozkwit, drapieznik, turbo, hiper, schody, nurkStart, przewrot });
 })();

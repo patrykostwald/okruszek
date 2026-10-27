@@ -24,6 +24,8 @@
    debiuty, czytelność, kontrast HUD i wstępu, sterowanie, jasne panele). SKIP_Z18=1 pomija go (ok. 1 min).
    Z20: przycisk „Zainstaluj” (android: beforeinstallprompt, ios: instrukcja, standalone i brak: ukryty), manifest, ikona maskable, sw.js, getInstallabilityErrors: pełny test gra_test_z20.cjs. SKIP_Z20=1 pomija go (ok. 1 min).
    Z15: grafika tonalna: pełny test gra_test_z15.cjs (brak ciemnego obrysu, przejścia bez skoków jasności, L0 nie czarny, zieleń tylko z funkcją, pamięć, klatki względem Z11). SKIP_Z15=1 pomija go (ok. 3 min).
+   Z21: przewrót w bok (unik), widoczne drogi toru bez ramek, unoszenie: pełny test gra_test_z21.cjs (przewrót w trzech trybach i na klawiaturze, drapieżnik i przeszkody w oknie, bot-unikacz, kontrast dróg i cienia,
+   brak obrysów, przełącznik Drogi toru, ciągłość wznoszenia, zrzuty). SKIP_Z21=1 pomija go (ok. 40 s).
    Testy Z3 i Z3b (stary harmonogram) działają w trybie zgodności ?pasmo=1. Musi skończyć się PRE-FLIGHT OK. */
 const fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
 const { chromium } = require('C:/Users/User/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
@@ -336,6 +338,20 @@ const bad = (m) => { fail++; console.log('  FAIL ' + m); };
       const lines = out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z20|BŁĄD|^[(]|info installabilityErrors/.test(l));
       lines.forEach(l => console.log('  z20> ' + l.trim()));
       code === 0 && /TEST Z20 OK/.test(out) ? ok('test Z20 (gra_test_z20.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z20 nie przeszedł (kod ' + code + ')');
+    }
+  }
+  /* Z21 (19.1-19.3): przewrót w bok (unik), widoczne drogi toru bez ramek, unoszenie: pełny test gra_test_z21.cjs (ok. 40 s). SKIP_Z21=1 pomija go. */
+  if (process.env.SKIP_Z21) console.log('  info pominięto test Z21 (SKIP_Z21)');
+  else {
+    const tf = path.join(__dirname, 'gra_test_z21.cjs');
+    if (!fs.existsSync(tf)) bad('brak gra_test_z21.cjs');
+    else {
+      let out = '', code = 0;
+      try { out = cp.execFileSync(process.execPath, [tf, file], { stdio: 'pipe', timeout: 900000, encoding: 'utf8' }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); code = e.status || 1; }
+      fs.writeFileSync(path.join(__dirname, 'preflight-z21-szczegoly.log'), out);
+      out.split(String.fromCharCode(10)).filter(l => /FAIL|TEST Z21|BŁĄD|^[(]| info (biegi|czas rysowania)/.test(l)).forEach(l => console.log('  z21> ' + l.trim()));
+      code === 0 && /TEST Z21 OK/.test(out) ? ok('test Z21 (gra_test_z21.cjs) przeszedł: ' + (out.match(/ok   /g) || []).length + ' sprawdzeń') : bad('test Z21 nie przeszedł (kod ' + code + ')');
     }
   }
   console.log(fail ? ('PRE-FLIGHT NIE PRZESZEDŁ (' + fail + ')') : 'PRE-FLIGHT OK');

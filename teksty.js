@@ -87,6 +87,6 @@ window.OKRUSZEK_TEKSTY = {
       'Drążek wskazuje sąsiednią komórkę. Stuknij prawą połową, żeby machnąć. Przytrzymaj prawą, żeby nurkować.'
     ],
     czulosc: 'Czułość gestu',
-    aria: 'Okruszek leci torem z dziewięciu komórek: trzy kolumny i trzy wysokości. Machaj skrzydłami, żeby wznieść się o wiersz, przytrzymaj, żeby nurkować, przesuwaj się w bok. Łap wiatry jeden po drugim, bo wtedy świat nabiera kolorów. Omijaj chmury, burze, grad, tornada, ptaki i samoloty. Nad chmury, na sam szczyt, prowadzą tylko Schody światła: drugi wiatr złapany z rzędu, środkiem wstęgi. Gdy drapieżnik złoży skrzydła nad Okruszkiem, zejdź z jego drogi.'
+    aria: 'Okruszek leci torem z dziewięciu komórek: trzy kolumny i trzy wysokości. Machaj skrzydłami, żeby wznieść się o wiersz, przytrzymaj, żeby nurkować, przesuwaj się w bok, a podwójnym stuknięciem zrób przewrót w tę stronę (unik). Łap wiatry jeden po drugim, bo wtedy świat nabiera kolorów. Omijaj chmury, burze, grad, tornada, ptaki i samoloty. Nad chmury, na sam szczyt, prowadzą tylko Schody światła: drugi wiatr złapany z rzędu, środkiem wstęgi. Gdy drapieżnik złoży skrzydła nad Okruszkiem, zejdź z jego drogi.'
   }
 };
