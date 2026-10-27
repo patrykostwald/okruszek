@@ -103,9 +103,10 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     chk(Math.abs(A2.e2 - 0.4) < 0.005 && Math.abs(A2.e3 - 0.3) < 0.005, 'koszt energii: E 0,4 -> ' + r2(A2.e3) + ' (25%, część, nie całość)', JSON.stringify(A2));
     chk(A2.n0 === 1 && A2.n1 === 1, 'przewrót nie zrywa łańcucha wiatrów (n ' + A2.n0 + ' -> ' + A2.n1 + ')');
     chk(A2.kan && A2.kan.obraz >= 3 && A2.kan.dzwiek >= 3 && A2.kan.vibrate >= 3 && A2.wibr >= 3, 'przewrót: obraz + wywołanie dźwięku + vibrate (' + JSON.stringify(A2.kan) + ')');
-    await pg.emulateMedia({ reducedMotion: 'reduce' }); await sleep(60); await reset({});
+    /* zmiana prefers-reduced-motion dociera do strony zdarzeniem matchMedia; przy obciążonym komputerze 60 ms nie wystarcza: czekamy na jej potwierdzenie w stronie */
+    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches && __okruszek.czucie().kamera.przechyl === 0); await sleep(60); await reset({});
     const A3 = await ev(() => { const O = __okruszek; O.przewrot('prawo'); let m = 0; for (let i = 0; i < 24; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); const w = O.skrzydla(); if (w) m = Math.max(m, Math.abs(w.obrot)); } return { obrot: m, kol: O.komorka().kol, unik: O.przewrotStan().log.length }; });
-    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await sleep(60);
+    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60);
     chk(A3.obrot > 0.1 && A3.obrot <= 0.6 && A3.kol === 2, 'reduced-motion: przewrót bez pełnego obrotu (najwyżej ' + r2(A3.obrot) + ' rad), mechanika ta sama (kolumna ' + A3.kol + ')');
 
     /* ---------- (b) unik przed drapieżnikiem ---------- */
@@ -318,9 +319,9 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     await reset({ k: 1, w: 1 });
     wyn.dysz = await ev(() => { const O = __okruszek, d = [], ys = []; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); const u = O.unoszenie(); d.push(u.dysz); ys.push(u.ekranY); } const kd = d.map((v, i) => i ? Math.abs(v - d[i - 1]) : 0); return { max: Math.max(...d), krokMax: Math.max(...kd), start: d[0], wiersze: O.komorka().wiersz }; });
     chk(wyn.dysz.max >= 4 && wyn.dysz.krokMax <= 2 && wyn.dysz.start === 0, 'dyszki unoszenia przy szybowaniu: uniesienie do ' + r2(wyn.dysz.max) + ' px >= 4, ciągłe (krok <= ' + r2(wyn.dysz.krokMax) + ' px), zero na starcie', JSON.stringify(wyn.dysz));
-    await pg.emulateMedia({ reducedMotion: 'reduce' }); await sleep(60); await reset({ k: 1, w: 1 });
+    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60); await reset({ k: 1, w: 1 });
     const DR = await ev(() => { const O = __okruszek; let m = 0; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); m = Math.max(m, O.unoszenie().dysz); } return m; });
-    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await sleep(60);
+    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60);
     chk(DR === 0, 'reduced-motion: bez dyszek (' + DR + ')');
 
     /* ---------- (h) zrzuty ---------- */

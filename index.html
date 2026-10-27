@@ -6045,7 +6045,7 @@ Słońce obiecało wrócić rano.</p>
     /* dziewięć dróg: smuga światła od każdej komórki w głąb (klin przez punkt zbiegu; sprite). Nad morzem chmur za dnia światło nie jest widoczne, więc dolne smugi
        są tam cieniem (multiply, ton cienia jak cień Okruszka): „prześwity” między bankami chmur; nocą (ciemne morze) znów światło (waga PAL.nightW) */
     col = mixc(torKolor('wstega'), [255, 255, 255], 0.3); spr = tintTex('drogi21', drogiSprite(), col);
-    var cS21 = mixc(PAL.c2, PAL.c3, 0.6), sprC = tintTex('drogi21c', drogiSprite(), cS21), nW = PAL.nightW, aS, aC, pulsA;
+    var cS21 = mixc(mixc(PAL.c2, PAL.c3, 0.6), PAL.s0, 0.5), sprC = tintTex('drogi21c', drogiSprite(), cS21), nW = PAL.nightW, aS, aC, pulsA;
     half = DROGI21.SZER * torCW / 2;
     for (r = 0; r < TOR.ROWS; r++) {
       dy = torRowSY(r) - v; if (dy < 8) continue;

@@ -1,0 +1,752 @@
+{
+ "stale": {
+  "T": 0.35,
+  "IMM": 0.25,
+  "CD": 1.2,
+  "OKNO": 0.25,
+  "MIN": 0.03,
+  "E": 0.25,
+  "E_MAX": 0.1
+ },
+ "drap": [
+  {
+   "seed": 1,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5692397583920878,
+   "tRoll": 1.3666666666666667,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 1,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5692397583920878,
+   "tRoll": 1.5499999999999994,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 1,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5692397583920878,
+   "tRoll": 1.2333333333333338,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 1,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5692397583920878,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 2,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.3000000000000003,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 2,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.483333333333333,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 2,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.1666666666666674,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 2,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 3,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.3000000000000003,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 3,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.483333333333333,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 3,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.1666666666666674,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 3,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 4,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.3000000000000003,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 4,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.483333333333333,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 4,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.1666666666666674,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 4,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 5,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.3000000000000003,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 5,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.483333333333333,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 5,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.1666666666666674,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 5,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 6,
+   "rollAt": 0.2,
+   "wynik": "unik",
+   "tryb": "gra",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.3000000000000003,
+   "przewroty": 1,
+   "uniki": 1
+  },
+  {
+   "seed": 6,
+   "rollAt": 0.02,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.483333333333333,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 6,
+   "rollAt": 0.34,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": 1.1666666666666674,
+   "przewroty": 1,
+   "uniki": 0
+  },
+  {
+   "seed": 6,
+   "rollAt": null,
+   "wynik": "zlapal",
+   "tryb": "zlapany",
+   "kom": 2,
+   "hitAt": 1.5,
+   "tRoll": null,
+   "przewroty": 0,
+   "uniki": 0
+  }
+ ],
+ "przesz": [
+  {
+   "typ": "chmura:szara",
+   "eta": 0.2,
+   "roll": true,
+   "efekt": "unik",
+   "kolizje": 0,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:szara",
+   "eta": 0.2,
+   "roll": false,
+   "efekt": "kara",
+   "kolizje": 1,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "burza",
+   "eta": 0.2,
+   "roll": true,
+   "efekt": "unik",
+   "kolizje": 0,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "burza",
+   "eta": 0.2,
+   "roll": false,
+   "efekt": "kara",
+   "kolizje": 1,
+   "wiersz": 2,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:fiolet",
+   "eta": 0.2,
+   "roll": true,
+   "efekt": "unik",
+   "kolizje": 0,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:fiolet",
+   "eta": 0.2,
+   "roll": false,
+   "efekt": "kara",
+   "kolizje": 1,
+   "wiersz": 2,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:szara",
+   "eta": 0.02,
+   "roll": true,
+   "efekt": "kara",
+   "kolizje": 1,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:szara",
+   "eta": 0.5,
+   "roll": true,
+   "efekt": "kara",
+   "kolizje": 1,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "chmura:oaza",
+   "eta": 0.2,
+   "roll": true,
+   "efekt": "oaza_wzlot",
+   "kolizje": 0,
+   "wiersz": 1,
+   "kontaktow": 1
+  },
+  {
+   "typ": "ptak",
+   "eta": 0.2,
+   "roll": true,
+   "efekt": "unik",
+   "kolizje": 0,
+   "wiersz": 1,
+   "kontaktow": 1
+  }
+ ],
+ "boty": [
+  {
+   "seed": 11,
+   "roll": false,
+   "czas": 64.7,
+   "koniec": "jastrzab",
+   "ataki": "zlapal",
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 11,
+   "roll": true,
+   "czas": 240,
+   "koniec": "limit",
+   "ataki": "unik,pudlo,pudlo,pudlo,unik,pudlo",
+   "przewroty": 5,
+   "uniki": 2
+  },
+  {
+   "seed": 12,
+   "roll": false,
+   "czas": 64.7,
+   "koniec": "jastrzab",
+   "ataki": "zlapal",
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 12,
+   "roll": true,
+   "czas": 240,
+   "koniec": "limit",
+   "ataki": "unik,pudlo,pudlo,unik,pudlo,unik,",
+   "przewroty": 6,
+   "uniki": 3
+  },
+  {
+   "seed": 13,
+   "roll": false,
+   "czas": 64.7,
+   "koniec": "jastrzab",
+   "ataki": "zlapal",
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 13,
+   "roll": true,
+   "czas": 240,
+   "koniec": "limit",
+   "ataki": "pudlo,pudlo,pudlo,pudlo,unik,pudlo",
+   "przewroty": 5,
+   "uniki": 1
+  },
+  {
+   "seed": 14,
+   "roll": false,
+   "czas": 64.8,
+   "koniec": "jastrzab",
+   "ataki": "zlapal",
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 14,
+   "roll": true,
+   "czas": 240,
+   "koniec": "limit",
+   "ataki": "unik,unik,pudlo,pudlo,unik,unik",
+   "przewroty": 5,
+   "uniki": 4
+  },
+  {
+   "seed": 15,
+   "roll": false,
+   "czas": 64.8,
+   "koniec": "jastrzab",
+   "ataki": "zlapal",
+   "przewroty": 0,
+   "uniki": 0
+  },
+  {
+   "seed": 15,
+   "roll": true,
+   "czas": 240,
+   "koniec": "limit",
+   "ataki": "pudlo,pudlo,unik,pudlo,unik,pudlo",
+   "przewroty": 6,
+   "uniki": 2
+  }
+ ],
+ "wstegi": [
+  {
+   "pora": "dzien",
+   "L": 0,
+   "d": {
+    "0,0": 11.4,
+    "2,0": 12.1,
+    "1,2": -15.6,
+    "0,2": -18.1
+   }
+  },
+  {
+   "pora": "dzien",
+   "L": 4,
+   "d": {
+    "0,0": 15.9,
+    "2,0": 16.6,
+    "1,2": -7.2,
+    "0,2": -6.9
+   }
+  },
+  {
+   "pora": "noc",
+   "L": 0,
+   "d": {
+    "0,0": 41.7,
+    "2,0": 44,
+    "1,2": 25.7,
+    "0,2": 24.9
+   }
+  },
+  {
+   "pora": "noc",
+   "L": 4,
+   "d": {
+    "0,0": 27.8,
+    "2,0": 29.3,
+    "1,2": 33.4,
+    "0,2": 29.3
+   }
+  }
+ ],
+ "kom": [
+  {
+   "tryb": 1,
+   "ptak": 7.6,
+   "daleka": 4.9
+  },
+  {
+   "tryb": 2,
+   "ptak": 7.6,
+   "daleka": 4.9
+  },
+  {
+   "tryb": 3,
+   "ptak": 7.6,
+   "daleka": 4.9
+  }
+ ],
+ "kontrast": [
+  {
+   "pora": "swit",
+   "L": 0,
+   "w": 0,
+   "cien": 11.03
+  },
+  {
+   "pora": "swit",
+   "L": 0,
+   "w": 1,
+   "cien": 9.8
+  },
+  {
+   "pora": "swit",
+   "L": 0,
+   "w": 2,
+   "cien": 8.08
+  },
+  {
+   "pora": "swit",
+   "L": 5,
+   "w": 0,
+   "cien": 11.12
+  },
+  {
+   "pora": "swit",
+   "L": 5,
+   "w": 1,
+   "cien": 6.17
+  },
+  {
+   "pora": "swit",
+   "L": 5,
+   "w": 2,
+   "cien": 6.02
+  },
+  {
+   "pora": "dzien",
+   "L": 0,
+   "w": 0,
+   "cien": 12.45
+  },
+  {
+   "pora": "dzien",
+   "L": 0,
+   "w": 1,
+   "cien": 9.54
+  },
+  {
+   "pora": "dzien",
+   "L": 0,
+   "w": 2,
+   "cien": 11.56
+  },
+  {
+   "pora": "dzien",
+   "L": 5,
+   "w": 0,
+   "cien": 12.8
+  },
+  {
+   "pora": "dzien",
+   "L": 5,
+   "w": 1,
+   "cien": 9.23
+  },
+  {
+   "pora": "dzien",
+   "L": 5,
+   "w": 2,
+   "cien": 6.24
+  },
+  {
+   "pora": "zachod",
+   "L": 0,
+   "w": 0,
+   "cien": 6.75
+  },
+  {
+   "pora": "zachod",
+   "L": 0,
+   "w": 1,
+   "cien": 7.19
+  },
+  {
+   "pora": "zachod",
+   "L": 0,
+   "w": 2,
+   "cien": 4.48
+  },
+  {
+   "pora": "zachod",
+   "L": 5,
+   "w": 0,
+   "cien": 6.76
+  },
+  {
+   "pora": "zachod",
+   "L": 5,
+   "w": 1,
+   "cien": 4.64
+  },
+  {
+   "pora": "zachod",
+   "L": 5,
+   "w": 2,
+   "cien": 5.34
+  },
+  {
+   "pora": "noc",
+   "L": 0,
+   "w": 0,
+   "cien": 2.35
+  },
+  {
+   "pora": "noc",
+   "L": 0,
+   "w": 1,
+   "cien": 2.9
+  },
+  {
+   "pora": "noc",
+   "L": 0,
+   "w": 2,
+   "cien": 2.36
+  },
+  {
+   "pora": "noc",
+   "L": 5,
+   "w": 0,
+   "cien": 8.59
+  },
+  {
+   "pora": "noc",
+   "L": 5,
+   "w": 1,
+   "cien": 8.31
+  },
+  {
+   "pora": "noc",
+   "L": 5,
+   "w": 2,
+   "cien": 3.59
+  }
+ ],
+ "linie": [
+  {
+   "pora": "dzien",
+   "off": {
+    "dol": 0.000027067052823286947,
+    "grz": 0.000054134105646573894
+   },
+   "on": {
+    "dol": 0.00001546688732759254,
+    "grz": 0.000054134105646573894
+   },
+   "siatka": {
+    "dol": 0.000027067052823286947,
+    "grz": 0.00023973675357768438
+   }
+  },
+  {
+   "pora": "noc",
+   "off": {
+    "dol": 0.0007076100952373587,
+    "grz": 0.004114192029139616
+   },
+   "on": {
+    "dol": 0.0006573427114226829,
+    "grz": 0.003998190374182671
+   },
+   "siatka": {
+    "dol": 0.0014229536341385136,
+    "grz": 0.019028138134770722
+   }
+  }
+ ],
+ "przeszkoda": {
+  "bez": {
+   "inn": 193.2499599999996,
+   "out": 215.86050838264612,
+   "k": 22.610548382646527
+  },
+  "z": {
+   "inn": 197.21880205128073,
+   "out": 220.65948865877914,
+   "k": 23.440686607498407
+  },
+  "ex": 195,
+  "ey": 370.34761255396467,
+  "skala": 0.8448657020622543,
+  "zmiana": 0.03671464357268777
+ },
+ "wzlot": {
+  "maxKrok": 5.247319480091846,
+  "wzrost": 117.68026752902335,
+  "iRow": 21,
+  "t90": 0.38333333333333336,
+  "wiersz": 1,
+  "ys": [
+   625,
+   610,
+   601,
+   556,
+   525,
+   513,
+   509,
+   508,
+   507,
+   507,
+   507,
+   507,
+   507,
+   507,
+   507
+  ]
+ },
+ "wiatr": {
+  "maxKrok": 5.340157529294515,
+  "wzrost": 118.29987549193896,
+  "iRow": 29,
+  "t90": 0.5166666666666667,
+  "wiersz": 1,
+  "wloty": 1
+ },
+ "dysz": {
+  "max": 6.999964494262347,
+  "krokMax": 0.26627229966425936,
+  "start": 0,
+  "wiersze": 1
+ }
+}
