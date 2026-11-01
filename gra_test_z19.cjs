@@ -16,7 +16,7 @@ const median = a => a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)];
  await pg.goto('file:///' + file.replace(/\\/g,'/') + '?test&tor=1&seed=23');
  await pg.waitForFunction(()=>!!window.__okruszek);
  check(await pg.locator('#wibracje').isHidden(),'przełącznik nie zmienia ekranu startowego');
- const reset = () => pg.evaluate(()=>{ const O=__okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(23); O.brama(1); O.odblokuj(); O.nowyBieg(); O.tempo(1); O.idz(1,1,true); });
+ const reset = () => pg.evaluate(()=>{ const O=__okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(23); O.brama(1); O.odblokuj(); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0); O.tempo(1); O.idz(1,1,true); });
  await reset();
  wyn.wejscie = await pg.evaluate(()=>{
   const O=__okruszek, cv=document.querySelector('canvas#g'), out=[];
@@ -37,7 +37,7 @@ const median = a => a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)];
  await reset();
  wyn.kanaly = await pg.evaluate(src=>{
   const O=__okruszek; O.bezPradow(false); O.bezPrzeszkod(false); const bot=(0,eval)(src);
-  O.torSymuluj(180,bot); O.bezPradow(true);O.bezPrzeszkod(true);O.nowyBieg();O.idz(1,1,true);
+  O.torSymuluj(180,bot); O.bezPradow(true);O.bezPrzeszkod(true);O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0);O.idz(1,1,true);
   O.torSymuluj(0.4,()=>({nurkuj:true}));O.torSymuluj(0.1,()=>({}));
   O.idz(1,1,true);O.zdarzenie('chmura:szara',{k:1,w:1,z:0.71});O.torSymuluj(0.1);
   O.ustawPoziom(4);O.torSymuluj(0.1);O.ustawPoziom(5);O.torSymuluj(0.1);O.brama(4);O.ustaw(0.1);O.zdarzenie('jastrzab');O.torSymuluj(4);
@@ -65,11 +65,11 @@ const median = a => a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)];
  check(wyn.ataki.some(a=>a.zwod),'zwód w drugim uderzeniu');
  await reset();
  wyn.kamera = await pg.evaluate(()=>{const O=__okruszek;O.idz(2,1);O.torSymuluj(0.05);const a=O.czucie().kamera;O.zdarzenie('samolot',{k:2,w:1,z:0.71});O.torSymuluj(0.1);return {skret:a,trafienie:O.czucie().kamera};});
- await pg.emulateMedia({reducedMotion:'reduce'}); await pg.waitForTimeout(50);
+ await pg.emulateMedia({reducedMotion:'reduce'}); await pg.waitForFunction(()=>matchMedia('(prefers-reduced-motion: reduce)').matches === __okruszek.czucie().reducedMotion);
  wyn.kamera.reduce = await pg.evaluate(()=>__okruszek.czucie().kamera);
  check(wyn.kamera.reduce.drzenie===0 && wyn.kamera.reduce.przechyl===0 && wyn.kamera.reduce.kop===0,'reduced-motion wyłącza przechył, drżenie i kopnięcie');
  await pg.emulateMedia({reducedMotion:'no-preference'});
- await pg.waitForTimeout(50); await reset();
+ await pg.waitForFunction(()=>matchMedia('(prefers-reduced-motion: reduce)').matches === __okruszek.czucie().reducedMotion); await reset();
  wyn.blyski = await pg.evaluate(()=>{const O=__okruszek;O.ustaw(0);let prev=false,starts=[];for(let i=0;i<600;i++){O.torSymuluj(1/60);O.kadr19(1/60);const on=O.czucie().blyskBurzy;if(on&&!prev)starts.push(i/60);prev=on;}return starts;});
  check(wyn.blyski.length>5 && wyn.blyski.every(t=>wyn.blyski.filter(x=>x>=t&&x<t+1).length<=3),'burze: najwyżej 3 początki błysku w dowolnym oknie sekundy');
  // Kontrast rzeczywistych pikseli, cień z porównania tego samego kadru z wyłączonym rysunkiem.
@@ -77,9 +77,9 @@ const median = a => a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)];
   const O=__okruszek,cv=document.querySelector('#g'),cx=cv.getContext('2d'),out=[];
   function lum(x,y,w,h){const d=cx.getImageData(Math.round(x*cv.width/390),Math.round(y*cv.height/844),Math.max(1,Math.round(w*cv.width/390)),Math.max(1,Math.round(h*cv.height/844))).data,a=[]; const lin=v=>(v/=255)<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;for(let i=0;i<d.length;i+=4)a.push(.2126*lin(d[i])+.7152*lin(d[i+1])+.0722*lin(d[i+2]));return a.sort((a,b)=>a-b);}
   for(const pora of ['swit','dzien','zachod','noc'])for(const L of [0,5]){
-   O.brama(1);O.nowyBieg();O.pauza(true);O.ustawPore(pora);O.ustawPoziom(L);O.torSymuluj(.1);O.idz(1,1,true);O.kadr19();
+   O.brama(1);O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0);O.ustawPore(pora);O.ustawPoziom(L);O.torSymuluj(.1);O.idz(1,1,true);O.kadr19(0);
    const hud=[[18,14,64,12],[18,30,55,22],[142,60,70,14],[300,14,70,12]].map(b=>{const a=lum(...b);return (a[a.length>>1]+.05)/(a[Math.floor(a.length*.02)]+.05);});
-   const q=O.cienOkruszka(); O.dbg({torCien:0});O.kadr19();let a=lum(q.x-8,q.y-2,16,4);O.dbg({torCien:1});O.kadr19();let b=lum(q.x-8,q.y-2,16,4); O.dbg({torCien:0});const la=a[a.length>>1],lb=b[b.length>>1],cie=(Math.max(la,lb)+.05)/(Math.min(la,lb)+.05);out.push({pora,L,hud,cien:cie});
+   const q=O.cienOkruszka(); O.dbg({torCien:0});O.kadr19(0);let a=lum(q.x-8,q.y-2,16,4);O.dbg({torCien:1});O.kadr19(0);let b=lum(q.x-8,q.y-2,16,4); O.dbg({torCien:0});const la=a[a.length>>1],lb=b[b.length>>1],cie=(Math.max(la,lb)+.05)/(Math.min(la,lb)+.05);out.push({pora,L,hud,cien:cie});
   }return out;
  });
  check(wyn.kontrast.every(x=>x.hud.every(c=>c>=4.5)),'HUD >=4,5:1 także w hiperze: minimum '+Math.min(...wyn.kontrast.flatMap(x=>x.hud)).toFixed(2));

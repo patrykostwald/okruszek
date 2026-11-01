@@ -63,7 +63,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     pg.on('pageerror', e => errors.push('pageerror: ' + (e.stack || e))); pg.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text()); });
     await pg.goto(base + '?test&tor=1&seed=23'); await pg.waitForFunction(() => !!window.__okruszek);
     const ev = (f, a) => pg.evaluate(f, a);
-    const reset = (o) => ev((o) => { const O = __okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(o.ziarno || 23); O.brama(o.brama || 1); O.odblokuj(); O.ustawEnergie(null); O.nurkuj(false); O.nowyBieg(); O.tempo(1); O.sterowanie(o.tryb || 1); O.ustawPore(o.pora || 'dzien'); O.ustawPoziom(o.L || 0); if (o.s !== undefined) O.ustaw(o.s); O.torSymuluj(0.1); O.idz(o.k === undefined ? 1 : o.k, o.w === undefined ? 1 : o.w, true); O.kadr19(); return O.przewrotStan().stale; }, o || {});
+    const reset = (o) => ev((o) => { const O = __okruszek; O.panel(false); O.pauza(true); O.bezPradow(true); O.bezPrzeszkod(true); O.ziarno(o.ziarno || 23); O.brama(o.brama || 1); O.odblokuj(); O.ustawEnergie(null); O.nurkuj(false); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0); O.tempo(1); O.sterowanie(o.tryb || 1); O.ustawPore(o.pora || 'dzien'); O.ustawPoziom(o.L || 0); if (o.s !== undefined) O.ustaw(o.s); O.torSymuluj(0.1); O.idz(o.k === undefined ? 1 : o.k, o.w === undefined ? 1 : o.w, true); O.kadr19(0); return O.przewrotStan().stale; }, o || {});
 
     /* ---------- (a) przewrót: hak, animacja, odnowienie, koszt ---------- */
     console.log('(a) przewrót: hak, okno niewrażliwości, odnowienie, koszt energii, animacja');
@@ -104,9 +104,9 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     chk(A2.n0 === 1 && A2.n1 === 1, 'przewrót nie zrywa łańcucha wiatrów (n ' + A2.n0 + ' -> ' + A2.n1 + ')');
     chk(A2.kan && A2.kan.obraz >= 3 && A2.kan.dzwiek >= 3 && A2.kan.vibrate >= 3 && A2.wibr >= 3, 'przewrót: obraz + wywołanie dźwięku + vibrate (' + JSON.stringify(A2.kan) + ')');
     /* zmiana prefers-reduced-motion dociera do strony zdarzeniem matchMedia; przy obciążonym komputerze 60 ms nie wystarcza: czekamy na jej potwierdzenie w stronie */
-    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches && __okruszek.czucie().kamera.przechyl === 0); await sleep(60); await reset({});
+    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches && __okruszek.czucie().reducedMotion); await sleep(60); await reset({});
     const A3 = await ev(() => { const O = __okruszek; O.przewrot('prawo'); let m = 0; for (let i = 0; i < 24; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); const w = O.skrzydla(); if (w) m = Math.max(m, Math.abs(w.obrot)); } return { obrot: m, kol: O.komorka().kol, unik: O.przewrotStan().log.length }; });
-    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60);
+    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches && !__okruszek.czucie().reducedMotion); await sleep(60);
     chk(A3.obrot > 0.1 && A3.obrot <= 0.6 && A3.kol === 2, 'reduced-motion: przewrót bez pełnego obrotu (najwyżej ' + r2(A3.obrot) + ' rad), mechanika ta sama (kolumna ' + A3.kol + ')');
 
     /* ---------- (b) unik przed drapieżnikiem ---------- */
@@ -114,7 +114,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     wyn.drap = await ev(() => {
       const O = __okruszek, out = [];
       const bieg = (seed, rollAt) => {
-        O.panel(false); O.pauza(true); O.ziarno(seed); O.brama(4); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.ustaw(0.1); O.idz(2, 1, true); O.zdarzenie('jastrzab');
+        O.panel(false); O.pauza(true); O.ziarno(seed); O.brama(4); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0); O.ustaw(0.1); O.idz(2, 1, true); O.zdarzenie('jastrzab');
         let done = false, tRoll = null, r = null, a = {};
         /* symulacja w krokach 0,1 s do rozstrzygnięcia PIERWSZEGO ataku (drapieżnik atakuje potem jeszcze dwa razy, a ten bot nie robi nic więcej) */
         for (let i = 0; i < 160 && !(a.wynik); i++) {
@@ -136,7 +136,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     wyn.przesz = await ev(() => {
       const O = __okruszek, out = [];
       const proba = (typ, eta, roll) => {
-        O.panel(false); O.pauza(true); O.ziarno(5); O.brama(2); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.ustaw(0.1); O.idz(2, 1, true); O.torSymuluj(0.05);
+        O.panel(false); O.pauza(true); O.ziarno(5); O.brama(2); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0); O.ustaw(0.1); O.idz(2, 1, true); O.torSymuluj(0.05);
         const sp = O.tor().sp, k0 = O.torLog().kontakty.length, s0 = O.stan().s;
         O.zdarzenie(typ, { k: 2, w: 1, z: 0.7 + sp * eta });
         if (roll) O.przewrot('prawo');
@@ -213,7 +213,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
         };
       };
       for (const seed of [11, 12, 13, 14, 15]) for (const roll of [false, true]) {
-        O.panel(false); O.pauza(true); O.ziarno(seed); O.brama(4); O.odblokuj(); O.ustawEnergie(null); O.bezPradow(false); O.bezPrzeszkod(false); O.nowyBieg();
+        O.panel(false); O.pauza(true); O.ziarno(seed); O.brama(4); O.odblokuj(); O.ustawEnergie(null); O.bezPradow(false); O.bezPrzeszkod(false); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0);
         const r = O.torSymuluj(240, mk(seed, roll)), L = O.torLog(), p = O.przewrotStan().liczniki;
         out.push({ seed, roll, czas: Math.round(r.graCzas * 10) / 10, koniec: r.tryb === 'gra' ? 'limit' : r.koniec, ataki: L.ataki.map(a => a.wynik).join(','), przewroty: p.przewroty, uniki: p.uniki });
       }
@@ -233,7 +233,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
       await reset({ pora, L, k: 1, w: 1 });
       wyn.wstegi.push(await ev(([pora, L, LUM, PUNKT]) => {
         const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT), out = { pora, L, d: {} };
-        for (const [c, r] of [[0, 0], [2, 0], [1, 2], [0, 2]]) { const p = pt(c, r, 0.9); O.dbg({}); O.kadr19(); const a = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(); const b = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); out.d[c + ',' + r] = Math.round((a - b) * 10) / 10; }
+        for (const [c, r] of [[0, 0], [2, 0], [1, 2], [0, 2]]) { const p = pt(c, r, 0.9); O.dbg({}); O.kadr19(0); const a = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(0); const b = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); out.d[c + ',' + r] = Math.round((a - b) * 10) / 10; }
         return out;
       }, [pora, L, LUM, PUNKT]));
     }
@@ -243,19 +243,21 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     for (const tryb of [1, 2, 3]) {
       await reset({ tryb, k: 1, w: 0 });
       /* pomiar w drodze (1,0) na głębokości z 1,35 (ok. 55 px nad komórką: poza rysunkiem ptaszka, który stoi w (1,0)) */
-      const a = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT), p = pt(1, 0, 1.35); O.dbg({}); O.kadr19(); const x = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(); const y = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return x - y; }, [LUM, PUNKT]);
-      await reset({ tryb, k: 1, w: 2 });
-      const b = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT), p = pt(1, 0, 1.35); O.dbg({}); O.kadr19(); const x = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(); const y = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return x - y; }, [LUM, PUNKT]);
+      const a = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT), p = pt(1, 0, 1.35); O.dbg({}); O.kadr19(0); const x = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(0); const y = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return x - y; }, [LUM, PUNKT]);
+      await ev(() => { __okruszek.idz(1, 2, true); __okruszek.kadr19(0); });
+      const b = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT), p = pt(1, 0, 1.35); O.dbg({}); O.kadr19(0); const x = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(0); const y = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return x - y; }, [LUM, PUNKT]);
       wyn.kom.push({ tryb, ptak: Math.round(a * 10) / 10, daleka: Math.round(b * 10) / 10 });
     }
     chk(wyn.kom.every(k => k.ptak > k.daleka * 1.3 && k.daleka >= 1.5), 'komórka Okruszka wyraźniejsza od dalekiej (droga (1,0) z ptaszkiem w (1,0) wobec ptaszka w (1,2)) w trybach 1-3: ' + wyn.kom.map(k => k.ptak + ' > ' + k.daleka).join(', '), JSON.stringify(wyn.kom));
     wyn.kontrast = await ev(([LUM]) => {
       const O = __okruszek, out = [];
       function lumy(x, y, w, h) { const c = document.getElementById('g'), k = c.width / 390, t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const cx = t.getContext('2d', { willReadFrequently: true }); cx.drawImage(c, 0, 0); const d = cx.getImageData(Math.round(x * k), Math.round(y * k), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))).data, a = []; const lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; for (let i = 0; i < d.length; i += 4) a.push(0.2126 * lin(d[i]) + 0.7152 * lin(d[i + 1]) + 0.0722 * lin(d[i + 2])); return a.sort((p, q) => p - q); }
-      for (const pora of ['swit', 'dzien', 'zachod', 'noc']) for (const L of [0, 5]) for (const w of [0, 1, 2]) {
-        O.panel(false); O.pauza(true); O.brama(1); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.ustawPore(pora); O.ustawPoziom(L); O.torSymuluj(0.1); O.idz(1, w, true); O.kadr19();
-        const q = O.cienOkruszka(); O.dbg({ torCien: 1 }); O.kadr19(); const a = lumy(q.x - 8, q.y - 2, 16, 4); O.dbg({}); O.kadr19(); const b = lumy(q.x - 8, q.y - 2, 16, 4);
-        const la = a[a.length >> 1], lb = b[b.length >> 1]; out.push({ pora, L, w, cien: Math.round((Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05) * 100) / 100 });
+      /* 12 stałych faz i położeń morza zamiast przypadkowej fazy RAF: również jasne płaty w nocy.
+         Każda para A/B ma dt=0; próg sprawdzamy przed zaokrągleniem. */
+      for (const pora of ['swit', 'dzien', 'zachod', 'noc']) for (const L of [0, 5]) for (const w of [0, 1, 2]) for (const faza of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
+        O.panel(false); O.pauza(true); O.brama(1); O.odblokuj(); O.bezPradow(true); O.bezPrzeszkod(true); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(faza, faza * 0.5); O.ustawPore(pora); O.ustawPoziom(L); O.torSymuluj(0.1); O.idz(1, w, true); O.kadr19(0);
+        const q = O.cienOkruszka(); O.dbg({ torCien: 1 }); O.kadr19(0); const a = lumy(q.x - 8, q.y - 2, 16, 4); O.dbg({}); O.kadr19(0); const b = lumy(q.x - 8, q.y - 2, 16, 4);
+        const la = a[a.length >> 1], lb = b[b.length >> 1]; out.push({ pora, L, w, faza, cien: (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05) });
       }
       O.odblokuj(); return out;
     }, [LUM]);
@@ -263,7 +265,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     wyn.linie = [];
     for (const pora of ['dzien', 'noc']) {
       await reset({ pora, L: 0, k: 1, w: 1 });
-      wyn.linie.push(await ev(([pora, M]) => { const O = __okruszek, m = eval('(' + M + ')'); O.dbg({ torDrogi: 1 }); O.kadr19(); const off = m(); O.dbg({}); O.kadr19(); const on = m(); O.torSiatka(true); O.kadr19(); const si = m(); O.torSiatka(false); O.kadr19(); return { pora, off, on, siatka: si }; }, [pora, MIERZ.toString()]));
+      wyn.linie.push(await ev(([pora, M]) => { const O = __okruszek, m = eval('(' + M + ')'); O.dbg({ torDrogi: 1 }); O.kadr19(0); const off = m(); O.dbg({}); O.kadr19(0); const on = m(); O.torSiatka(true); O.kadr19(0); const si = m(); O.torSiatka(false); O.kadr19(0); return { pora, off, on, siatka: si }; }, [pora, MIERZ.toString()]));
     }
     chk(wyn.linie.every(l => l.on.grz - l.off.grz <= 0.0015 && l.on.dol - l.off.dol <= 0.0025 && l.on.grz < l.siatka.grz * 0.6), 'drogi bez prostokątnych obrysów: cienkie jasne linie (grz) +' + wyn.linie.map(l => (l.on.grz - l.off.grz).toFixed(4)).join('/') + ' <= 0,0015 i wobec ?siatka=1 ' + wyn.linie.map(l => l.on.grz.toFixed(4) + '<' + l.siatka.grz.toFixed(4)).join('/') + ', ciemne (dol) +' + wyn.linie.map(l => (l.on.dol - l.off.dol).toFixed(4)).join('/') + ' <= 0,0025', JSON.stringify(wyn.linie));
     await reset({ pora: 'dzien', L: 2, k: 1, w: 2 });
@@ -271,7 +273,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
       const O = __okruszek, lum = eval(LUM);
       O.zdarzenie('chmura:szara', { k: 1, w: 0, z: 1.3 }); O.torSymuluj(0.01);
       const g = O.gdzie().find(q => q.typ === 'chmura:szara'), w = 46 * g.skala, h = 30 * g.skala;
-      const pomiar = () => { O.kadr19(); const inn = lum(g.ex - w / 2, g.ey - h / 2, w, h), outT = lum(g.ex - w, g.ey - h * 1.6, w * 2, h * 0.5), outB = lum(g.ex - w, g.ey + h * 1.1, w * 2, h * 0.5); return { inn, out: (outT + outB) / 2, k: Math.abs(inn - (outT + outB) / 2) }; };
+      const pomiar = () => { O.kadr19(0); const inn = lum(g.ex - w / 2, g.ey - h / 2, w, h), outT = lum(g.ex - w, g.ey - h * 1.6, w * 2, h * 0.5), outB = lum(g.ex - w, g.ey + h * 1.1, w * 2, h * 0.5); return { inn, out: (outT + outB) / 2, k: Math.abs(inn - (outT + outB) / 2) }; };
       O.dbg({ torDrogi: 1 }); const a = pomiar(); O.dbg({}); const b = pomiar();
       return { bez: a, z: b, ex: g.ex, ey: g.ey, skala: g.skala, zmiana: a.k > 0 ? Math.abs(b.k - a.k) / a.k : 0 };
     }, [LUM]);
@@ -282,7 +284,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     const PB = await pg.evaluate(() => { const b = document.getElementById('drogi'); return { jest: !!b, widoczny: !!b && !b.hidden && getComputedStyle(b).display !== 'none', tekst: b && b.textContent, pressed: b && b.getAttribute('aria-pressed'), wys: b ? b.getBoundingClientRect().height : 0 }; });
     chk(PB.jest && PB.widoczny && PB.pressed === 'true' && /widoczne/.test(PB.tekst) && PB.wys >= 44, 'panel w torze: przełącznik „Drogi toru” widoczny, włączony, >= 44 px (' + PB.tekst + ', ' + Math.round(PB.wys) + ' px)', JSON.stringify(PB));
     await pg.locator('#drogi').click(); await sleep(100);
-    const PO = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT); O.panel(false); O.kadr19(); const p = pt(0, 0, 0.9), a = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(); const b = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return { drogi: O.drogi(), zapis: O.zapisPodglad().drogi, tekst: document.getElementById('drogi').textContent, roznica: Math.abs(a - b) }; }, [LUM, PUNKT]);
+    const PO = await ev(([LUM, PUNKT]) => { const O = __okruszek, lum = eval(LUM), pt = eval(PUNKT); O.panel(false); O.kadr19(0); const p = pt(0, 0, 0.9), a = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({ torDrogi: 1 }); O.kadr19(0); const b = lum(p[0] - 6, p[1] - 3, 12, 6); O.dbg({}); return { drogi: O.drogi(), zapis: O.zapisPodglad().drogi, tekst: document.getElementById('drogi').textContent, roznica: Math.abs(a - b) }; }, [LUM, PUNKT]);
     chk(PO.drogi === false && PO.zapis === 0 && /ukryte/.test(PO.tekst) && PO.roznica < 0.5, 'kliknięcie wyłącza drogi (obraz jak z wyłączonym rysunkiem) i zapisuje wybór (zapis.drogi = 0)', JSON.stringify(PO));
     await pg.reload(); await pg.waitForFunction(() => !!window.__okruszek); await sleep(200);
     const PR = await ev(() => __okruszek.drogi());
@@ -319,9 +321,13 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     await reset({ k: 1, w: 1 });
     wyn.dysz = await ev(() => { const O = __okruszek, d = [], ys = []; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); const u = O.unoszenie(); d.push(u.dysz); ys.push(u.ekranY); } const kd = d.map((v, i) => i ? Math.abs(v - d[i - 1]) : 0); return { max: Math.max(...d), krokMax: Math.max(...kd), start: d[0], wiersze: O.komorka().wiersz }; });
     chk(wyn.dysz.max >= 4 && wyn.dysz.krokMax <= 2 && wyn.dysz.start === 0, 'dyszki unoszenia przy szybowaniu: uniesienie do ' + r2(wyn.dysz.max) + ' px >= 4, ciągłe (krok <= ' + r2(wyn.dysz.krokMax) + ' px), zero na starcie', JSON.stringify(wyn.dysz));
-    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60); await reset({ k: 1, w: 1 });
+    const aktywna = await ev(() => { const O = __okruszek; for (let i = 0; i < 600; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); if (O.unoszenie().dysz >= 4) return O.unoszenie().dysz; } return 0; });
+    await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches && __okruszek.czucie().reducedMotion);
+    const przerwana = await ev(() => { const O = __okruszek; const przed = O.unoszenie(); O.kadr19(0); return { przed, po: O.unoszenie() }; });
+    chk(aktywna >= 4 && przerwana.przed.dysz === 0 && przerwana.po.dysz === 0 && przerwana.po.dyszK === 0, 'zmiana reduced-motion podczas aktywnej dyszki zeruje ją od razu, także bez kroku symulacji', JSON.stringify({ aktywna, przerwana }));
+    await reset({ k: 1, w: 1 });
     const DR = await ev(() => { const O = __okruszek; let m = 0; for (let i = 0; i < 300; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); m = Math.max(m, O.unoszenie().dysz); } return m; });
-    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches); await sleep(60);
+    await pg.emulateMedia({ reducedMotion: 'no-preference' }); await pg.waitForFunction(() => !matchMedia('(prefers-reduced-motion: reduce)').matches && !__okruszek.czucie().reducedMotion); await sleep(60);
     chk(DR === 0, 'reduced-motion: bez dyszek (' + DR + ')');
 
     /* ---------- (h) zrzuty ---------- */
@@ -338,7 +344,7 @@ const ZAPIS = { v: 1, bramy: [1, 2, 3, 4, 5, 6], najdalej: 0, najdluzszy: 0, kra
     for (const pora of ['dzien', 'noc']) { await reset({ pora, L: 0, k: 0, w: 2 }); await pg.screenshot({ path: path.join(dir, 'cien-' + pora + '.png') }); }
     await reset({ k: 1, w: 2, s: 0.1 });
     for (let i = 0; i < 4; i++) { await ev((i) => { const O = __okruszek; if (i === 0) { O.stuknij(); O.torSymuluj(0.35); O.stuknij(); } for (let k = 0; k < 9; k++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); } }, i); await pg.screenshot({ path: path.join(dir, 'wznoszenie-' + i + '.png'), clip: { x: 0, y: 380, width: 390, height: 340 } }); }
-    const cpu = await ev(() => { const O = __okruszek; O.panel(false); O.pauza(true); O.brama(1); O.odblokuj(); O.nowyBieg(); O.ustawPoziom(2); O.idz(1, 1, true); const r = {}; for (const on of [true, false]) { O.drogi(on); O.zerujCpu(); for (let i = 0; i < 90; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); } r[on ? 'z' : 'bez'] = O.cpu(); } O.drogi(true); return r; });
+    const cpu = await ev(() => { const O = __okruszek; O.panel(false); O.pauza(true); O.brama(1); O.odblokuj(); O.nowyBieg(); O.pauza(true); O.pomiarKadru19(0); O.ustawPoziom(2); O.idz(1, 1, true); const r = {}; for (const on of [true, false]) { O.drogi(on); O.zerujCpu(); for (let i = 0; i < 90; i++) { O.torSymuluj(1 / 60); O.kadr19(1 / 60); } r[on ? 'z' : 'bez'] = O.cpu(); } O.drogi(true); return r; });
     info('czas rysowania klatki (ms, 90 klatek, headless bez GPU, to NIE jest pomiar telefonu): z drogami p50 ' + cpu.z.p50 + ' / p95 ' + cpu.z.p95 + ', bez dróg p50 ' + cpu.bez.p50 + ' / p95 ' + cpu.bez.p95);
     chk(cpu.z.p50 <= cpu.bez.p50 + 4, 'drogi nie dokładają więcej niż 4 ms do mediany czasu rysowania (' + cpu.z.p50 + ' wobec ' + cpu.bez.p50 + ' ms)');
     fs.writeFileSync(path.join(dir, 'pomiary.json'), JSON.stringify(wyn, null, 1));

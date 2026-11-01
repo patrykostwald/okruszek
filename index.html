@@ -1159,7 +1159,14 @@ Słońce obiecało wrócić rano.</p>
   var nightK = 0, PAL = {}, ST = { g: 0, p: 0, w: 0, f: 0 }, hueW = [], odcieni = 0;
   var stumbleT = 0, fogT = 0, windDX = 0, gradHit = 0, mglaHit = 0, burzaHit = 0, latHit = 0, stadoHit = 0, flashK = 0, boltT = 0, dbgL = [], predLog = { jastrzab: [], sowa: [] };
   var nextEv = {}, lastBR = -99, lastNew = -99, ruchMedia19 = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)'), reduce = !!(ruchMedia19 && ruchMedia19.matches);
-  if (ruchMedia19 && ruchMedia19.addEventListener) ruchMedia19.addEventListener('change', function (e) { reduce = e.matches; });
+  function zmianaRuchu19() {
+    reduce = !!(ruchMedia19 && ruchMedia19.matches);
+    if (reduce) szybT = dyszT = dyszFaza = dyszAmp = dyszK = dyszPx = 0;
+  }
+  if (ruchMedia19) {
+    if (ruchMedia19.addEventListener) ruchMedia19.addEventListener('change', zmianaRuchu19);
+    else if (ruchMedia19.addListener) ruchMedia19.addListener(zmianaRuchu19);
+  }
   var dts = [], DTN = 240, lowTimer = 0, cpuMs = [];
   var elWynik = document.getElementById('wynik'), elM = document.getElementById('w-m'), elRek = document.getElementById('w-rek'), elJeszcze = document.getElementById('jeszcze');
   var elEt = document.getElementById('w-et'), elLin = document.getElementById('w-lin');
@@ -2974,6 +2981,7 @@ Słońce obiecało wrócić rano.</p>
 
   var items = [];
   function render(dt) {
+    zmianaRuchu19();   /* preferencja obowiązuje także przed dostarczeniem zdarzenia change */
     var qd, k, j, hold = isHold() && state === 'gra', nk = nightK, hy = hyK, f4 = sm((sk - 0.78) / 0.15);
     var c0z = performance.now();   /* Z4: czas rysowania świata (hak cpu()) */
     if (TORON) torPrzedRysowaniem(dt);   /* Z14: ptaszek na wysokości swojego wiersza (BIRDY), skrzydła wg akcji */
@@ -3023,7 +3031,7 @@ Słońce obiecało wrócić rano.</p>
     ctx.fillStyle = gr; ctx.fillRect(-70, HORIZON + seaDY - 26, W + 140, 66);
     /* kulisy, prądy i przeszkody (jeszcze za ptaszkiem) w jednej kolejności od tyłu do przodu */
     if (TORON && !introOn && TOR_SIATKA && !DBG.torSzyny) drawTorSzyny();   /* Z17: szyny tylko z ?siatka=1 */   /* Z14: szyny toru w perspektywie (za plastrami i kulisami) */
-    if (TORON && !introOn && !TOR_SIATKA && !DBG.torDrogi && ZAP.drogi !== 0) drawTorDrogi(0);   /* Z21 (19.2): pas górny i drogi nad horyzontem (za przedmiotami toru: przeszkody zostają czytelne) */
+    if (TORON && !introOn && !TOR_SIATKA && !DBG.torDrogi && ZAP.drogi !== 0) drawTorDrogi(0, dt);   /* Z21 (19.2): pas górny i drogi nad horyzontem (za przedmiotami toru: przeszkody zostają czytelne) */
     var pi = 0, it;
     items.length = 0;
     for (k = 0; k < prady.length; k++) items.push(prady[k]);
@@ -3046,7 +3054,7 @@ Słońce obiecało wrócić rano.</p>
     while (pi < items.length) { it = items[pi++]; drawItem(it, false); }
     if (!DBG.motes) drawMotes();
     drawSwitZ11(cSky);   /* Z11: świt: słońce za plecami, poświata od kamery */
-    if (TORON && !introOn && !TOR_SIATKA && !DBG.torDrogi && ZAP.drogi !== 0) drawTorDrogi(1);   /* Z21 (19.2): pas dolny i drogi na morzu chmur (nad morzem, pod przedmiotami bliskiego dołu i ptaszkiem) */
+    if (TORON && !introOn && !TOR_SIATKA && !DBG.torDrogi && ZAP.drogi !== 0) drawTorDrogi(1, dt);   /* Z21 (19.2): pas dolny i drogi na morzu chmur (nad morzem, pod przedmiotami bliskiego dołu i ptaszkiem) */
     if (TORON && !introOn && !DBG.torPl) torDolRysuj19(); // Bliski dolny wiersz ponad dekoracyjnym morzem chmur.
     if (TORON && !introOn && !DBG.torPtak) drawTorNaPtaku();   /* Z14: komórka Okruszka, zebrany wzlot, atak drapieżnika, trasa wiatru */
 
@@ -3161,7 +3169,7 @@ Słońce obiecało wrócić rano.</p>
     else if (!paused) skV += (sk - skV) * (1 - Math.exp(-dt * tempo / Z15_TAU));
     return skV;
   }
-  var renderBledy = {};
+  var renderBledy = {}, pomiarKadru19 = false;
   function frame(now) {
     var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)), k, j, tf0 = performance.now(); last = now; frames++;
     dts.push(dt); if (dts.length > DTN) dts.shift();
@@ -3172,7 +3180,7 @@ Słońce obiecało wrócić rano.</p>
       for (k = 0; k < n; k++) sim(dtg / n);
     }
     var skLogika = sk; sk = skWidok(dt);
-    try { render(dt); } catch (eR) { if (ctx.reset) ctx.reset(); ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; if (!renderBledy[String(eR)]) { renderBledy[String(eR)] = 1; setTimeout(function () { throw eR; }, 0); } }   /* Z17: błąd rysowania nie zatrzymuje pętli klatek (zgłoszony raz, widoczny w konsoli i w testach) */
+    try { if (!(TEST && paused && pomiarKadru19)) render(dt); } catch (eR) { if (ctx.reset) ctx.reset(); ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; if (!renderBledy[String(eR)]) { renderBledy[String(eR)] = 1; setTimeout(function () { throw eR; }, 0); } }   /* Z17: błąd rysowania nie zatrzymuje pętli klatek (zgłoszony raz, widoczny w konsoli i w testach) */
     sk = skLogika;   /* Z15: rysowanie z wygładzonym etapem koloru */
     dzwiekKlatka();   /* Z5: prędkość i nurkowanie do dźwięku, tanio, raz na klatkę */
     if (TEST) { k = performance.now() - tf0; ftAll.push(k); if (ftAll.length > 600) ftAll.shift(); if (kurt && !kurt.scena) { kurtFt.push(k); if (kurtFt.length > 2000) kurtFt.shift(); } }   /* Z10: czas pracy klatki (ogółem i przy bramie) */
@@ -5533,6 +5541,7 @@ Słońce obiecało wrócić rano.</p>
     var up = yF < yV - 1e-5, tauV = up ? (torPrzerzut > 0 ? TOR.WIND_TAU_UP : TOR.Y_TAU_UP) : 0.045;
     yV += (yF - yV) * (1 - Math.exp(-dt / tauV));
     /* dyszki unoszenia: w szybowaniu (bez nurkowania, przerzutu, machnięcia od DYSZ_PO s, poza nadchmurzem) co DYSZ_CO s łagodne uniesienie; amplituda wchodzi i gaśnie płynnie */
+    zmianaRuchu19();
     var szyb = state === 'gra' && !torNurk && !diving && torPrzerzut <= 0 && gameT - lastBeatT > TOR.DYSZ_PO && !torNadch(TR) && !reduce;
     szybT = szyb ? szybT + dt : 0;
     if (szyb && dyszFaza <= 0) { dyszT += dt; if (dyszT >= TOR.DYSZ_CO) { dyszT = 0; dyszFaza = 1e-3; } }
@@ -5960,7 +5969,7 @@ Słońce obiecało wrócić rano.</p>
     var u, f, dl = 0, dr = 0, A, sw;
     torGeom();
     if (introOn) { BIRDY = BIRDY0; TORW = null; return; }
-    BIRDY = torRowSY(yV) - (reduce ? 0 : anty19 * 12) - dyszPx;   /* Z21: rysowana wysokość (unoszenie) i dyszka */
+    BIRDY = torRowSY(yV) - (reduce ? 0 : anty19 * 12 + dyszPx);   /* Z21: rysowana wysokość (unoszenie) i dyszka */
     var wi19 = czucie19.wejscia[czucie19.wejscia.length - 1]; if (wi19 && wi19.klatka === null && dt > 0) wi19.klatka = performance.now();
     if (state !== 'gra') { TORW = null; return; }
     sw = reduce ? 0.4 : 1;
@@ -5984,7 +5993,7 @@ Słońce obiecało wrócić rano.</p>
       if (przewrotDir > 0) { dr = Math.max(dr, 0.9 * lead); dl = Math.max(dl, 0.45 * trail); } else { dl = Math.max(dl, 0.9 * lead); dr = Math.max(dr, 0.45 * trail); }
       f = Math.min(f, -0.55 + 0.35 * rk);
     }
-    if (dyszK > 0 && !(torNurk || diving)) f -= 0.1 * dyszK * sw;   /* Z21 (19.3): dyszka: skrzydła lekko uniesione */
+    if (!reduce && dyszK > 0 && !(torNurk || diving)) f -= 0.1 * dyszK * sw;   /* Z21 (19.3): dyszka: skrzydła lekko uniesione */
     TORW = { f: f, dl: dl, dr: dr, obrot: rl, obrotK: rk, obrotDir: przewrotDir };
   }
   /* szyny: miękka siatka torów w perspektywie (jasne wstęgi lecące w głąb), z płynącym światłem */
@@ -6030,9 +6039,9 @@ Słońce obiecało wrócić rano.</p>
   function cienPoSwiatle19() {
     if (!TORON || introOn || DBG.torCien || !torCienMac19 || (state !== 'gra' && state !== 'ladowanie')) return;
     ctx.save(); ctx.setTransform(torCienMac19); var X = torSX(xF, G.ZB), Y = torCienY(yV), k = torCienK(yV);   /* Z21: cień pod rysowaną wysokością */
-    // W hiperze rozkwit rozjaśnia również noc: rdzeń ponownie ciemny, poza nim jasny półcień.
-    var jasny = PAL.nightW > 0.35 && lvl < 4;
-    torCien(X, Y, k * 1.35, 0.9, jasny ? [69, 58, 106] : [242, 237, 255]); torCien(X, Y, k, 0.98, jasny ? [250, 242, 255] : [25, 19, 55], true); ctx.restore();
+    /* Morze chmur ma jasne płaty także nocą: jasny rdzeń zanikał na nich poniżej 2:1.
+       Ciemny rdzeń i miękki jasny półcień pozostają czytelne w obu porach i w hiperze. */
+    torCien(X, Y, k * 1.35, 0.9, [242, 237, 255]); torCien(X, Y, k, 0.98, [25, 19, 55], true); ctx.restore();
   }
   function torCienY(r) { return H * lerp(CIEN17.Y0, CIEN17.Y1, TOR.ROWS > 1 ? r / (TOR.ROWS - 1) : 1); }
   function torCienK(r) { return 0.72 + 0.28 * (TOR.ROWS > 1 ? r / (TOR.ROWS - 1) : 1); }
@@ -6179,8 +6188,8 @@ Słońce obiecało wrócić rano.</p>
     x.putImageData(img, 0, 0); drogiSpr = c; return c;
   }
   function drogiAlfaCel(c, r) { var dc = Math.abs(c - TC), dr = Math.abs(r - TR); return (!dc && !dr) ? DROGI21.A_PTAK : (dc <= 1 && dr <= 1 ? DROGI21.A_SASIAD : DROGI21.A); }
-  function drawTorDrogi(faza) {   /* faza 0 = przed przedmiotami toru (niebo: pas górny, wiersze nad horyzontem), 1 = po nich (morze: pas dolny, wiersze nad morzem) */
-    var v = torVPY(), L = DROGI21.L, spr, col, k, c, r, dy, xc, half, sL, sR, m, A, B, e0, chS = torCH / G.ZB, gr, dtf = Math.min(0.05, dts.length ? dts[dts.length - 1] : 0.016), kA = 1 - Math.exp(-dtf / DROGI21.TAU);
+  function drawTorDrogi(faza, dt) {   /* faza 0 = przed przedmiotami toru (niebo: pas górny, wiersze nad horyzontem), 1 = po nich (morze: pas dolny, wiersze nad morzem) */
+    var v = torVPY(), L = DROGI21.L, spr, col, k, c, r, dy, xc, half, sL, sR, m, A, B, e0, chS = torCH / G.ZB, gr, dtf = Math.min(0.05, dt), kA = 1 - Math.exp(-dtf / DROGI21.TAU);
     if (state !== 'gra' && state !== 'ladowanie') return;
     if (!faza) for (k = 0; k < TOR.COLS * TOR.ROWS; k++) { if (drogiA[k] === undefined) drogiA[k] = drogiAlfaCel(k % TOR.COLS, Math.floor(k / TOR.COLS)); else drogiA[k] += (drogiAlfaCel(k % TOR.COLS, Math.floor(k / TOR.COLS)) - drogiA[k]) * kA; }
     ctx.save();
@@ -6206,7 +6215,7 @@ Słońce obiecało wrócić rano.</p>
       for (c = 0; c < TOR.COLS; c++) {
         xc = torKX(c) - camX; sL = (xc - half) / G.ZB / dy; sR = (xc + half) / G.ZB / dy; A = (sR - sL) * m / 2; B = (sR + sL) * m / 2;
         pulsA = drogiA[c + r * TOR.COLS] * (reduce ? 1 : 0.92 + 0.08 * Math.sin(t * 0.9 + c * 2.1 + r * 1.3)) * (1 - (1 - DROGI21.NOC) * nW);
-        aS = pulsA * (naMorzu ? Math.max(nW, 0.35) : 1); aC = naMorzu ? Math.min(DROGI21.CIEN_MAX, pulsA * DROGI21.CIEN) * (1 - nW) : 0;
+        aS = pulsA * (naMorzu ? nW : 1); aC = naMorzu ? Math.min(DROGI21.CIEN_MAX, pulsA * DROGI21.CIEN) * (1 - nW) : 0;
         ctx.save(); ctx.transform(A, 0, B, m, W / 2, v);
         if (aS > 0.004) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = Math.min(1, aS); ctx.drawImage(spr, -L, 0); }
         if (aC > 0.004) { ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = Math.min(1, aC); ctx.drawImage(sprC, -L, 0); }
@@ -6749,8 +6758,11 @@ Słońce obiecało wrócić rano.</p>
       }
       function komorka() { return { kol: TC, wiersz: TR, x: xF, y: yF, yV: yV, dysz: dyszPx, cel: torYCel(), p: torP, wzlot: torLift, koszt: TR > 0 ? torKoszt(TR - 1) : 0, nurkuje: torNurk, nurkowanie: diving, przerzut: torPrzerzut > 0, h: h, COLS: TOR.COLS, ROWS: TOR.ROWS, ekranX: torSX(xF, G.ZB), ekranY: torRowSY(yF), idealnie: torIdealne() }; }
       function plaster(pl) { return { id: pl.id, z: pl.z, eta: (pl.z - G.ZB) / Math.max(0.3, curSpeed), wz: pl.wz, faza: pl.faza, siatka: pl.g.slice(), puste: pl.puste, kontakt: pl.kontakt }; }
-      O.kadr19 = function (dt) { if (dt) t += dt; var p = paused; paused = false; try { render(1 / 60); } finally { paused = p; } };
-      O.czucie = function () { return JSON.parse(JSON.stringify({ kanaly: czucie19.kanaly, wejscia: czucie19.wejscia, kamera: kamera19(), blyskBurzy: blyskBurzy19(), blyskEkranu: !reduce && flashK > 0.02, os: os19(TC, TR), nauka: !ZAP.naukaTor, wibracje: ZAP.dz.v !== 0 })); };
+      /* Pomiary A/B: stały czas i droga morza, bez klatek RAF podczas pauzy.
+         kadr19(0) przerysowuje ten sam stan; dodatnie dt przesuwa animację. */
+      O.pomiarKadru19 = function (czas, droga) { pomiarKadru19 = true; t = czas || 0; seaD = droga || 0; };
+      O.kadr19 = function (dt) { if (dt) t += dt; var p = paused; paused = false; try { render(dt === undefined ? 1 / 60 : dt); } finally { paused = p; } };
+      O.czucie = function () { return JSON.parse(JSON.stringify({ reducedMotion: reduce, kanaly: czucie19.kanaly, wejscia: czucie19.wejscia, kamera: kamera19(), blyskBurzy: blyskBurzy19(), blyskEkranu: !reduce && flashK > 0.02, os: os19(TC, TR), nauka: !ZAP.naukaTor, wibracje: ZAP.dz.v !== 0 })); };
       O.komorka = komorka;
       O.idz = function (k, w, skok) {
         k = torKl(Math.round(k), TOR.COLS); w = torKl(Math.round(w), TOR.ROWS);
