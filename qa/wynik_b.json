@@ -1,0 +1,243 @@
+{
+ "B1_osiem_kierunkow_ze_srodka": {
+  "P": "k2w1 mach0",
+  "L": "k0w1 mach0",
+  "D": "k1w2 mach0",
+  "G": "k1w1 mach1",
+  "PG": "k2w1 mach1",
+  "LG": "k0w1 mach1",
+  "PD": "k2w2 mach0",
+  "LD": "k0w2 mach0"
+ },
+ "B1_stukniec_na_wiersz_gora_rytm": 9,
+ "B1_stukniec_dol_do_srodka_rytm": 2,
+ "B1_stukniec_dol_do_srodka_spam": 3,
+ "B1_szybowanie_wiersz_w_dol_po_s": 3.149,
+ "B1_nurkowanie_przytrzymanie_0_8s": {
+  "wiersze_co_100ms": [
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   2,
+   2
+  ],
+  "po_puszczeniu": "w1",
+  "wybicia": 1
+ },
+ "B1_kciuk_lezy_0_3s_potem_w_bok": {
+  "kol": 2,
+  "w": 1,
+  "nurk": false,
+  "uwaga": "skręt"
+ },
+ "B1_opoznienie_ms_stan": {
+  "przesuniecie": [
+   4
+  ],
+  "stukniecie_od_puszczenia": [
+   9
+  ],
+  "uwaga": "machnięcie liczy się przy puszczeniu palca; nurkowanie po HOLD_T 0,2 s; ruch obrazu 95% w ok. 0,2 s (MOVE_TAU 0,065)"
+ },
+ "B1_czulosc_ruch_30px_kolumna": {
+  "1": 1,
+  "0.5": 1,
+  "1.5": 2
+ },
+ "B1_duch_palca": {
+  "trzyma_przed": true,
+  "palce_przed": 1,
+  "po_cancel_nurk": false,
+  "palce_po": 0,
+  "nowy_palec_palce": 0
+ },
+ "B1_blur_w_trakcie": {
+  "nurk": false,
+  "palce": 0
+ },
+ "B1_dwa_trzy_palce": {
+  "dwa": {
+   "nurk": true,
+   "palce": 2
+  },
+  "trzy": {
+   "nurk": true,
+   "palce": 3
+  },
+  "po": {
+   "nurk": false,
+   "palce": 0
+  }
+ },
+ "B2_ruchy": {
+  "lewe": "k0w1 mach1 wyb0",
+  "prawe": "k2w1 mach1 wyb0",
+  "oba": "k1w1 mach1 wyb0",
+  "oba_30ms_rozjazd": "k1w1 mach1 wyb0",
+  "oba_120ms_rozjazd": "k2w1 mach1 wyb0",
+  "przytrzymaj_oba": "k1w0 mach0 wyb1",
+  "przytrzymaj_lewy": "k0w1 mach0 wyb0",
+  "oba_x4": "k1w1 mach4 wyb0"
+ },
+ "B2_opoznienie_ms_stan_lewe": [
+  9
+ ],
+ "B2_lewe_potem_prawe_z_dolu": {
+  "kol": 1,
+  "w": 1,
+  "p": 0.04,
+  "lift": 0,
+  "nurk": false,
+  "mach": 2,
+  "wzloty": 1,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_osiem_kierunkow_drazek": {
+  "P": "k2w1 mach0",
+  "L": "k0w1 mach0",
+  "D": "k1w2 mach0",
+  "G": "k1w1 mach1",
+  "PG": "k2w1 mach1",
+  "LG": "k0w1 mach1",
+  "PD": "k2w2 mach0",
+  "LD": "k0w2 mach0"
+ },
+ "B3_drazek_trzymany_1_2s_w_prawo": {
+  "kol": 2,
+  "w": 1,
+  "p": 0.32,
+  "lift": 0,
+  "nurk": false,
+  "mach": 0,
+  "wzloty": 0,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_stuk_prawa_polowa": {
+  "kol": 1,
+  "w": 1,
+  "p": 0.04,
+  "lift": 1,
+  "nurk": false,
+  "mach": 1,
+  "wzloty": 0,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_przytrzymaj_prawa": {
+  "kol": 1,
+  "w": 0,
+  "p": 0.05,
+  "lift": 0,
+  "nurk": false,
+  "mach": 0,
+  "wzloty": 0,
+  "wybicia": 1,
+  "nurkowania": 1,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_drazek_plus_stuk_prawa": {
+  "kol": 2,
+  "w": 1,
+  "p": 0.05,
+  "lift": 1,
+  "nurk": false,
+  "mach": 1,
+  "wzloty": 0,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_wychylenie_30px": {
+  "kol": 1,
+  "w": 1,
+  "p": 0.12,
+  "lift": 0,
+  "nurk": false,
+  "mach": 0,
+  "wzloty": 0,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_drazek_krawedz_lewo": {
+  "kol": 0,
+  "w": 1,
+  "p": 0.1,
+  "lift": 0,
+  "nurk": false,
+  "mach": 0,
+  "wzloty": 0,
+  "wybicia": 0,
+  "nurkowania": 0,
+  "palce": 0,
+  "tryb": "gra"
+ },
+ "B3_drazek_geometria": {
+  "jest": false,
+  "widocznosc": 0.7917442678665286,
+  "bx": 56,
+  "by": 789,
+  "kx": 4,
+  "ky": 800.2272727191448,
+  "wychylenie": 0,
+  "promien": 70,
+  "srednica": 140
+ },
+ "B_zmiana_trybu_z_palcem": {
+  "po_zmianie": {
+   "kol": 1,
+   "w": 1,
+   "p": 0.02,
+   "lift": 0,
+   "nurk": false,
+   "mach": 0,
+   "wzloty": 0,
+   "wybicia": 1,
+   "nurkowania": 1,
+   "palce": 0,
+   "tryb": "gra"
+  },
+  "po_puszczeniu": {
+   "kol": 1,
+   "w": 1,
+   "p": 0.06,
+   "lift": 0,
+   "nurk": false,
+   "mach": 0,
+   "wzloty": 0,
+   "wybicia": 1,
+   "nurkowania": 1,
+   "palce": 0,
+   "tryb": "gra"
+  },
+  "tryb": 3
+ },
+ "B_klawisz_T": {
+  "tryb": 2,
+  "ls": "{\"v\":1,\"m\":2,\"c\":1}"
+ },
+ "B_klawiatura": {
+  "prawo": "k2w1 mach0",
+  "lewo": "k0w1 mach0",
+  "dol": "k1w2 mach0",
+  "gora": "k1w1 mach1",
+  "nurk_S": "w0 wyb1"
+ },
+ "B_bledy": [
+  "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently"
+ ]
+}

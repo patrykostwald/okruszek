@@ -1,0 +1,212 @@
+{
+ "K1": {
+  "L0": {
+   "czas": 411.5,
+   "wiatryMin": 22.3,
+   "przeszkodyMin": 12.7,
+   "s2Min": 0.58,
+   "puste": 0,
+   "celW": 8.25,
+   "celP": 4.5
+  },
+  "L1": {
+   "czas": 271,
+   "wiatryMin": 25.2,
+   "przeszkodyMin": 14.4,
+   "s2Min": 0.22,
+   "puste": 0,
+   "celW": 12,
+   "celP": 9
+  },
+  "L2": {
+   "czas": 106.5,
+   "wiatryMin": 28.7,
+   "przeszkodyMin": 18.6,
+   "s2Min": 1.13,
+   "puste": 0,
+   "celW": 16.5,
+   "celP": 15.75
+  },
+  "L4": {
+   "czas": 35,
+   "wiatryMin": 15.4,
+   "przeszkodyMin": 20.6,
+   "s2Min": 1.71,
+   "puste": 0,
+   "celW": 18.75,
+   "celP": 32.25
+  }
+ },
+ "K2": {
+  "L0": {
+   "czas": 365,
+   "wiatryMin": 23,
+   "przeszkodyMin": 13,
+   "s2Min": 0.82,
+   "puste": 0,
+   "celW": 9.75,
+   "celP": 6.75
+  },
+  "L1": {
+   "czas": 219,
+   "wiatryMin": 20,
+   "przeszkodyMin": 24.4,
+   "s2Min": 1.64,
+   "puste": 0,
+   "celW": 13.5,
+   "celP": 12.75
+  },
+  "L2": {
+   "czas": 85,
+   "wiatryMin": 22.6,
+   "przeszkodyMin": 33.9,
+   "s2Min": 2.12,
+   "puste": 0,
+   "celW": 18,
+   "celP": 21
+  },
+  "L3": {
+   "czas": 21,
+   "wiatryMin": 11.4,
+   "przeszkodyMin": 22.9,
+   "s2Min": 2.86,
+   "puste": 0,
+   "celW": 20.25,
+   "celP": 31.5
+  },
+  "L4": {
+   "czas": 20.5,
+   "wiatryMin": 8.8,
+   "przeszkodyMin": 26.3,
+   "s2Min": 0,
+   "puste": 0,
+   "celW": 20.25,
+   "celP": 42
+  }
+ },
+ "K3": {
+  "L0": {
+   "czas": 464.5,
+   "wiatryMin": 24.8,
+   "przeszkodyMin": 12.7,
+   "s2Min": 0.65,
+   "puste": 0,
+   "celW": 11.25,
+   "celP": 9.75
+  },
+  "L1": {
+   "czas": 268.5,
+   "wiatryMin": 18.8,
+   "przeszkodyMin": 23.7,
+   "s2Min": 1.34,
+   "puste": 0,
+   "celW": 15.75,
+   "celP": 17.25
+  },
+  "L2": {
+   "czas": 88.5,
+   "wiatryMin": 20.3,
+   "przeszkodyMin": 33.2,
+   "s2Min": 1.36,
+   "puste": 0,
+   "celW": 20.25,
+   "celP": 27.75
+  }
+ },
+ "K4": {
+  "L0": {
+   "czas": 515,
+   "wiatryMin": 21.4,
+   "przeszkodyMin": 15.4,
+   "s2Min": 0.93,
+   "puste": 0,
+   "celW": 12,
+   "celP": 11.25
+  },
+  "L1": {
+   "czas": 224.5,
+   "wiatryMin": 20,
+   "przeszkodyMin": 28.9,
+   "s2Min": 2.67,
+   "puste": 0,
+   "celW": 16.5,
+   "celP": 19.5
+  },
+  "L2": {
+   "czas": 75,
+   "wiatryMin": 19.2,
+   "przeszkodyMin": 36,
+   "s2Min": 0.8,
+   "puste": 0,
+   "celW": 21,
+   "celP": 31.5
+  }
+ },
+ "K5": {
+  "L0": {
+   "czas": 442,
+   "wiatryMin": 22.9,
+   "przeszkodyMin": 20.9,
+   "s2Min": 3.26,
+   "puste": 0,
+   "celW": 12.75,
+   "celP": 12.75
+  },
+  "L1": {
+   "czas": 276.5,
+   "wiatryMin": 25.2,
+   "przeszkodyMin": 28.2,
+   "s2Min": 3.91,
+   "puste": 0,
+   "celW": 17.25,
+   "celP": 22.5
+  },
+  "L2": {
+   "czas": 76.5,
+   "wiatryMin": 26.7,
+   "przeszkodyMin": 26.7,
+   "s2Min": 6.27,
+   "puste": 0,
+   "celW": 22.5,
+   "celP": 36.75
+  },
+  "L4": {
+   "czas": 31,
+   "wiatryMin": 17.4,
+   "przeszkodyMin": 31,
+   "s2Min": 7.74,
+   "puste": 0,
+   "celW": 21.75,
+   "celP": 69.75
+  }
+ },
+ "K6": {
+  "L0": {
+   "czas": 501.5,
+   "wiatryMin": 23.3,
+   "przeszkodyMin": 21.5,
+   "s2Min": 3.95,
+   "puste": 0,
+   "celW": 13.5,
+   "celP": 15
+  },
+  "L1": {
+   "czas": 214,
+   "wiatryMin": 18.2,
+   "przeszkodyMin": 36.4,
+   "s2Min": 4.77,
+   "puste": 0,
+   "celW": 17.25,
+   "celP": 25.5
+  },
+  "L2": {
+   "czas": 94,
+   "wiatryMin": 21.7,
+   "przeszkodyMin": 44,
+   "s2Min": 8.94,
+   "puste": 0,
+   "celW": 23.25,
+   "celP": 41.25
+  }
+ }
+}

@@ -1,0 +1,96 @@
+TEST Z3b C:\Users\User\Desktop\projekty\gra-okruszek-Z11\index.html (tempo botów x4)
+  info stałe: {"SINK":0.04,"DIVE":0.2,"ZOOM":0.12,"PRAD_H":0.55,"PRAD_S":0.24,"CH_STEP":0.5,"CHAIN_W":2.2,"DIVE_TOP":0.5,"GATE4":3,"CAP4":0.79,"GATE5":5,"CAP5":0.93,"HY_S":0.95,"HY_HOLD":2,"HY_LEN":6,"H0":0.8,"ZB":0.7,"HIT":72,"HITB":30,"HITR":95,"WET":5,"SPIN":1,"HAW_WARN":2,"HAW_CHASE":10,"HAW_FIRST":120,"HAW_S":0.7,"OBS_FROM":20,"WARN":2,"WIND_LEN":4,"HAIL_LEN":2.2,"HAIL_H":0.12,"FOG_LEN":3.5,"E_POJEDYNCZY":0.3,"E_DWA":0.62,"E_TRZY":1,"E_NURK":0.4,"HIT_IDEAL":34,"HIT_IDEAL_UCZ":54,"EDGE_K":0.5,"GRACE_E":1.3,"FALL_E":0.35,"E_UP":3,"BLOOM_T":1.2,"ZIG":0.16,"E_SK":[[0,0],[0.3,0.5],[0.62,0.7],[1,1]]}
+  ok   hak Z3b kompletny (22 funkcji)
+(a) poziomy L0-L5 i wskaźnik
+  ok   progi: s=0,05 -> L0, 0,2 -> L1, 0,4 -> L2, 0,7 -> L3, 0,85 -> L4 ({"0.05":0,"0.2":1,"0.4":2,"0.7":3,"0.85":4})
+  ok   ustawPoziom(5) -> poziom 5 i hiperprzestrzeń
+  ok   wskaźnik poziomu w stałej strefie wypełnia się z poziomem (suma wypełnienia stopni L0..L4: 0.27, 1.50, 2.48, 3.50, 4.53; pasek widoczny na pikselach, różnica od tła L0..L4: 84, 131, 116, 156, 227)
+  ok   komunikat przy wejściu na poziom: "Kolor", po ok. 2 s znika ("")
+(b) trudność: boty (czas gry 60 s, tempo x4)
+  info bot idealny: koniec 150.02 s gry, tryb gra, wlotów 60, maks. poziom 4, pierwsze wejścia na poziomy (s gry) 0.02/1.22/2.10/5.80/25.92/-1.00, czas w poziomach 2.90/14.01/59.43/63.25/10.44/0.00, hiper razy 0, L5 bez łańcucha 0
+  ok   bot idealny osiąga L4 w 25.92 s czasu gry (<= 60)
+  ok   bot idealny: L5 nigdy bez łańcucha >= 5 prądów w 12 s (L5 trwało 0.00 s, razy 0)
+  ok   bot idealny: L4 trwa 10.44 s i L5 0.00 s z 150.02 s (rzadkość: 7% biegu na L4-L5)
+  ok   bot idealny: każde L5 trwało ok. 6 s (; razy 0)
+  info średniak A (co drugi prąd): maks. poziom 2, wlotów 10, koniec 60.12 s; B (losowo 50%): 3, wlotów 4, 38.18 s; C (50% i nurkuje jak idealny): 3, wlotów 5, 42.80 s
+  ok   średniak A (50% prądów): szczyt L2 (cel L2-L3)
+  ok   średniak B (losowe 50%): szczyt L3 (cel L2-L3)
+  ok   średniak C (50% prądów i nurkowanie jak idealny): bez L5 (szczyt L3)
+  info losowy A: maks. poziom 2 (4.10 s), losowy B: 2 (4.09 s), bierny: 0 (20.02 s)
+  ok   bot losowy nigdy nie osiąga L4 (szczyty L2, L2)
+  ok   bot bierny: szczyt L0 i lądowanie po 20.02 s
+(c) hiperprzestrzeń (L5)
+  info łańcuch 6: maks. s 1.00, hiper razy 1, czasy ["6.03"]
+  ok   łańcuch 6 prądów + nurkowanie: wchodzi L5 (przy 6 prądach w 12 s, s=1.00)
+  ok   L5 trwa 6.03 s (cel ok. 6) i wygasa
+  ok   po wygaśnięciu poziom wraca poniżej L5 (L2)
+  info łańcuch 4: maks. s 0.93, maks. poziom 4, hiper razy 0
+  ok   łańcuch tylko 4 prądów + nurkowanie: brak L5 (maks. s 0.93 <= 0.93)
+  info 6 prądów co 3,6 s (zerwany łańcuch): maks. poziom 3, maks. prądów w 12 s 4, hiper 0
+  ok   te same 6 prądów, ale poza oknem łańcucha (3,6 s > 2,2 s): brak L5 i brak L4 (szczyt L3)
+(d) kolor: kolejność, odcienie, etapy
+  ok   kolejność niebo >= daleko >= blisko >= smugi na każdym poziomie i o każdej porze doby (84 próbek: 4 pory x 21 prędkości)
+  ok   narysowane warstwy: kolor nie rośnie od tyłu do przodu w żadnej klatce próbki (84 próbek, 9 warstw każda)
+  ok   L0 (s=0): zero koloru
+  ok   pełny kolor wszędzie dopiero przy s=1
+  ok   przy s=0,8 (początek L4) pełni jeszcze nie ma: {"n":0.834718,"b":0.776227}
+  info liczba odcieni (wagi > 0,5) od s: 0:0 0.1:0 0.2:1 0.3:3 0.4:4 0.5:6 0.6:8 0.7:9 0.8:11 0.9:14 1:14
+  ok   odcienie dochodzą po jednym (nigdy 2 naraz w kroku 0,02), nigdy nie ubywają; w L0 zero (s=0,14: 0)
+  ok   rozciągnięte po L1-L4: s=0,2 -> 1, 0,5 -> 6, 0,9 -> 14 z 14 (czternasty od s=0.9)
+  info nadwyżka chroma / ułamek barwnych pikseli, zachód, L0..L4: 1.9/0.00  2.8/0.04  4.9/0.08  20.9/0.66  38.6/0.90
+  ok   L0: sam kontur (nadwyżka chroma 1.9 < 5, barwnych pikseli 0%)
+  ok   L1: szarości i błękit, nasycenie niskie (nadwyżka 2.8 < 8)
+  ok   nasycenie i liczba barwnych pikseli rosną z poziomem (nadwyżka 2 < 3 < 5 < 21 < 39; barwnych pikseli 0% < 4% < 8% < 66% < 90%)
+  ok   każda pora doby: L0 sam kontur (< 5), L4 pełna paleta (> 10 i o ponad 8 nad L1): noc 2.7/2.1/41.5, swit 0.0/0.4/22.6, dzien 0.1/0.4/53.8, zachod 2.4/3.0/38.4
+  ok   gwiazdy: w nocy widoczne także przy pełnym kolorze (0.95), w dzień przy s=1 gasną (0.00)
+(e) doba w tle
+  info tempo doby (s na dobę): L5 15.0, s=0.1 240.0, s=0.3 240.0, s=0.5 84.4, s=0.7 39.4, s=0.9 36.2
+  ok   tempo doby maleje z poziomem prędkości (strogo dla L0-L2 > L3 > L5)
+  ok   wartości: spokojny lot 240.00 s (cel ok. 240), L3-L4 39.41/36.25 s (cel ok. 40), L5 15.00 s (cel ok. 15)
+  info zmierzony okres doby w czasie gry: spokojny 240 s, s=0,8 37.7 s, L5 15.0 s
+  ok   faktyczny przesuw doby: 240 s (spokojny) > 38 s (L3-L4) > 15 s (L5)
+  info jasność nieba: min 17, maks. 59, największy skok na 0,1% doby (s=0.2): 0.18
+  info jasność nieba: min 49, maks. 162, największy skok na 0,1% doby (s=0.9): 0.50
+  ok   doba płynna: największy skok jasności nieba na 0,1% doby < 3 z 255 (0.50), także na styku noc -> noc
+  info jasność obrazu na klatkach przy L5 (doba 15 s): 1408 klatek, min 100, maks. 190, największy skok między klatkami 3.39
+  ok   obraz: brak skoków jasności między klatkami (max 3.39 < 6) przy pełnej dobie 15 s (rozpiętość 90)
+  info kolejność pór od zachodu: zachod > noc > swit > dzien > zachod > noc
+  ok   doba przechodzi w kolejności zachód > noc > świt > dzień > zachód
+  ok   noc() ustawia porę doby na noc (nocW=1)
+(f) nowe przeszkadzajki
+  ok   zdarzenie('stado') -> true, widoczne w gdzie() (156,522), faza "zapowiedz"
+  ok   stado: zapowiedź trwa 2.33 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   zdarzenie('wiatr') -> true, widoczne w gdzie() (195,296), faza "zapowiedz"
+  ok   wiatr: zapowiedź trwa 2.02 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   zdarzenie('grad') -> true, widoczne w gdzie() (220,296), faza "zapowiedz"
+  ok   grad: zapowiedź trwa 2.00 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   zdarzenie('burza') -> true, widoczne w gdzie() (227,527), faza "zapowiedz"
+  ok   burza: zapowiedź trwa 2.59 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   zdarzenie('latawiec') -> true, widoczne w gdzie() (199,523), faza "zapowiedz"
+  ok   latawiec: zapowiedź trwa 2.32 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   zdarzenie('mgla') -> true, widoczne w gdzie() (232,530), faza "zapowiedz"
+  ok   mgla: zapowiedź trwa 2.21 s czasu gry (>= 2 przy najszybszym locie, s=1)
+  ok   stado na torze: wirowanie i spadek prędkości (0.45 -> 0.09), 1 trafienie
+  ok   stado 300 jedn. obok toru: bez kolizji
+  ok   sznur latawca na torze: potknięcie i utrata prędkości (0.45 -> 0.16)
+  ok   sznur latawca 300 jedn. obok toru: bez kolizji
+  ok   burza: wirowanie i spadek o poziom (L2 -> L1)
+  ok   mgła: spadek o poziom (L2 -> L1) i gaśnięcie koloru (sk 0.08 < 0,7 * s 0.14)
+  ok   wiatr: w zapowiedzi (pierwsze 1,8 s) nic nie znosi, potem znosi w bok o 674 jedn. (ptaszek bez sterowania: bx=674)
+  ok   grad: trafienie = utrata wysokości (pod gradem 0.46, obok 0.70, różnica 0.24, jedno trafienie = 0.12)
+  ok   sowa w dzień: zdarzenie odrzucone (false), brak na scenie
+  ok   sowa o zachodzie: odrzucona
+  ok   sowa w nocy: wymuszalna, zaczyna od zapowiedzi (sam cień)
+  ok   sowa: zapowiedź 2 s z sygnałem (pościg po 2.00 s)
+  ok   sowa: ucieczka prędkością (s=1) działa jak u jastrzębia, bieg trwa
+  ok   sowa złapała: koniec biegu, tekst "KONIEC LOTU 86m Sowa była szybsza. Okruszek wraca jutro. Jeszcze raz"
+(g) harmonogram nowych przeszkód (bieg 125 s czasu gry, tempo x8)
+  info pierwsze pojawienia (s gry), noc: {"ptak":24.896799999905042,"deszcz":31.936799999905205,"wiatr":34.89679999990508,"stado":41.695999999904515,"latawiec":50.49679999990434,"grad":55.29599999990383,"mgla":69.29599999990423,"burza":78.57599999990568,"sowa":120.17679999991246}, spawny: {"ptak":10,"deszcz":6,"jastrzab":0,"sowa":1,"stado":2,"wiatr":2,"grad":1,"burza":1,"latawiec":1,"mgla":1}
+  ok   nowe przeszkody też nie pojawiają się w pierwszych 20 s (próbek z przeszkodą: 0)
+  ok   harmonogram: każda nowa przeszkoda pojawia się po swoim terminie (wiatr 34.90, stado 41.70, latawiec 50.50, grad 55.30, mgła 69.30, burza 78.58)
+  ok   harmonogram: w nocy drapieżnikiem jest sowa (1), nie jastrząb (0)
+  ok   harmonogram: za dnia drapieżnikiem jest jastrząb (1), nigdy sowa (0)
+  info fps (headless bez GPU, 390x844 @1x) L0..L5: 100 / 100 / 100 / 100 / 100 / 100 (to NIE jest pomiar telefonu)
+  ok   klatki headless >= 25 na każdym poziomie (min 100)
+  ok   brak błędów i ostrzeżeń konsoli
+TEST Z3b OK

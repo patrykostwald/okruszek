@@ -1,0 +1,56 @@
+TEST Z11 C:\Users\User\Desktop\projekty\gra-okruszek-Z11\index.html
+(a) hak, KRAINY, teksty, klasy
+  ok   hak Z11 kompletny (19 funkcji)
+  ok   nowy typ prądu w każdej krainie: K2 tęcza księżycowa, K3 komin ciepła, K4 poryw latawcowy, K5 smuga
+  ok   przeszkadzajki: K2 deszcz + grad, K3 szpile + mgła, K4 festiwal latawców + wiatr boczny (częściej niż sznur z Z3b), K5 Wielki przelot + stado
+  ok   finały K1-K5: trzy_w_rytmie, ulewa_i_luk, kanion_wiez, festiwal, przelot_olbrzyma
+  ok   teksty Z11 w teksty.js (23 zdań, każde <= 7 słów; szept świtu i Cioci Gęgawy jak w specyfikacji)
+  ok   klasy: szpile, sznury festiwalu, wiry, ulewa = S1; tęcza i komin = S0; S3 nadal tylko jastrząb, sowa, morze chmur
+(b) każdy element wymuszalny hakiem i widoczny w gdzie()
+  ok   zdarzenie(...) -> true i wpis w gdzie() z położeniem ekranu dla 25 wymuszeń (szpile, komin, latawce, poryw, przelot, smuga, tecza_ks, teczka, rogal, ulewa, festiwal, final, zwiastun)
+  info układy szpil: rzad 5, aleja 6, strzala 5, skos 4, kanion 11; sylwetki wież: 8 (kod rysuje każdą osobno)
+  ok   szpile: wszystkie 8 sylwetek występują w grze (0,1,2,3,4,5,6,7)
+(c) szczeliny, kolizja trzonu, niska wieża, skutki S1
+  ok   szczeliny między trzonami wież i sznurami (240 układów): najmniejsza w szerokościach ptaszka L0-L5 = 2.25 / 2.25 / 2.25 / 1.84 / 1.84 / 1.53 (próg 2,2 / 2,2 / 2,2 / 1,8 / 1,8 / 1,5)
+  ok   kolizja tylko trzonu (60% szerokości rysunku): środek i brzeg trzonu trafiają, 59 j. od osi i w obrębie rysunku (68 j.) nie
+  ok   niska wieża (szczyt 0,45): przelot górą przy h = 0,62 (> szczyt + 0,1) bez kolizji, przy h = 0,5 uderzenie
+  ok   uderzenie w wieżę = S1 (s 0.42 -> 0.34, spadek <= 0,1; wirowanie 0,8 s, piórka, odbicie)
+(d) komin, tęcza, poryw, smuga, wiry
+  ok   komin ciepła: wysokość 0.43 -> 0.63 (+0,2), rozpęd +0.12 (<= 0,5 j. = 0.12), łańcuch i licznik 12 s bez zmian (kolor stoi)
+  ok   komin nie przebija CAP4 (s 0.79 <= 0.79), działa raz, gaśnie w 5 s po wlocie (tempo 0.20/s = 1/5 s)
+  ok   tęcza księżycowa: przelot pod łukiem = 1 prąd w łańcuchu (+1 w oknie 12 s) i suche piórka (mokro: true -> false)
+  ok   tęcza: alfa L0 0.33, L1 0.33, L2 0.88, L3 0.88, L4 0.88 (<= 0,35 w L0-L1, pełna od L2); poryw latawcowy = 1 prąd w łańcuchu
+  ok   smuga samolotu = JEDEN prąd w łańcuchu: cały przelot przez smugę (ok. 3 s) dodał 1 wpis w oknie 12 s (2 -> 3), łańcuch 2 -> 1, żadnych kolejnych
+  ok   smuga: skok prędkości 0.24 <= 1,5 j. (0.36); przy s = 0,2 (< 0,35) smuga nie działa
+  ok   wir = S1: s 0.49 -> 0.43, drżenie kamery 8 px przez 1.18 s, czułość skrętu x0.6 przez 1.18 s, znos 40.49 j. (<= 50 = 1 szerokość ptaszka), jeden wir na przelot
+(e) budżet prędkości
+  info boty z wymuszanymi bonusami (90 s): K5 smuga+tecza_ks+poryw+komin: maks. L5, smug 15, kominów 0 | K3 komin: maks. L3, smug 0, kominów 61 | K5 smuga: maks. L1, smug 0, kominów 0 | K2 tecza_ks+smuga+komin+prądy: maks. L5, smug 8, kominów 7 | K4 poryw+smuga+komin+prądy: maks. L5, smug 7, kominów 8
+  ok   bonusy (smuga, komin, poryw, tęcza) nie dają L4 bez GATE4 (>= 3 prądy w 12 s) ani L5 bez GATE5: 0 naruszeń w 5 biegach
+  ok   sam komin (bez prądów, 61 kominów): najwyżej L3 (nigdy L4, komin nie przekracza CAP4)
+  info bot idealny w K2-K5 (z Z3b, nurkuje od 30% wysokości), pierwszy pełny kolor (s): K2/1 27.75, K2/2 28.00, K2/3 27.00, K3/1 27.00, K3/2 27.00, K3/3 27.00, K4/1 27.00, K4/2 33.50, K4/3 34.75, K5/1 35.25, K5/2 42.75, K5/3 27.00
+  ok   bot idealny osiąga pełny kolor w <= 60 s w każdej krainie K2-K5 (12 biegów z przeszkodami Z11)
+  ok   bot losowy w K2-K5 nigdy L4 ani pełnego koloru (12 biegów, szczyty L2 L1 L2 L2 L2 L2 L2 L1 L2 L2 L2 L3)
+  ok   bot "50% prądów" w K2-K5 z przeszkodami: trójka z rzędu w 11.0% serii (<= 15%, 91 serii)
+(f) 400 wymuszeń nowych przeszkód: 0 końców biegu
+  ok   400 wymuszeń (szpile w 5 układach, festiwal latawców, Wielki przelot z wirami, ulewa; po 50, tor przesuwany, co piąte nisko: h = 0,2, przelot 0,32): 0 końców biegu
+  info skutki (trafienia) na 50 wymuszeń: szpile-rzad 25, szpile-aleja 47, szpile-strzala 21, szpile-skos 26, szpile-kanion 59, latawce 8, przelot 50, ulewa 0
+(g) zapowiedzi w sekundach
+  ok   zapowiedzi 25 wymuszeń na L0, L2, L4, L5 i przy przyspieszeniu L0 -> L5: szpile, latawce, ulewa >= 1,5 s (min 1.70 s), Wielki przelot >= 2,5 s (min 2.72 s)
+(i) kierunek słońca, finały i zwiastuny w ruchu, Rogal
+  ok   słońce: świt za plecami (tarcza niewidoczna, światło od kamery 1.00), dzień wysoko (y 78 z 845), zachód na wprost nad horyzontem (x 195, y 477), noc: Rogal
+  info finały i zwiastuny: K1 zwiastun tecza, finał trzy_w_rytmie | K2 zwiastun szpile, finał ulewa_i_luk | K3 zwiastun latawce, finał kanion_wiez | K4 zwiastun przelot, finał festiwal (+żółty latawiec) | K5 zwiastun burza, finał przelot_olbrzyma
+  ok   zwiastuny 300 m przed bramą (S0, z boku toru): K1 -> tęcza, K2 -> szpila, K3 -> latawiec, K4 -> mały samolot, K5 -> burza
+  ok   finały K1-K5 przed bramą (trzy w rytmie, ulewa i łuk, kanion wież, festiwal z żółtym latawcem, przelot olbrzyma): bez nowych zagrożeń w finale, kończą się na bramie
+  ok   Rogal w Morzu Pierzyn: wychyla się zza chmur 24.10 s po starcie z bramy 2 (po 20 s ciszy), mruga od L3, w L1 nie
+(h) kolor: kolejność warstw i czerwień przy s = 0
+  ok   kolejność niebo >= daleko >= blisko >= smugi i warstwy od tyłu do przodu przy E = 0 / 0,3 / 0,62 / 1 w K2-K5 z elementami Z11 na ekranie (16 próbek)
+  info czerwone piksele poza szalikiem przy s = 0: K2/domowa 0 z 161443 (szalik 168, strefa HUD i tekstu 45), K2/noc 0 z 161443 (szalik 174, strefa HUD i tekstu 45), K2/dzien 0 z 161443 (szalik 174, strefa HUD i tekstu 44), K3/domowa 0 z 161443 (szalik 170, strefa HUD i tekstu 36), K3/noc 0 z 161443 (szalik 178, strefa HUD i tekstu 38), K3/dzien 0 z 161443 (szalik 168, strefa HUD i tekstu 36), K4/domowa 0 z 161443 (szalik 163, strefa HUD i tekstu 45), K4/noc 0 z 161443 (szalik 169, strefa HUD i tekstu 45), K4/dzien 0 z 161443 (szalik 172, strefa HUD i tekstu 45), K5/domowa 0 z 161443 (szalik 169, strefa HUD i tekstu 42), K5/noc 0 z 161443 (szalik 171, strefa HUD i tekstu 37), K5/dzien 0 z 161443 (szalik 165, strefa HUD i tekstu 42)
+  ok   przy s = 0 brak czerwieni poza szalikiem w K2-K5 o porze domowej, w nocy i w dzień (12 kadrów z elementami Z11 na ekranie; najwięcej 0 pikseli = 0.0000%, próg 0,01%; szalik czerwony w każdym kadrze)
+(j) pamięć sprite'ów i klatki
+  ok   pamięć sprite'ów po zbudowaniu wszystkich wież (8) i samolotów (2): 49.4 MB (<= 60 MB), 421 sprite'ów
+  info klatki (najlepszy z 4, 390x844 @2x, headless bez GPU): Z5 100.00 (100.00/100.00/100.00/100.00), Z11 z samolotem i 5 wieżami 100.00 (99.60/100.00/100.00/100.00); czas rysowania (cpu, średnio ms): Z5 2.13/2.01/1.9/1.92, Z11 3.16/2.64/2.5/2.91
+  ok   na ekranie: samolot i 5 wież
+  ok   klatki z samolotem i 5 wieżami nie gorsze niż o 10% od Z5 (100.00 vs 100.00 kl/s)
+  info CPU x4 (tylko informacja, headless bez GPU): Z5 41.00 kl/s (rysowanie 15.25 ms), Z11 z samolotem i wieżami 29.60 kl/s (rysowanie 24.37 ms); kryterium >= 55 kl/s na średnim Androidzie do potwierdzenia na telefonie (Z7)
+  ok   brak błędów i ostrzeżeń konsoli
+TEST Z11 OK
